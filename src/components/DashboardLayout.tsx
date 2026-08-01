@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
 import { StatRadarChart } from "@/components/StatRadarChart";
 import { EquippedGearGrid } from "@/components/EquippedGearGrid";
+import { WorkoutTrackerForm } from "@/components/WorkoutTrackerForm";
 import { BottomNav } from "@/components/BottomNav";
 
 interface UserProfileData {
@@ -75,6 +76,16 @@ export function DashboardLayout() {
 
   const hpPercent = Math.min(100, Math.max(0, (userData.current_hp / userData.max_hp) * 100));
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
+
+  const handleFinishWorkout = (summary: { totalRvs: number; totalVolume: number }) => {
+    if (profile) {
+      setProfile({
+        ...profile,
+        exp: profile.exp + summary.totalRvs,
+        gold: profile.gold + Math.round(summary.totalVolume / 10),
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-white flex justify-center selection:bg-pixel-green selection:text-black">
@@ -181,7 +192,23 @@ export function DashboardLayout() {
               </motion.div>
             )}
 
-            {activeTab !== "hub" && (
+            {activeTab === "quests" && (
+              <motion.div
+                key="quests"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                <WorkoutTrackerForm
+                  userId={userData.user_id}
+                  userWeightKg={userData.weight_kg}
+                  onFinishSession={handleFinishWorkout}
+                />
+              </motion.div>
+            )}
+
+            {activeTab !== "hub" && activeTab !== "quests" && (
               <motion.div
                 key={activeTab}
                 initial={{ opacity: 0, y: 12 }}
