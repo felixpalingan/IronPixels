@@ -70,6 +70,25 @@ CREATE TABLE IF NOT EXISTS public."Session_Sets" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS public."User_Skills" (
+    skill_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public."Users"(user_id) ON DELETE CASCADE,
+    skill_name TEXT NOT NULL,
+    damage_multiplier NUMERIC(4,2) NOT NULL DEFAULT 1.5,
+    cooldown_minutes INT NOT NULL DEFAULT 5,
+    last_used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public."Dungeon_Bosses" (
+    boss_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    boss_name TEXT NOT NULL,
+    current_hp BIGINT NOT NULL DEFAULT 250000,
+    max_hp BIGINT NOT NULL DEFAULT 500000,
+    status TEXT NOT NULL DEFAULT 'Active',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 INSERT INTO public."Users" (user_id, username, character_class, level, current_hp, max_hp, exp, max_exp, gold, weight_kg)
 VALUES ('e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Felix', 'CYBER KNIGHT', 15, 850, 1000, 10000, 15000, 12500, 75.00)
 ON CONFLICT (user_id) DO NOTHING;
@@ -94,3 +113,14 @@ VALUES
 ('e5f6a7b8-c90d-1e2f-3a4b-5c6d7e8f9a0b', 'Leg Press', 'Tier C', 0.70),
 ('f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c', 'Lat Pulldown', 'Tier C', 0.80)
 ON CONFLICT (exercise_name) DO NOTHING;
+
+INSERT INTO public."Dungeon_Bosses" (boss_id, boss_name, current_hp, max_hp, status)
+VALUES ('b055d7ac-1234-4567-89ab-cdef01234567', 'Shadow Dragon Ignis', 250000, 500000, 'Active')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public."User_Skills" (skill_id, user_id, skill_name, damage_multiplier, cooldown_minutes, last_used_at)
+VALUES 
+('s1111111-1111-1111-1111-111111111111', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Heavy Cleave', 2.50, 5, NULL),
+('s2222222-2222-2222-2222-222222222222', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Iron Shield Bash', 1.80, 3, NULL),
+('s3333333-3333-3333-3333-333333333333', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Dragon Flare', 4.00, 10, NULL)
+ON CONFLICT DO NOTHING;

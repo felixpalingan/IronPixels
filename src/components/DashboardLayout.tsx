@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Coins } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
 import { StatRadarChart } from "@/components/StatRadarChart";
 import { EquippedGearGrid } from "@/components/EquippedGearGrid";
 import { WorkoutTrackerForm } from "@/components/WorkoutTrackerForm";
+import { CombatArena } from "@/components/CombatArena";
 import { BottomNav } from "@/components/BottomNav";
 
 interface UserProfileData {
@@ -37,6 +38,8 @@ interface UserProfileData {
 export function DashboardLayout() {
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [activeTab, setActiveTab] = useState<string>("hub");
+  const [subView, setSubView] = useState<"workout" | "combat">("workout");
+  const [lastSessionDamage, setLastSessionDamage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -78,6 +81,9 @@ export function DashboardLayout() {
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
 
   const handleFinishWorkout = (summary: { totalRvs: number; totalVolume: number }) => {
+    setLastSessionDamage(summary.totalRvs);
+    setSubView("combat");
+
     if (profile) {
       setProfile({
         ...profile,
@@ -199,12 +205,46 @@ export function DashboardLayout() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
+                className="space-y-4"
               >
-                <WorkoutTrackerForm
-                  userId={userData.user_id}
-                  userWeightKg={userData.weight_kg}
-                  onFinishSession={handleFinishWorkout}
-                />
+                <div className="grid grid-cols-2 gap-2 bg-surface border border-pixel-border p-1">
+                  <button
+                    onClick={() => setSubView("workout")}
+                    className={`py-2 px-3 flex items-center justify-center gap-2 font-mono text-xs font-bold transition-all ${
+                      subView === "workout"
+                        ? "bg-pixel-green text-black shadow-neon"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <Dumbbell className="w-4 h-4" />
+                    <span>WORKOUT TRACKER</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSubView("combat")}
+                    className={`py-2 px-3 flex items-center justify-center gap-2 font-mono text-xs font-bold transition-all ${
+                      subView === "combat"
+                        ? "bg-health-red text-white shadow-red-glow"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <Swords className="w-4 h-4" />
+                    <span>BOSS ARENA</span>
+                  </button>
+                </div>
+
+                {subView === "workout" ? (
+                  <WorkoutTrackerForm
+                    userId={userData.user_id}
+                    userWeightKg={userData.weight_kg}
+                    onFinishSession={handleFinishWorkout}
+                  />
+                ) : (
+                  <CombatArena
+                    userId={userData.user_id}
+                    sessionDamage={lastSessionDamage}
+                  />
+                )}
               </motion.div>
             )}
 
