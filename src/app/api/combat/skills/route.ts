@@ -5,7 +5,7 @@ const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
 const DEFAULT_SKILLS = [
   {
-    skill_id: "s1111111-1111-1111-1111-111111111111",
+    skill_id: "11111111-1111-1111-1111-111111111111",
     skill_name: "Heavy Cleave",
     damage_multiplier: 2.5,
     cooldown_minutes: 5,
@@ -13,7 +13,7 @@ const DEFAULT_SKILLS = [
     icon: "sword",
   },
   {
-    skill_id: "s2222222-2222-2222-2222-222222222222",
+    skill_id: "22222222-2222-2222-2222-222222222222",
     skill_name: "Iron Shield Bash",
     damage_multiplier: 1.8,
     cooldown_minutes: 3,
@@ -21,7 +21,7 @@ const DEFAULT_SKILLS = [
     icon: "shield",
   },
   {
-    skill_id: "s3333333-3333-3333-3333-333333333333",
+    skill_id: "33333333-3333-3333-3333-333333333333",
     skill_name: "Dragon Flare",
     damage_multiplier: 4.0,
     cooldown_minutes: 10,

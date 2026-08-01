@@ -120,7 +120,7 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO public."User_Skills" (skill_id, user_id, skill_name, damage_multiplier, cooldown_minutes, last_used_at)
 VALUES 
-('s1111111-1111-1111-1111-111111111111', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Heavy Cleave', 2.50, 5, NULL),
-('s2222222-2222-2222-2222-222222222222', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Iron Shield Bash', 1.80, 3, NULL),
-('s3333333-3333-3333-3333-333333333333', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Dragon Flare', 4.00, 10, NULL)
+('11111111-1111-1111-1111-111111111111', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Heavy Cleave', 2.50, 5, NULL),
+('22222222-2222-2222-2222-222222222222', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Iron Shield Bash', 1.80, 3, NULL),
+('33333333-3333-3333-3333-333333333333', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Dragon Flare', 4.00, 10, NULL)
 ON CONFLICT DO NOTHING;
