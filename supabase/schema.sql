@@ -42,11 +42,31 @@ CREATE TABLE IF NOT EXISTS public."Exercise_Dictionary" (
 CREATE TABLE IF NOT EXISTS public."Workout_Sessions" (
     session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public."Users"(user_id) ON DELETE CASCADE,
+    total_volume_kg NUMERIC(10,2) NOT NULL DEFAULT 0,
+    total_rvs NUMERIC(10,2) NOT NULL DEFAULT 0,
+    exercise_count INT NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'completed',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public."Session_Exercises" (
+    log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL REFERENCES public."Workout_Sessions"(session_id) ON DELETE CASCADE,
     exercise_id UUID NOT NULL REFERENCES public."Exercise_Dictionary"(exercise_id) ON DELETE CASCADE,
-    sets INT NOT NULL,
+    sets_count INT NOT NULL DEFAULT 0,
+    reps_count INT NOT NULL DEFAULT 0,
+    weight_lifted NUMERIC(10,2) NOT NULL DEFAULT 0,
+    rvs_generated NUMERIC(10,2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public."Session_Sets" (
+    set_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    log_id UUID NOT NULL REFERENCES public."Session_Exercises"(log_id) ON DELETE CASCADE,
+    set_number INT NOT NULL,
+    weight_kg NUMERIC(6,2) NOT NULL,
     reps INT NOT NULL,
-    weight_lifted NUMERIC(6,2) NOT NULL,
-    rvs_generated NUMERIC(10,2) NOT NULL,
+    rvs_generated NUMERIC(10,2) NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

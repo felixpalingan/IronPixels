@@ -6,7 +6,22 @@ export interface SetItem {
   reps: number;
 }
 
-export async function calculateRVS(userId: string, exerciseId: string, sets: SetItem[]) {
+export interface ExerciseLogInput {
+  exercise_id: string;
+  sets: SetItem[];
+}
+
+export interface ExerciseCalcResult {
+  exercise_id: string;
+  movement_coefficient: number;
+  sets_count: number;
+  reps_count: number;
+  weight_lifted: number;
+  rvs_generated: number;
+  sets: Array<SetItem & { rvs_generated: number }>;
+}
+
+export async function calculateSessionRVS(userId: string, exercises: ExerciseLogInput[]) {
   let userWeightKg = 75.0;
   try {
     const { data: user } = await supabase
@@ -21,39 +36,73 @@ export async function calculateRVS(userId: string, exerciseId: string, sets: Set
   } catch (e) {
   }
 
-  let movementCoefficient = 1.0;
-  try {
-    const { data: exercise } = await supabase
-      .from("Exercise_Dictionary")
-      .select("movement_coefficient")
-      .eq("exercise_id", exerciseId)
-      .single();
+  let totalSessionVolume = 0;
+  let totalSessionRVS = 0;
+  let totalSessionSets = 0;
+  let totalSessionReps = 0;
 
-    if (exercise && exercise.movement_coefficient) {
-      movementCoefficient = parseFloat(exercise.movement_coefficient);
+  const exerciseResults: ExerciseCalcResult[] = [];
+
+  for (const ex of exercises) {
+    let coeff = 1.0;
+    try {
+      const { data: dict } = await supabase
+        .from("Exercise_Dictionary")
+        .select("movement_coefficient")
+        .eq("exercise_id", ex.exercise_id)
+        .single();
+
+      if (dict && dict.movement_coefficient) {
+        coeff = parseFloat(dict.movement_coefficient);
+      }
+    } catch (e) {
     }
-  } catch (e) {
-  }
 
-  let totalRVS = 0;
-  let totalVolumeKg = 0;
-  let totalReps = 0;
+    let exVolume = 0;
+    let exRVS = 0;
+    let exReps = 0;
 
-  for (const set of sets) {
-    if (set.weight_kg > 0 && set.reps > 0 && userWeightKg > 0) {
-      const setRVS = (set.weight_kg / userWeightKg) * set.reps * movementCoefficient;
-      totalRVS += setRVS;
-      totalVolumeKg += set.weight_kg * set.reps;
-      totalReps += set.reps;
-    }
+    const setsResult = ex.sets.map((set, idx) => {
+      const w = set.weight_kg || 0;
+      const r = set.reps || 0;
+      let setRVS = 0;
+      if (w > 0 && r > 0 && userWeightKg > 0) {
+        setRVS = (w / userWeightKg) * r * coeff;
+      }
+      exVolume += w * r;
+      exRVS += setRVS;
+      exReps += r;
+      return {
+        set_number: idx + 1,
+        weight_kg: w,
+        reps: r,
+        rvs_generated: Math.round(setRVS * 100) / 100,
+      };
+    });
+
+    totalSessionVolume += exVolume;
+    totalSessionRVS += exRVS;
+    totalSessionSets += setsResult.length;
+    totalSessionReps += exReps;
+
+    exerciseResults.push({
+      exercise_id: ex.exercise_id,
+      movement_coefficient: coeff,
+      sets_count: setsResult.length,
+      reps_count: exReps,
+      weight_lifted: exVolume,
+      rvs_generated: Math.round(exRVS * 100) / 100,
+      sets: setsResult,
+    });
   }
 
   return {
     user_weight_kg: userWeightKg,
-    movement_coefficient: movementCoefficient,
-    total_rvs: Math.round(totalRVS * 100) / 100,
-    total_volume_kg: totalVolumeKg,
-    total_sets: sets.length,
-    total_reps: totalReps,
+    total_volume_kg: totalSessionVolume,
+    total_rvs: Math.round(totalSessionRVS * 100) / 100,
+    total_exercises: exercises.length,
+    total_sets: totalSessionSets,
+    total_reps: totalSessionReps,
+    exercise_results: exerciseResults,
   };
 }

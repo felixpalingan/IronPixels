@@ -1,48 +1,81 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabaseClient";
-import { calculateRVS, SetItem } from "@/lib/rvsEngine";
+import { calculateSessionRVS, ExerciseLogInput } from "@/lib/rvsEngine";
 
-interface WorkoutPayload {
+interface SessionPayload {
   user_id: string;
-  exercise_id: string;
-  sets: SetItem[];
+  exercises: ExerciseLogInput[];
 }
 
 export async function POST(request: Request) {
   try {
-    const body: WorkoutPayload = await request.json();
-    const { user_id, exercise_id, sets } = body;
+    const body: SessionPayload = await request.json();
+    const { user_id, exercises } = body;
 
-    if (!user_id || !exercise_id || !sets || sets.length === 0) {
+    if (!user_id || !exercises || exercises.length === 0) {
       return NextResponse.json(
-        { error: "Invalid payload: user_id, exercise_id, and sets are required." },
+        { error: "Invalid payload: user_id and exercises are required." },
         { status: 400 }
       );
     }
 
-    const calcResult = await calculateRVS(user_id, exercise_id, sets);
+    const sessionCalc = await calculateSessionRVS(user_id, exercises);
 
     try {
-      await supabase.from("Workout_Sessions").insert({
-        user_id,
-        exercise_id,
-        sets: calcResult.total_sets,
-        reps: calcResult.total_reps,
-        weight_lifted: calcResult.total_volume_kg,
-        rvs_generated: calcResult.total_rvs,
-      });
+      const { data: sessionData, error: sessionErr } = await supabase
+        .from("Workout_Sessions")
+        .insert({
+          user_id,
+          total_volume_kg: sessionCalc.total_volume_kg,
+          total_rvs: sessionCalc.total_rvs,
+          exercise_count: sessionCalc.total_exercises,
+          status: "completed",
+        })
+        .select("session_id")
+        .single();
+
+      if (sessionData && sessionData.session_id) {
+        const sessionId = sessionData.session_id;
+
+        for (const exRes of sessionCalc.exercise_results) {
+          const { data: logData } = await supabase
+            .from("Session_Exercises")
+            .insert({
+              session_id: sessionId,
+              exercise_id: exRes.exercise_id,
+              sets_count: exRes.sets_count,
+              reps_count: exRes.reps_count,
+              weight_lifted: exRes.weight_lifted,
+              rvs_generated: exRes.rvs_generated,
+            })
+            .select("log_id")
+            .single();
+
+          if (logData && logData.log_id) {
+            const logId = logData.log_id;
+            const setsPayload = exRes.sets.map((s) => ({
+              log_id: logId,
+              set_number: s.set_number,
+              weight_kg: s.weight_kg,
+              reps: s.reps,
+              rvs_generated: s.rvs_generated,
+            }));
+
+            await supabase.from("Session_Sets").insert(setsPayload);
+          }
+        }
+      }
     } catch (e) {
     }
 
     return NextResponse.json({
       success: true,
       user_id,
-      exercise_id,
-      result: calcResult,
+      result: sessionCalc,
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to process workout session." },
+      { error: "Failed to submit workout session." },
       { status: 500 }
     );
   }
