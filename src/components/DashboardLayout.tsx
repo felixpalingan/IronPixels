@@ -80,10 +80,12 @@ export function DashboardLayout() {
     <div className="min-h-screen bg-background text-white flex justify-center selection:bg-pixel-green selection:text-black">
       <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-20">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-pixel-border/60 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 border-2 border-pixel-green bg-pixel-green/20 flex items-center justify-center shadow-neon">
-              <div className="w-2.5 h-2.5 bg-pixel-green animate-pulse" />
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/icon.png"
+              alt="IronPixels Logo"
+              className="w-8 h-8 object-contain border border-pixel-green/80 shadow-neon bg-black p-0.5"
+            />
             <span className="font-headline font-extrabold tracking-wider text-lg text-pixel-green uppercase">
               IRONPIXELS
             </span>
