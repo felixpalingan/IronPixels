@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords } from "lucide-react";
+import { Flame, Swords, ShieldAlert } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
 import { BossSprite, BossState } from "@/components/BossSprite";
+import { HeroSprite, HeroState } from "@/components/HeroSprite";
 
 interface DamageParticle {
   id: string;
@@ -48,6 +49,7 @@ export function CombatArena({
   });
 
   const [bossState, setBossState] = useState<BossState>("idle");
+  const [heroState, setHeroState] = useState<HeroState>("idle");
   const [combatLog, setCombatLog] = useState<Array<{ id: string; msg: string; color: string }>>([]);
 
   useEffect(() => {
@@ -75,10 +77,10 @@ export function CombatArena({
     const particle: DamageParticle = {
       id: Math.random().toString(),
       text: textStr,
-      x: canvas.width / 2 + (Math.random() * 80 - 40),
-      y: canvas.height / 2 + (Math.random() * 40 - 20),
-      vx: (Math.random() - 0.5) * 1.5,
-      vy: -2.5 - Math.random() * 1.5,
+      x: canvas.width * 0.7 + (Math.random() * 40 - 20),
+      y: canvas.height * 0.4 + (Math.random() * 30 - 15),
+      vx: (Math.random() - 0.5) * 0.8,
+      vy: -0.8 - Math.random() * 0.5,
       opacity: 1.0,
       scale: isCritical ? 1.4 : 1.0,
       color: isCritical ? "#FFD60A" : "#ff3b30",
@@ -90,6 +92,11 @@ export function CombatArena({
 
   const executeAttack = async (damage: number, actionName: string) => {
     if (damage <= 0 || bossState === "dead") return;
+
+    setHeroState("attack");
+    setTimeout(() => {
+      setHeroState("idle");
+    }, 600);
 
     setBossState("hit");
     spawnDamageParticle(damage, true, `${actionName.toUpperCase()} -${formatNumber(damage)}`);
@@ -150,7 +157,7 @@ export function CombatArena({
       particlesRef.current.forEach((p, idx) => {
         p.x += p.vx;
         p.y += p.vy;
-        p.opacity -= 0.015;
+        p.opacity -= 0.005;
 
         if (p.opacity <= 0) {
           particlesRef.current.splice(idx, 1);
@@ -159,9 +166,12 @@ export function CombatArena({
 
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.opacity);
-        ctx.font = `${p.isCritical ? "bold 16px" : "bold 13px"} 'JetBrains Mono', monospace`;
+        ctx.font = `${p.isCritical ? "bold 20px" : "bold 16px"} 'JetBrains Mono', monospace`;
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 4;
+        ctx.strokeText(p.text, p.x, p.y);
         ctx.fillStyle = p.color;
         ctx.textAlign = "center";
         ctx.fillText(p.text, p.x, p.y);
@@ -190,6 +200,8 @@ export function CombatArena({
     addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${boss.boss_name}.`, "#FFD60A");
   };
 
+  const hpPercentage = Math.max(0, Math.min(100, (boss.current_hp / boss.max_hp) * 100));
+
   return (
     <div className="w-full max-w-[600px] mx-auto p-4 space-y-4">
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">
@@ -210,18 +222,36 @@ export function CombatArena({
           </span>
         </div>
 
-        <div className="relative border border-pixel-border bg-black overflow-hidden flex flex-col justify-center items-center my-2 p-4 min-h-[260px]">
+        <div className="w-full bg-surface border border-pixel-border p-2 shadow-red-glow">
+          <div className="flex justify-between text-xs font-mono text-health-red font-bold mb-1">
+            <span>BOSS HP</span>
+            <span>
+              {formatNumber(boss.current_hp)} / {formatNumber(boss.max_hp)}
+            </span>
+          </div>
+          <div className="w-full bg-black h-3 border border-pixel-border overflow-hidden">
+            <div
+              className="bg-health-red h-full transition-all duration-300 shadow-red-glow"
+              style={{ width: `${hpPercentage}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="relative border border-pixel-border bg-black overflow-hidden flex items-center justify-between px-8 py-6 my-2 min-h-[220px]">
+          <HeroSprite currentState={heroState} />
+
           <BossSprite
             currentState={bossState}
             currentHp={boss.current_hp}
             maxHp={boss.max_hp}
+            flipHorizontal={true}
           />
 
           <canvas
             ref={canvasRef}
             width={520}
-            height={120}
-            className="absolute inset-0 w-full h-full pointer-events-none z-20"
+            height={220}
+            className="absolute inset-0 w-full h-full pointer-events-none z-30"
           />
         </div>
       </div>

@@ -70,3 +70,35 @@ body {
   from { background-position-x: 0px; }
   to { background-position-x: -400px; }
 }
+
+.sprite-soldier {
+  width: 100px;
+  height: 100px;
+  background-image: url('/assets/soldier-sprite.png');
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.sprite-soldier-idle {
+  background-position-y: 0px;
+  animation: hero-idle 0.8s steps(6) infinite;
+}
+
+.sprite-soldier-attack {
+  background-position-y: -200px;
+  animation: hero-attack 0.5s steps(6) 1;
+}
+
+@keyframes hero-idle {
+  from { background-position-x: 0px; }
+  to { background-position-x: -600px; }
+}
+
+@keyframes hero-attack {
+  from { background-position-x: 0px; }
+  to { background-position-x: -600px; }
+}
+
+.flip-horizontal {
+  transform: scaleX(-1);
+}
