@@ -10,6 +10,7 @@ import { EquippedGearGrid } from "@/components/EquippedGearGrid";
 import { WorkoutTrackerForm } from "@/components/WorkoutTrackerForm";
 import { CombatArena } from "@/components/CombatArena";
 import { BottomNav } from "@/components/BottomNav";
+import { SettingsModal } from "@/components/SettingsModal";
 
 interface UserProfileData {
   user_id: string;
@@ -44,6 +45,7 @@ export function DashboardLayout() {
     totalRvs: number;
     totalVolume: number;
   } | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -117,12 +119,21 @@ export function DashboardLayout() {
             </span>
           </div>
 
-          <button className="p-1.5 border border-pixel-border bg-surface hover:border-pixel-green transition-colors text-pixel-green">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-1.5 border border-pixel-border bg-surface hover:border-pixel-green transition-colors text-pixel-green"
+          >
             <Settings className="w-5 h-5" />
           </button>
         </header>
 
         <main className="p-4 flex-1 relative">
+          <SettingsModal
+            isOpen={isSettingsOpen}
+            onClose={() => setIsSettingsOpen(false)}
+            userData={userData}
+          />
+
           <AnimatePresence>
             {sessionVictoryModal && (
               <motion.div
