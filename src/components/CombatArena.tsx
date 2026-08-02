@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords, ShieldAlert } from "lucide-react";
+import { Flame, Swords } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
 import { BossSprite, BossState } from "@/components/BossSprite";
@@ -90,13 +90,18 @@ export function CombatArena({
     particlesRef.current.push(particle);
   };
 
-  const executeAttack = async (damage: number, actionName: string) => {
+  const executeAttack = async (
+    damage: number,
+    actionName: string,
+    attackType: "attack01" | "attack02" | "attack03" = "attack01"
+  ) => {
     if (damage <= 0 || bossState === "dead") return;
 
-    setHeroState("attack");
+    setHeroState(attackType);
+    const duration = attackType === "attack03" ? 700 : 500;
     setTimeout(() => {
       setHeroState("idle");
-    }, 600);
+    }, duration);
 
     setBossState("hit");
     spawnDamageParticle(damage, true, `${actionName.toUpperCase()} -${formatNumber(damage)}`);
@@ -138,7 +143,7 @@ export function CombatArena({
 
   useEffect(() => {
     if (sessionDamage > 0) {
-      executeAttack(sessionDamage, "Gym RVS Strike");
+      executeAttack(sessionDamage, "Gym RVS Strike", "attack01");
       addLog(`RVS Gym Attack dealt ${formatNumber(sessionDamage)} damage to ${boss.boss_name}!`, "#00ff41");
     }
   }, [sessionDamage]);
@@ -195,8 +200,13 @@ export function CombatArena({
     ]);
   };
 
-  const handleSkillCast = (skillName: string, damageDealt: number, newBossHp: number) => {
-    executeAttack(damageDealt, skillName);
+  const handleSkillCast = (
+    skillName: string,
+    damageDealt: number,
+    newBossHp: number,
+    attackType: "attack01" | "attack02" | "attack03"
+  ) => {
+    executeAttack(damageDealt, skillName, attackType);
     addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${boss.boss_name}.`, "#FFD60A");
   };
 
@@ -237,7 +247,7 @@ export function CombatArena({
           </div>
         </div>
 
-        <div className="relative border border-pixel-border bg-black overflow-hidden flex items-center justify-between px-8 py-6 my-2 min-h-[220px]">
+        <div className="relative border border-pixel-border dungeon-bg-stage overflow-hidden flex items-end justify-between px-8 pb-4 pt-10 min-h-[220px]">
           <HeroSprite currentState={heroState} />
 
           <BossSprite
@@ -246,6 +256,8 @@ export function CombatArena({
             maxHp={boss.max_hp}
             flipHorizontal={true}
           />
+
+          <div className="dungeon-floor-tile" />
 
           <canvas
             ref={canvasRef}

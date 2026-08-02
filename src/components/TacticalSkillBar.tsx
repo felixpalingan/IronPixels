@@ -12,11 +12,12 @@ export interface SkillData {
   remaining_seconds: number;
   is_ready: boolean;
   icon?: string;
+  attack_type?: "attack01" | "attack02" | "attack03";
 }
 
 interface TacticalSkillBarProps {
   userId?: string;
-  onSkillCast?: (skillName: string, damageDealt: number, newBossHp: number) => void;
+  onSkillCast?: (skillName: string, damageDealt: number, newBossHp: number, attackType: "attack01" | "attack02" | "attack03") => void;
 }
 
 export function TacticalSkillBar({
@@ -32,6 +33,7 @@ export function TacticalSkillBar({
       remaining_seconds: 0,
       is_ready: true,
       icon: "sword",
+      attack_type: "attack01",
     },
     {
       skill_id: "22222222-2222-2222-2222-222222222222",
@@ -41,6 +43,7 @@ export function TacticalSkillBar({
       remaining_seconds: 0,
       is_ready: true,
       icon: "shield",
+      attack_type: "attack02",
     },
     {
       skill_id: "33333333-3333-3333-3333-333333333333",
@@ -50,6 +53,7 @@ export function TacticalSkillBar({
       remaining_seconds: 0,
       is_ready: true,
       icon: "flame",
+      attack_type: "attack03",
     },
   ]);
 
@@ -62,7 +66,14 @@ export function TacticalSkillBar({
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
-            setSkills(data);
+            setSkills(
+              data.map((sk: SkillData) => {
+                let attackType: "attack01" | "attack02" | "attack03" = "attack01";
+                if (sk.skill_name.includes("Shield")) attackType = "attack02";
+                if (sk.skill_name.includes("Flare")) attackType = "attack03";
+                return { ...sk, attack_type: attackType };
+              })
+            );
           }
         }
       } catch (err) {
@@ -121,7 +132,12 @@ export function TacticalSkillBar({
         );
 
         if (onSkillCast) {
-          onSkillCast(data.skill_name, data.damage_dealt, data.boss_current_hp);
+          onSkillCast(
+            data.skill_name,
+            data.damage_dealt,
+            data.boss_current_hp,
+            skill.attack_type || "attack01"
+          );
         }
       }
     } catch (err) {
