@@ -11,6 +11,9 @@ import { WorkoutTrackerForm } from "@/components/WorkoutTrackerForm";
 import { CombatArena } from "@/components/CombatArena";
 import { BottomNav } from "@/components/BottomNav";
 import { SettingsModal } from "@/components/SettingsModal";
+import { BlacksmithShop } from "@/components/BlacksmithShop";
+import { InventoryGrid } from "@/components/InventoryGrid";
+import { EQUIPMENT_DICTIONARY, InventoryRecord, ItemType } from "@/lib/equipment";
 
 interface UserProfileData {
   user_id: string;
@@ -29,11 +32,6 @@ interface UserProfileData {
     vit: number;
     luk: number;
   };
-  equipped_gear: Array<{
-    slot: string;
-    name: string;
-    icon?: string;
-  }>;
 }
 
 export function DashboardLayout() {
@@ -46,7 +44,40 @@ export function DashboardLayout() {
     totalVolume: number;
   } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+
+  const INITIAL_INVENTORY: InventoryRecord[] = [
+    {
+      inventory_id: "inv-init-1",
+      user_id: "user-1",
+      item_id: EQUIPMENT_DICTIONARY[0].item_id,
+      is_equipped: true,
+      item: EQUIPMENT_DICTIONARY[0],
+    },
+    {
+      inventory_id: "inv-init-2",
+      user_id: "user-1",
+      item_id: EQUIPMENT_DICTIONARY[1].item_id,
+      is_equipped: true,
+      item: EQUIPMENT_DICTIONARY[1],
+    },
+    {
+      inventory_id: "inv-init-3",
+      user_id: "user-1",
+      item_id: EQUIPMENT_DICTIONARY[2].item_id,
+      is_equipped: true,
+      item: EQUIPMENT_DICTIONARY[2],
+    },
+    {
+      inventory_id: "inv-init-4",
+      user_id: "user-1",
+      item_id: EQUIPMENT_DICTIONARY[3].item_id,
+      is_equipped: false,
+      item: EQUIPMENT_DICTIONARY[3],
+    },
+  ];
+
+  const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
+  const [userGold, setUserGold] = useState<number>(12500);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -55,32 +86,57 @@ export function DashboardLayout() {
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
+          if (data.gold) setUserGold(data.gold);
         }
       } catch (err) {
-      } finally {
-        setLoading(false);
       }
     }
     fetchProfile();
   }, []);
 
-  const userData = profile || {
-    user_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-    username: "Felix",
-    character_class: "CYBER KNIGHT",
-    level: 15,
-    current_hp: 850,
-    max_hp: 1000,
-    exp: 10000,
-    max_exp: 15000,
-    gold: 12500,
-    weight_kg: 75,
-    stats: { str: 85, agi: 72, vit: 54, luk: 60 },
-    equipped_gear: [
-      { slot: "weapon", name: "Iron Blade...", icon: "sword" },
-      { slot: "armor", name: "Chainmail", icon: "shield" },
-      { slot: "accessory", name: "Vitality A...", icon: "heart" },
-    ],
+  const baseStats = profile?.stats || { str: 85, agi: 72, vit: 54, luk: 60 };
+  const baseMaxHp = profile?.max_hp || 1000;
+
+  const equippedItems = userInventory.filter((rec) => rec.is_equipped);
+
+  const bonusStats = equippedItems.reduce(
+    (acc, rec) => {
+      acc.str += rec.item.bonus_str || 0;
+      acc.agi += rec.item.bonus_agi || 0;
+      acc.vit += rec.item.bonus_vit || 0;
+      acc.luk += rec.item.bonus_luk || 0;
+      acc.hp += rec.item.bonus_hp || 0;
+      return acc;
+    },
+    { str: 0, agi: 0, vit: 0, luk: 0, hp: 0 }
+  );
+
+  const totalStats = {
+    str: baseStats.str + bonusStats.str,
+    agi: baseStats.agi + bonusStats.agi,
+    vit: baseStats.vit + bonusStats.vit,
+    luk: baseStats.luk + bonusStats.luk,
+  };
+
+  const totalMaxHp = baseMaxHp + bonusStats.hp;
+
+  const userData = {
+    user_id: profile?.user_id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+    username: profile?.username || "Felix",
+    character_class: profile?.character_class || "CYBER KNIGHT",
+    level: profile?.level || 15,
+    current_hp: Math.min(totalMaxHp, profile?.current_hp || 850),
+    max_hp: totalMaxHp,
+    exp: profile?.exp || 10000,
+    max_exp: profile?.max_exp || 15000,
+    gold: userGold,
+    weight_kg: profile?.weight_kg || 75,
+    stats: totalStats,
+    equipped_gear: equippedItems.map((rec) => ({
+      slot: rec.item.type,
+      name: rec.item.item_name,
+      icon: rec.item.icon,
+    })),
   };
 
   const hpPercent = Math.min(100, Math.max(0, (userData.current_hp / userData.max_hp) * 100));
@@ -90,11 +146,14 @@ export function DashboardLayout() {
     setLastSessionDamage(summary.totalRvs);
     setSessionVictoryModal(summary);
 
+    const earnedGold = Math.round(summary.totalVolume / 10);
+    setUserGold((prev) => prev + earnedGold);
+
     if (profile) {
       setProfile({
         ...profile,
         exp: profile.exp + summary.totalRvs,
-        gold: profile.gold + Math.round(summary.totalVolume / 10),
+        gold: profile.gold + earnedGold,
       });
     }
 
@@ -102,6 +161,43 @@ export function DashboardLayout() {
       setSessionVictoryModal(null);
       setSubView("combat");
     }, 2800);
+  };
+
+  const handleToggleEquip = async (inventoryId: string, currentEquippedState: boolean, itemType: ItemType) => {
+    const nextEquippedState = !currentEquippedState;
+
+    setUserInventory((prev) =>
+      prev.map((rec) => {
+        if (rec.inventory_id === inventoryId) {
+          return { ...rec, is_equipped: nextEquippedState };
+        }
+        if (nextEquippedState && rec.item.type === itemType) {
+          return { ...rec, is_equipped: false };
+        }
+        return rec;
+      })
+    );
+
+    const targetRec = userInventory.find((r) => r.inventory_id === inventoryId);
+    if (targetRec) {
+      try {
+        await fetch("/api/inventory/equip", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            inventory_id: inventoryId,
+            item_id: targetRec.item_id,
+            item_type: itemType,
+            is_equipped: nextEquippedState,
+          }),
+        });
+      } catch (err) {
+      }
+    }
+  };
+
+  const handleAddItemToInventory = (newItem: InventoryRecord) => {
+    setUserInventory((prev) => [newItem, ...prev]);
   };
 
   return (
@@ -142,7 +238,7 @@ export function DashboardLayout() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
               >
-                <div className="w-full max-w-sm border-2 border-pixel-green bg-surface p-6 text-center space-y-4 shadow-neon">
+                <div className="w-full max-w-sm border-2 border-pixel-green bg-surface p-6 text-center space-y-4 shadow-neon font-mono">
                   <div className="w-14 h-14 border-2 border-pixel-green bg-pixel-green/20 text-pixel-green flex items-center justify-center mx-auto shadow-neon animate-bounce">
                     <Swords className="w-8 h-8" />
                   </div>
@@ -151,12 +247,12 @@ export function DashboardLayout() {
                     <h3 className="font-headline font-extrabold text-2xl text-pixel-green uppercase tracking-wider">
                       GYM RAID VICTORY!
                     </h3>
-                    <p className="font-mono text-xs text-gray-300 mt-1">
+                    <p className="text-xs text-gray-300 mt-1">
                       SESSION COMPLETED. PREPARING ATTACK...
                     </p>
                   </div>
 
-                  <div className="bg-black/60 border border-pixel-border p-3 space-y-2 font-mono">
+                  <div className="bg-black/60 border border-pixel-border p-3 space-y-2">
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">TOTAL RVS DAMAGE:</span>
                       <span className="text-pixel-green font-bold">{formatNumber(sessionVictoryModal.totalRvs)} RVS</span>
@@ -171,7 +267,7 @@ export function DashboardLayout() {
                     </div>
                   </div>
 
-                  <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest animate-pulse">
+                  <div className="text-[10px] text-gray-500 uppercase tracking-widest animate-pulse">
                     UNLEASHING RVS DAMAGE ON BOSS...
                   </div>
                 </div>
@@ -313,24 +409,34 @@ export function DashboardLayout() {
               </motion.div>
             )}
 
-            {activeTab !== "hub" && activeTab !== "quests" && (
+            {activeTab === "shop" && (
               <motion.div
-                key={activeTab}
+                key="shop"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.25 }}
-                className="border border-pixel-border bg-surface p-8 text-center min-h-[350px] flex flex-col items-center justify-center"
               >
-                <div className="w-12 h-12 border-2 border-pixel-green bg-pixel-green/10 text-pixel-green flex items-center justify-center font-mono font-bold text-xl mb-4 shadow-neon uppercase">
-                  {activeTab[0]}
-                </div>
-                <h2 className="font-headline font-bold text-xl uppercase tracking-wider text-pixel-green">
-                  {activeTab} SECTION
-                </h2>
-                <p className="font-mono text-xs text-gray-400 mt-2 max-w-xs">
-                  SECTION UNDER ACTIVE DUNGEON DEVELOPMENT. STAY TUNED WARRIOR.
-                </p>
+                <BlacksmithShop
+                  userGold={userGold}
+                  onUpdateGold={setUserGold}
+                  onAddItemToInventory={handleAddItemToInventory}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === "inventory" && (
+              <motion.div
+                key="inventory"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                <InventoryGrid
+                  inventory={userInventory}
+                  onToggleEquip={handleToggleEquip}
+                />
               </motion.div>
             )}
           </AnimatePresence>

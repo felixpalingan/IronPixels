@@ -1,7 +1,6 @@
 "use client";
 
-import { LayoutGrid, Swords, Shield, Store } from "lucide-react";
-import { motion } from "framer-motion";
+import { Home, Swords, ShoppingBag, Package } from "lucide-react";
 
 interface BottomNavProps {
   activeTab: string;
@@ -10,37 +9,36 @@ interface BottomNavProps {
 
 export function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
   const tabs = [
-    { id: "hub", label: "HUB", icon: LayoutGrid },
+    { id: "hub", label: "THE HUB", icon: Home },
     { id: "quests", label: "QUESTS", icon: Swords },
-    { id: "inventory", label: "INVENTORY", icon: Shield },
-    { id: "shop", label: "SHOP", icon: Store },
+    { id: "shop", label: "SHOP", icon: ShoppingBag },
+    { id: "inventory", label: "VAULT", icon: Package },
   ];
 
   return (
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[600px] bg-background/95 backdrop-blur-md border-t border-pixel-border/80 px-4 py-2 z-50">
-      <div className="grid grid-cols-4 gap-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-pixel-border/60 flex justify-center">
+      <div className="w-full max-w-[600px] grid grid-cols-4 p-1.5 gap-1 font-mono">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
-            <motion.button
+            <button
               key={tab.id}
-              whileTap={{ scale: 0.95 }}
               onClick={() => onSelectTab(tab.id)}
-              className={`flex flex-col items-center justify-center py-2 px-1 border transition-all ${
+              className={`py-2 px-1 flex flex-col items-center justify-center gap-1 transition-all ${
                 isActive
-                  ? "border-pixel-green bg-pixel-green/10 text-pixel-green shadow-neon"
-                  : "border-transparent text-gray-500 hover:text-gray-300"
+                  ? "bg-pixel-green text-black font-extrabold shadow-neon"
+                  : "text-gray-400 hover:text-white hover:bg-surface/50"
               }`}
             >
-              <Icon className="w-5 h-5 mb-1" />
-              <span className="font-mono text-[10px] tracking-widest font-bold">
+              <Icon className="w-4 h-4" />
+              <span className="text-[10px] tracking-wider uppercase">
                 {tab.label}
               </span>
-            </motion.button>
+            </button>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

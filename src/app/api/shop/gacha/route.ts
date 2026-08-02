@@ -1,0 +1,102 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { EQUIPMENT_DICTIONARY, ItemRarity, EquipmentItem } from "@/lib/equipment";
+
+export async function POST(request: Request) {
+  try {
+    const { chest_type } = await request.json();
+
+    const CHEST_PRICES: Record<string, number> = {
+      bronze: 1000,
+      silver: 5000,
+      void: 25000,
+    };
+
+    const price = CHEST_PRICES[chest_type];
+    if (!price) {
+      return NextResponse.json({ error: "Invalid chest type" }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+
+    let userGold = 12500;
+    let userId = authData?.user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
+    if (authData?.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("gold")
+        .eq("user_id", userId)
+        .single();
+
+      if (profile) {
+        userGold = profile.gold;
+      }
+    }
+
+    if (userGold < price) {
+      return NextResponse.json(
+        { error: `Insufficient Gold. You need ${price.toLocaleString()} Gold.` },
+        { status: 400 }
+      );
+    }
+
+    const rand = Math.random() * 100;
+    let targetRarity: ItemRarity = "common";
+
+    if (chest_type === "bronze") {
+      if (rand < 5) targetRarity = "epic";
+      else if (rand < 30) targetRarity = "rare";
+      else targetRarity = "common";
+    } else if (chest_type === "silver") {
+      if (rand < 5) targetRarity = "legendary";
+      else if (rand < 25) targetRarity = "epic";
+      else if (rand < 85) targetRarity = "rare";
+      else targetRarity = "common";
+    } else if (chest_type === "void") {
+      if (rand < 60) targetRarity = "legendary";
+      else targetRarity = "epic";
+    }
+
+    const pool = EQUIPMENT_DICTIONARY.filter((item) => item.rarity === targetRarity);
+    const selectedItem: EquipmentItem =
+      pool.length > 0
+        ? pool[Math.floor(Math.random() * pool.length)]
+        : EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
+
+    const newGoldBalance = userGold - price;
+
+    if (authData?.user) {
+      await supabase
+        .from("profiles")
+        .update({ gold: newGoldBalance })
+        .eq("user_id", userId);
+
+      await supabase.from("user_inventory").insert({
+        user_id: userId,
+        item_id: selectedItem.item_id,
+        is_equipped: false,
+      });
+    }
+
+    const newInventoryRecord = {
+      inventory_id: `inv-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      user_id: userId,
+      item_id: selectedItem.item_id,
+      is_equipped: false,
+      item: selectedItem,
+    };
+
+    return NextResponse.json({
+      success: true,
+      new_gold: newGoldBalance,
+      drawn_item: newInventoryRecord,
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to process Gacha purchase." },
+      { status: 500 }
+    );
+  }
+}
