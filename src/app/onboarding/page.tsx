@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Minus, Plus, Settings } from "lucide-react";
+import { ArrowRight, Minus, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StatRadarChart } from "@/components/StatRadarChart";
 
@@ -46,23 +46,54 @@ const CHARACTER_CLASSES: ClassDetail[] = [
 export default function OnboardingPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [weightKg, setWeightKg] = useState<number>(75);
+  const [weightInputStr, setWeightInputStr] = useState<string>("75");
   const [selectedClass, setSelectedClass] = useState<CharacterClass>("WARRIOR");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const activeClassDetail = CHARACTER_CLASSES.find((c) => c.name === selectedClass)!;
 
+  const handleWeightInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const valStr = e.target.value;
+    setWeightInputStr(valStr);
+    const num = parseFloat(valStr);
+    if (!isNaN(num) && num > 0) {
+      setWeightKg(num);
+    }
+  };
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const num = Number(e.target.value);
+    setWeightKg(num);
+    setWeightInputStr(num.toString());
+  };
+
+  const handleMinus = () => {
+    const next = Math.max(30, Number((weightKg - 0.5).toFixed(1)));
+    setWeightKg(next);
+    setWeightInputStr(next.toString());
+  };
+
+  const handlePlus = () => {
+    const next = Math.min(250, Number((weightKg + 0.5).toFixed(1)));
+    setWeightKg(next);
+    setWeightInputStr(next.toString());
+  };
+
   const handleStep1Next = () => {
-    if (weightKg <= 0 || weightKg > 300) {
-      setErrorMsg("INVALID MASS PARAMETER.");
+    const val = parseFloat(weightInputStr);
+    if (isNaN(val) || val <= 0 || val > 300) {
+      setErrorMsg("INVALID MASS PARAMETER. MUST BE POSITIVE.");
       return;
     }
+    setWeightKg(val);
     setErrorMsg("");
     setStep(2);
   };
 
   const handleCompleteOnboarding = async () => {
-    if (weightKg <= 0 || weightKg > 300) {
+    const val = parseFloat(weightInputStr);
+    if (isNaN(val) || val <= 0 || val > 300) {
       setErrorMsg("INVALID MASS PARAMETER.");
       setStep(1);
       return;
@@ -76,7 +107,7 @@ export default function OnboardingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          weight_kg: weightKg,
+          weight_kg: val,
           character_class: selectedClass,
         }),
       });
@@ -98,18 +129,14 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between p-4 relative selection:bg-[#00ff41] selection:text-black">
       <header className="w-full max-w-md mx-auto flex items-center justify-between border-b border-zinc-800 pb-3 pt-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-zinc-900 border border-zinc-700 p-0.5 flex items-center justify-center">
-            <img src="/icon.png" alt="Logo" className="w-full h-full object-contain" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-zinc-950 border border-zinc-700 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,65,0.2)] overflow-hidden">
+            <img src="/icon.png" alt="Logo" className="w-full h-full object-cover scale-125" />
           </div>
-          <span className="font-headline font-extrabold text-base tracking-wider uppercase text-white">
+          <span className="font-headline font-black text-lg tracking-wider uppercase text-white">
             IRON PIXELS
           </span>
         </div>
-
-        <button className="p-1.5 text-zinc-400 hover:text-white">
-          <Settings className="w-4 h-4" />
-        </button>
       </header>
 
       <main className="w-full max-w-md mx-auto flex-1 flex flex-col justify-center py-6 space-y-6">
@@ -143,10 +170,16 @@ export default function OnboardingPage() {
                 <div className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[#00ff41]" />
                 <div className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[#00ff41]" />
 
-                <span className="font-headline font-black text-5xl text-white tracking-tight">
-                  {weightKg}
-                </span>
-                <span className="font-mono font-bold text-lg text-zinc-400 self-end mb-1">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="20"
+                  max="300"
+                  value={weightInputStr}
+                  onChange={handleWeightInputChange}
+                  className="font-headline font-black text-5xl text-white bg-transparent w-36 text-center focus:outline-none focus:text-[#00ff41] transition-colors tracking-tight"
+                />
+                <span className="font-mono font-bold text-lg text-zinc-400 self-end mb-2">
                   KG
                 </span>
               </div>
@@ -154,7 +187,7 @@ export default function OnboardingPage() {
               <div className="w-full max-w-xs flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setWeightKg((prev) => Math.max(30, prev - 1))}
+                  onClick={handleMinus}
                   className="w-11 h-11 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-center text-white transition-colors"
                 >
                   <Minus className="w-4 h-4" />
@@ -164,14 +197,15 @@ export default function OnboardingPage() {
                   type="range"
                   min="40"
                   max="160"
+                  step="0.5"
                   value={weightKg}
-                  onChange={(e) => setWeightKg(Number(e.target.value))}
+                  onChange={handleSliderChange}
                   className="flex-1 accent-[#00ff41] bg-zinc-800 h-1.5 cursor-pointer"
                 />
 
                 <button
                   type="button"
-                  onClick={() => setWeightKg((prev) => Math.min(200, prev + 1))}
+                  onClick={handlePlus}
                   className="w-11 h-11 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-center text-white transition-colors"
                 >
                   <Plus className="w-4 h-4" />

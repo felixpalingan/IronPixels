@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, Key, Mail, CornerDownRight } from "lucide-react";
+import { User, Key, Mail, Eye, EyeOff, CornerDownRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 
@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -63,11 +64,11 @@ export default function RegisterPage() {
         className="w-full max-w-sm flex flex-col items-center space-y-6 z-10"
       >
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-28 h-28 bg-zinc-950 border border-zinc-800 p-2 flex items-center justify-center shadow-[0_0_40px_rgba(0,255,65,0.25)] relative">
+          <div className="w-28 h-28 bg-zinc-950 border border-zinc-800 p-2 flex items-center justify-center shadow-[0_0_40px_rgba(0,255,65,0.25)] relative overflow-hidden">
             <img
               src="/icon.png"
               alt="IronPixels Logo"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover scale-110"
             />
           </div>
 
@@ -102,7 +103,6 @@ export default function RegisterPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-[#0a0a0c] border border-zinc-800 px-3.5 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#00ff41] focus:ring-1 focus:ring-[#00ff41] transition-all font-mono"
               />
-              <span className="absolute right-3 top-3.5 w-1.5 h-3 bg-[#00ff41]/50 animate-pulse" />
             </div>
           </div>
 
@@ -120,7 +120,6 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#0a0a0c] border border-zinc-800 px-3.5 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#00ff41] focus:ring-1 focus:ring-[#00ff41] transition-all font-mono"
               />
-              <span className="absolute right-3 top-3.5 w-1.5 h-3 bg-[#00ff41]/50 animate-pulse" />
             </div>
           </div>
 
@@ -129,16 +128,22 @@ export default function RegisterPage() {
               <Key className="w-3.5 h-3.5 text-zinc-400" />
               ACCESS CODE (PASSWORD)
             </label>
-            <div className="relative">
+            <div className="relative flex items-center">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0a0a0c] border border-zinc-800 px-3.5 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#00ff41] focus:ring-1 focus:ring-[#00ff41] transition-all font-mono"
+                className="w-full bg-[#0a0a0c] border border-zinc-800 pl-3.5 pr-10 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#00ff41] focus:ring-1 focus:ring-[#00ff41] transition-all font-mono"
               />
-              <span className="absolute right-3 top-3.5 w-1.5 h-3 bg-[#00ff41]/50 animate-pulse" />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 text-zinc-400 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
