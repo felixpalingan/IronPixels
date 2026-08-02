@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Shield, Key, Mail, User, Swords, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,12 +40,12 @@ export default function RegisterPage() {
 
       if (error) {
         setErrorMsg(error.message);
+        setLoading(false);
       } else if (data.user) {
         window.location.href = "/onboarding";
       }
     } catch (err: any) {
       setErrorMsg("An unexpected registration error occurred.");
-    } finally {
       setLoading(false);
     }
   };
@@ -75,7 +73,7 @@ export default function RegisterPage() {
             CREATE GUILD ACCOUNT
           </h1>
           <p className="font-mono text-xs text-gray-400">
-            JOIN THE GUILD AND LEVEL UP YOUR PHYSICAL GAINS
+            INSTANT GUILD REGISTRATION. LEVEL UP YOUR GAINS
           </p>
         </div>
 
@@ -154,7 +152,7 @@ export default function RegisterPage() {
             ) : (
               <>
                 <Swords className="w-4 h-4" />
-                <span>CONTINUE TO ONBOARDING</span>
+                <span>INSTANT REGISTER & ONBOARD</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
