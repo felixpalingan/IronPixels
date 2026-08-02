@@ -27,7 +27,7 @@ export function TacticalSkillBar({
   const [skills, setSkills] = useState<SkillData[]>([
     {
       skill_id: "11111111-1111-1111-1111-111111111111",
-      skill_name: "Heavy Cleave",
+      skill_name: "Heavy Blade Slash",
       damage_multiplier: 2.5,
       cooldown_minutes: 5,
       remaining_seconds: 0,
@@ -37,7 +37,7 @@ export function TacticalSkillBar({
     },
     {
       skill_id: "22222222-2222-2222-2222-222222222222",
-      skill_name: "Iron Shield Bash",
+      skill_name: "Shield Thrust Strike",
       damage_multiplier: 1.8,
       cooldown_minutes: 3,
       remaining_seconds: 0,
@@ -47,7 +47,7 @@ export function TacticalSkillBar({
     },
     {
       skill_id: "33333333-3333-3333-3333-333333333333",
-      skill_name: "Dragon Flare",
+      skill_name: "Flame Arrow Volley",
       damage_multiplier: 4.0,
       cooldown_minutes: 10,
       remaining_seconds: 0,
@@ -69,8 +69,11 @@ export function TacticalSkillBar({
             setSkills(
               data.map((sk: SkillData) => {
                 let attackType: "attack01" | "attack02" | "attack03" = "attack01";
-                if (sk.skill_name.includes("Shield")) attackType = "attack02";
-                if (sk.skill_name.includes("Flare")) attackType = "attack03";
+                if (sk.skill_name.toLowerCase().includes("shield") || sk.skill_name.toLowerCase().includes("thrust")) {
+                  attackType = "attack02";
+                } else if (sk.skill_name.toLowerCase().includes("arrow") || sk.skill_name.toLowerCase().includes("flare")) {
+                  attackType = "attack03";
+                }
                 return { ...sk, attack_type: attackType };
               })
             );
@@ -98,7 +101,7 @@ export function TacticalSkillBar({
         })
       );
     }, 1000);
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleCastSkill = async (skill: SkillData) => {
@@ -188,9 +191,9 @@ export function TacticalSkillBar({
               )}
 
               <div className="flex items-center gap-1.5 mb-1">
-                {sk.skill_name.includes("Cleave") && <Sword className="w-4 h-4 text-pixel-green" />}
-                {sk.skill_name.includes("Shield") && <Shield className="w-4 h-4 text-exp-blue" />}
-                {sk.skill_name.includes("Flare") && <Flame className="w-4 h-4 text-gold-loot" />}
+                {sk.attack_type === "attack01" && <Sword className="w-4 h-4 text-pixel-green" />}
+                {sk.attack_type === "attack02" && <Shield className="w-4 h-4 text-exp-blue" />}
+                {sk.attack_type === "attack03" && <Flame className="w-4 h-4 text-gold-loot" />}
                 <span className="font-headline font-bold text-xs truncate text-white">
                   {sk.skill_name}
                 </span>

@@ -40,6 +40,10 @@ export function DashboardLayout() {
   const [activeTab, setActiveTab] = useState<string>("hub");
   const [subView, setSubView] = useState<"workout" | "combat">("workout");
   const [lastSessionDamage, setLastSessionDamage] = useState<number>(0);
+  const [sessionVictoryModal, setSessionVictoryModal] = useState<{
+    totalRvs: number;
+    totalVolume: number;
+  } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export function DashboardLayout() {
 
   const handleFinishWorkout = (summary: { totalRvs: number; totalVolume: number }) => {
     setLastSessionDamage(summary.totalRvs);
-    setSubView("combat");
+    setSessionVictoryModal(summary);
 
     if (profile) {
       setProfile({
@@ -91,6 +95,11 @@ export function DashboardLayout() {
         gold: profile.gold + Math.round(summary.totalVolume / 10),
       });
     }
+
+    setTimeout(() => {
+      setSessionVictoryModal(null);
+      setSubView("combat");
+    }, 2800);
   };
 
   return (
@@ -113,7 +122,52 @@ export function DashboardLayout() {
           </button>
         </header>
 
-        <main className="p-4 flex-1">
+        <main className="p-4 flex-1 relative">
+          <AnimatePresence>
+            {sessionVictoryModal && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+              >
+                <div className="w-full max-w-sm border-2 border-pixel-green bg-surface p-6 text-center space-y-4 shadow-neon">
+                  <div className="w-14 h-14 border-2 border-pixel-green bg-pixel-green/20 text-pixel-green flex items-center justify-center mx-auto shadow-neon animate-bounce">
+                    <Swords className="w-8 h-8" />
+                  </div>
+
+                  <div>
+                    <h3 className="font-headline font-extrabold text-2xl text-pixel-green uppercase tracking-wider">
+                      GYM RAID VICTORY!
+                    </h3>
+                    <p className="font-mono text-xs text-gray-300 mt-1">
+                      SESSION COMPLETED. PREPARING ATTACK...
+                    </p>
+                  </div>
+
+                  <div className="bg-black/60 border border-pixel-border p-3 space-y-2 font-mono">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">TOTAL RVS DAMAGE:</span>
+                      <span className="text-pixel-green font-bold">{formatNumber(sessionVictoryModal.totalRvs)} RVS</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">TOTAL VOLUME LIFTED:</span>
+                      <span className="text-white font-bold">{formatNumber(sessionVictoryModal.totalVolume)} KG</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">GOLD LOOT REWARD:</span>
+                      <span className="text-gold-loot font-bold">+{formatNumber(Math.round(sessionVictoryModal.totalVolume / 10))} GOLD</span>
+                    </div>
+                  </div>
+
+                  <div className="font-mono text-[10px] text-gray-500 uppercase tracking-widest animate-pulse">
+                    UNLEASHING RVS DAMAGE ON BOSS...
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <AnimatePresence mode="wait">
             {activeTab === "hub" && (
               <motion.div

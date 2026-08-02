@@ -6,7 +6,7 @@ const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 const DEFAULT_SKILLS = [
   {
     skill_id: "11111111-1111-1111-1111-111111111111",
-    skill_name: "Heavy Cleave",
+    skill_name: "Heavy Blade Slash",
     damage_multiplier: 2.5,
     cooldown_minutes: 5,
     last_used_at: null,
@@ -14,7 +14,7 @@ const DEFAULT_SKILLS = [
   },
   {
     skill_id: "22222222-2222-2222-2222-222222222222",
-    skill_name: "Iron Shield Bash",
+    skill_name: "Shield Thrust Strike",
     damage_multiplier: 1.8,
     cooldown_minutes: 3,
     last_used_at: null,
@@ -22,7 +22,7 @@ const DEFAULT_SKILLS = [
   },
   {
     skill_id: "33333333-3333-3333-3333-333333333333",
-    skill_name: "Dragon Flare",
+    skill_name: "Flame Arrow Volley",
     damage_multiplier: 4.0,
     cooldown_minutes: 10,
     last_used_at: null,

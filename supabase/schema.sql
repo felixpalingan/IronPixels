@@ -115,12 +115,12 @@ VALUES
 ON CONFLICT (exercise_name) DO NOTHING;
 
 INSERT INTO public."Dungeon_Bosses" (boss_id, boss_name, current_hp, max_hp, status)
-VALUES ('b055d7ac-1234-4567-89ab-cdef01234567', 'Shadow Dragon Ignis', 250000, 500000, 'Active')
+VALUES ('b055d7ac-1234-4567-89ab-cdef01234567', 'Demon Lord Ignis', 250000, 500000, 'Active')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public."User_Skills" (skill_id, user_id, skill_name, damage_multiplier, cooldown_minutes, last_used_at)
 VALUES 
-('11111111-1111-1111-1111-111111111111', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Heavy Cleave', 2.50, 5, NULL),
-('22222222-2222-2222-2222-222222222222', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Iron Shield Bash', 1.80, 3, NULL),
-('33333333-3333-3333-3333-333333333333', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Dragon Flare', 4.00, 10, NULL)
+('11111111-1111-1111-1111-111111111111', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Heavy Blade Slash', 2.50, 5, NULL),
+('22222222-2222-2222-2222-222222222222', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Shield Thrust Strike', 1.80, 3, NULL),
+('33333333-3333-3333-3333-333333333333', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Flame Arrow Volley', 4.00, 10, NULL)
 ON CONFLICT DO NOTHING;
