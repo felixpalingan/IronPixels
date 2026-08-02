@@ -43,8 +43,7 @@ export default function RegisterPage() {
       if (error) {
         setErrorMsg(error.message);
       } else if (data.user) {
-        router.push("/onboarding");
-        router.refresh();
+        window.location.href = "/onboarding";
       }
     } catch (err: any) {
       setErrorMsg("An unexpected registration error occurred.");
@@ -163,7 +162,7 @@ export default function RegisterPage() {
         </form>
 
         <div className="text-center font-mono text-[10px] text-gray-500 uppercase tracking-widest pt-2 border-t border-pixel-border/50">
-          POWERED BY SUPABASE AUTH & RVS ENGINE
+          IRONPIXELS RETRO FITNESS RPG © 2026
         </div>
       </motion.div>
     </div>

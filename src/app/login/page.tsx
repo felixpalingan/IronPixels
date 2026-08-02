@@ -34,8 +34,8 @@ export default function LoginPage() {
       if (error) {
         setErrorMsg(error.message);
       } else if (data.user) {
-        router.push("/onboarding");
-        router.refresh();
+        document.cookie = "ironpixels_onboarded=true; path=/; max-age=31536000";
+        window.location.href = "/";
       }
     } catch (err: any) {
       setErrorMsg("An unexpected login error occurred.");
@@ -139,7 +139,7 @@ export default function LoginPage() {
         </form>
 
         <div className="text-center font-mono text-[10px] text-gray-500 uppercase tracking-widest pt-2 border-t border-pixel-border/50">
-          POWERED BY SUPABASE AUTH & RVS ENGINE
+          IRONPIXELS RETRO FITNESS RPG © 2026
         </div>
       </motion.div>
     </div>
