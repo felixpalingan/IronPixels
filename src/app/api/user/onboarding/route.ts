@@ -27,19 +27,13 @@ export async function POST(request: Request) {
     }
 
     const selectedClass = (character_class || "CYBER KNIGHT").toUpperCase();
-    if (!CLASS_BASE_STATS[selectedClass as keyof typeof CLASS_BASE_STATS]) {
-      return NextResponse.json(
-        { error: "Invalid character class selected." },
-        { status: 400 }
-      );
-    }
+    const stats = CLASS_BASE_STATS[selectedClass as keyof typeof CLASS_BASE_STATS] || CLASS_BASE_STATS["CYBER KNIGHT"];
 
     const baseUsername = username || user?.email?.split("@")[0] || "Warrior";
-    const uniqueUsername = `${baseUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
 
-    const userProfile = {
+    const profileData = {
       user_id: userId,
-      username: user?.email ? baseUsername : uniqueUsername,
+      username: baseUsername,
       character_class: selectedClass,
       weight_kg: parsedWeight,
       level: 1,
@@ -47,70 +41,28 @@ export async function POST(request: Request) {
       max_hp: 1000,
       exp: 0,
       max_exp: 1000,
-      gold: 500,
+      gold: 12500,
+      str: stats.str,
+      agi: stats.agi,
+      vit: stats.vit,
+      luk: stats.luk,
     };
 
     try {
       await supabase
-        .from("Users")
-        .upsert(userProfile, { onConflict: "user_id" });
+        .from("profiles")
+        .upsert(profileData, { onConflict: "user_id" });
     } catch (e) {
     }
 
-    const stats = CLASS_BASE_STATS[selectedClass as keyof typeof CLASS_BASE_STATS];
-    try {
-      await supabase
-        .from("User_Stats")
-        .upsert({ user_id: userId, ...stats }, { onConflict: "user_id" });
-    } catch (e) {
-    }
-
-    const defaultSkills = [
-      {
-        skill_id: "11111111-1111-1111-1111-111111111111",
-        user_id: userId,
-        skill_name: "Heavy Blade Slash",
-        damage_multiplier: 2.5,
-        cooldown_minutes: 5,
-      },
-      {
-        skill_id: "22222222-2222-2222-2222-222222222222",
-        user_id: userId,
-        skill_name: "Shield Thrust Strike",
-        damage_multiplier: 1.8,
-        cooldown_minutes: 3,
-      },
-      {
-        skill_id: "33333333-3333-3333-3333-333333333333",
-        user_id: userId,
-        skill_name: "Flame Arrow Volley",
-        damage_multiplier: 4.0,
-        cooldown_minutes: 10,
-      },
-    ];
-
-    try {
-      await supabase.from("User_Skills").upsert(defaultSkills, { onConflict: "skill_id" });
-    } catch (e) {
-    }
-
-    const res = NextResponse.json({
+    return NextResponse.json({
       success: true,
       message: "Onboarding completed successfully.",
-      user: userProfile,
-      stats,
+      user: profileData,
     });
-
-    res.cookies.set("ironpixels_onboarded", "true", {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-      httpOnly: false,
-    });
-
-    return res;
-  } catch (err) {
+  } catch (err: any) {
     return NextResponse.json(
-      { error: "Internal server error during onboarding." },
+      { error: err.message || "Failed to complete onboarding." },
       { status: 500 }
     );
   }
