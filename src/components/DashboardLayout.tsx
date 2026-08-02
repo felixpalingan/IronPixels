@@ -67,31 +67,43 @@ export function DashboardLayout() {
       is_equipped: true,
       item: EQUIPMENT_DICTIONARY[2],
     },
-    {
-      inventory_id: "inv-init-4",
-      user_id: "user-1",
-      item_id: EQUIPMENT_DICTIONARY[3].item_id,
-      is_equipped: false,
-      item: EQUIPMENT_DICTIONARY[3],
-    },
   ];
 
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
   const [userGold, setUserGold] = useState<number>(12500);
 
   useEffect(() => {
-    async function fetchProfile() {
+    const localInv = localStorage.getItem("ironpixels_inventory");
+    if (localInv) {
       try {
-        const res = await fetch("/api/user/profile");
-        if (res.ok) {
-          const data = await res.json();
-          setProfile(data);
-          if (data.gold) setUserGold(data.gold);
+        const parsed = JSON.parse(localInv);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setUserInventory(parsed);
         }
-      } catch (err) {
-      }
+      } catch (e) {}
     }
-    fetchProfile();
+
+    async function fetchData() {
+      try {
+        const resProf = await fetch("/api/user/profile");
+        if (resProf.ok) {
+          const dataProf = await resProf.json();
+          setProfile(dataProf);
+          if (dataProf.gold !== undefined) setUserGold(dataProf.gold);
+        }
+
+        const resInv = await fetch("/api/user/inventory");
+        if (resInv.ok) {
+          const dataInv = await resInv.json();
+          if (Array.isArray(dataInv) && dataInv.length > 0) {
+            setUserInventory(dataInv);
+            localStorage.setItem("ironpixels_inventory", JSON.stringify(dataInv));
+          }
+        }
+      } catch (err) {}
+    }
+
+    fetchData();
   }, []);
 
   const baseStats = profile?.stats || { str: 85, agi: 72, vit: 54, luk: 60 };
@@ -101,11 +113,11 @@ export function DashboardLayout() {
 
   const bonusStats = equippedItems.reduce(
     (acc, rec) => {
-      acc.str += rec.item.bonus_str || 0;
-      acc.agi += rec.item.bonus_agi || 0;
-      acc.vit += rec.item.bonus_vit || 0;
-      acc.luk += rec.item.bonus_luk || 0;
-      acc.hp += rec.item.bonus_hp || 0;
+      acc.str += rec.item?.bonus_str || 0;
+      acc.agi += rec.item?.bonus_agi || 0;
+      acc.vit += rec.item?.bonus_vit || 0;
+      acc.luk += rec.item?.bonus_luk || 0;
+      acc.hp += rec.item?.bonus_hp || 0;
       return acc;
     },
     { str: 0, agi: 0, vit: 0, luk: 0, hp: 0 }
@@ -142,8 +154,8 @@ export function DashboardLayout() {
 
   const gearSkills = equippedItems
     .map((rec) => ({
-      name: rec.item.granted_skill_name || rec.item.item_name,
-      icon: rec.item.icon,
+      name: rec.item?.granted_skill_name || rec.item?.item_name,
+      icon: rec.item?.icon,
     }))
     .filter((s) => Boolean(s.name));
 
@@ -174,8 +186,8 @@ export function DashboardLayout() {
   const handleToggleEquip = async (inventoryId: string, currentEquippedState: boolean, itemType: ItemType) => {
     const nextEquippedState = !currentEquippedState;
 
-    setUserInventory((prev) =>
-      prev.map((rec) => {
+    setUserInventory((prev) => {
+      const updated = prev.map((rec) => {
         if (rec.inventory_id === inventoryId) {
           return { ...rec, is_equipped: nextEquippedState };
         }
@@ -183,8 +195,10 @@ export function DashboardLayout() {
           return { ...rec, is_equipped: false };
         }
         return rec;
-      })
-    );
+      });
+      localStorage.setItem("ironpixels_inventory", JSON.stringify(updated));
+      return updated;
+    });
 
     const targetRec = userInventory.find((r) => r.inventory_id === inventoryId);
     if (targetRec) {
@@ -199,13 +213,16 @@ export function DashboardLayout() {
             is_equipped: nextEquippedState,
           }),
         });
-      } catch (err) {
-      }
+      } catch (err) {}
     }
   };
 
   const handleAddItemToInventory = (newItem: InventoryRecord) => {
-    setUserInventory((prev) => [newItem, ...prev]);
+    setUserInventory((prev) => {
+      const updated = [newItem, ...prev];
+      localStorage.setItem("ironpixels_inventory", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (

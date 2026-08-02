@@ -32,92 +32,82 @@ export function TacticalSkillBar({
   playerStr = 85,
   onSkillCast,
 }: TacticalSkillBarProps) {
-  const [skills, setSkills] = useState<SkillData[]>([
-    {
-      skill_id: "s-default-1",
-      skill_name: "Heavy Blade Slash",
-      damage_multiplier: 2.5,
-      cooldown_minutes: 3,
-      remaining_seconds: 0,
-      is_ready: true,
-      icon: "sword",
-      attack_type: "attack01",
-    },
-    {
-      skill_id: "s-default-2",
-      skill_name: "Shield Thrust Strike",
-      damage_multiplier: 1.8,
-      cooldown_minutes: 2,
-      remaining_seconds: 0,
-      is_ready: true,
-      icon: "shield",
-      attack_type: "attack02",
-    },
-    {
-      skill_id: "s-default-3",
-      skill_name: "Flame Arrow Volley",
-      damage_multiplier: 4.0,
-      cooldown_minutes: 5,
-      remaining_seconds: 0,
-      is_ready: true,
-      icon: "flame",
-      attack_type: "attack03",
-    },
-  ]);
-
+  const [skills, setSkills] = useState<SkillData[]>([]);
   const [executingSkillId, setExecutingSkillId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (equippedSkills && equippedSkills.length > 0) {
-      const generatedFromGear: SkillData[] = equippedSkills.map((sk, idx) => {
-        const nameLower = sk.name.toLowerCase();
-        let multiplier = 3.5;
-        let attackType: "attack01" | "attack02" | "attack03" = "attack01";
-        let icon = "sword";
-
-        if (nameLower.includes("void") || nameLower.includes("nova") || nameLower.includes("dragon")) {
-          multiplier = 8.5;
-          attackType = "attack03";
-          icon = "flame";
-        } else if (nameLower.includes("plasma") || nameLower.includes("overload")) {
-          multiplier = 5.5;
-          attackType = "attack02";
-          icon = "zap";
-        } else if (nameLower.includes("shadow") || nameLower.includes("strike")) {
-          multiplier = 4.0;
-          attackType = "attack01";
-          icon = "sword";
-        }
-
-        return {
-          skill_id: `s-gear-${idx}-${sk.name}`,
-          skill_name: sk.name,
-          damage_multiplier: multiplier,
-          cooldown_minutes: Math.max(2, Math.floor(multiplier)),
-          remaining_seconds: 0,
-          is_ready: true,
-          icon: sk.icon || icon,
-          attack_type: attackType,
-        };
-      });
-
-      setSkills(generatedFromGear);
+  const getSavedCdSecs = (skillName: string) => {
+    try {
+      const cdUntil = localStorage.getItem(`ironpixels_cd_${skillName}`);
+      if (!cdUntil) return 0;
+      const remainingMs = Number(cdUntil) - Date.now();
+      return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
+    } catch (e) {
+      return 0;
     }
+  };
+
+  useEffect(() => {
+    let sourceSkills = equippedSkills;
+
+    if (!sourceSkills || sourceSkills.length === 0) {
+      sourceSkills = [
+        { name: "Heavy Blade Slash", icon: "sword" },
+        { name: "Shield Thrust Strike", icon: "shield" },
+        { name: "Flame Arrow Volley", icon: "flame" },
+      ];
+    }
+
+    const generated: SkillData[] = sourceSkills.map((sk, idx) => {
+      const nameLower = sk.name.toLowerCase();
+      let multiplier = 3.5;
+      let attackType: "attack01" | "attack02" | "attack03" = "attack01";
+      let icon = "sword";
+      let cdMins = 3;
+
+      if (nameLower.includes("void") || nameLower.includes("nova") || nameLower.includes("dragon")) {
+        multiplier = 8.5;
+        attackType = "attack03";
+        icon = "flame";
+        cdMins = 5;
+      } else if (nameLower.includes("plasma") || nameLower.includes("overload")) {
+        multiplier = 5.5;
+        attackType = "attack02";
+        icon = "zap";
+        cdMins = 4;
+      } else if (nameLower.includes("shadow") || nameLower.includes("strike")) {
+        multiplier = 4.0;
+        attackType = "attack01";
+        icon = "sword";
+        cdMins = 3;
+      }
+
+      const cdSecs = getSavedCdSecs(sk.name);
+
+      return {
+        skill_id: `s-gear-${idx}-${sk.name}`,
+        skill_name: sk.name,
+        damage_multiplier: multiplier,
+        cooldown_minutes: cdMins,
+        remaining_seconds: cdSecs,
+        is_ready: cdSecs === 0,
+        icon: sk.icon || icon,
+        attack_type: attackType,
+      };
+    });
+
+    setSkills(generated);
   }, [equippedSkills]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setSkills((prevSkills) =>
         prevSkills.map((sk) => {
-          if (sk.remaining_seconds > 0) {
-            const nextSecs = sk.remaining_seconds - 1;
-            return {
-              ...sk,
-              remaining_seconds: nextSecs,
-              is_ready: nextSecs === 0,
-            };
-          }
-          return sk;
+          const cdSecs = getSavedCdSecs(sk.skill_name);
+          return {
+            ...sk,
+            remaining_seconds: cdSecs,
+            is_ready: cdSecs === 0,
+          };
         })
       );
     }, 1000);
@@ -132,14 +122,23 @@ export function TacticalSkillBar({
 
     const baseDmg = playerStr * 20 + Math.floor(Math.random() * 500);
     const calculatedDamage = Math.round(baseDmg * skill.damage_multiplier);
+    const cdMs = skill.cooldown_minutes * 60 * 1000;
 
     try {
-      const res = await fetch("/api/combat/attack", {
+      localStorage.setItem(
+        `ironpixels_cd_${skill.skill_name}`,
+        (Date.now() + cdMs).toString()
+      );
+
+      const res = await fetch("/api/combat/execute-skill", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId,
-          rvs_damage: calculatedDamage,
+          skill_id: skill.skill_id,
+          cooldown_minutes: skill.cooldown_minutes,
+          damage_multiplier: skill.damage_multiplier,
+          base_damage: baseDmg,
         }),
       });
 
@@ -151,7 +150,7 @@ export function TacticalSkillBar({
             ? {
                 ...s,
                 is_ready: false,
-                remaining_seconds: s.cooldown_minutes * 60,
+                remaining_seconds: skill.cooldown_minutes * 60,
               }
             : s
         )
@@ -161,7 +160,7 @@ export function TacticalSkillBar({
         onSkillCast(
           skill.skill_name,
           calculatedDamage,
-          data.current_hp || 0,
+          data.boss_current_hp || 0,
           skill.attack_type || "attack01"
         );
       }
@@ -208,9 +207,9 @@ export function TacticalSkillBar({
               key={skill.skill_id}
               onClick={() => handleCast(skill)}
               disabled={!skill.is_ready || isExecuting}
-              className={`p-2 border.2 relative flex flex-col items-center justify-center gap-1.5 transition-all ${
+              className={`p-2 border-2 relative flex flex-col items-center justify-center gap-1.5 transition-all ${
                 skill.is_ready
-                  ? "border-[#00ff41] bg-black hover:bg-[#00ff41]/20 text-white shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+                  ? "border-[#00ff41] bg-black hover:bg-[#00ff41]/20 text-white shadow-[0_0_15px_rgba(0,255,65,0.2)] cursor-pointer"
                   : "border-zinc-800 bg-zinc-950 text-zinc-600 cursor-not-allowed"
               }`}
             >

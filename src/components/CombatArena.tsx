@@ -58,6 +58,27 @@ export function CombatArena({
   const [heroState, setHeroState] = useState<HeroState>("idle");
   const [combatLog, setCombatLog] = useState<Array<{ id: string; msg: string; color: string }>>([]);
 
+  const todayKey = `ironpixels_combat_log_${new Date().toISOString().split("T")[0]}`;
+
+  useEffect(() => {
+    try {
+      const savedLogs = localStorage.getItem(todayKey);
+      if (savedLogs) {
+        setCombatLog(JSON.parse(savedLogs));
+      }
+    } catch (e) {}
+  }, [todayKey]);
+
+  const addLog = (msg: string, color = "#e5e2e1") => {
+    setCombatLog((prev) => {
+      const updated = [{ id: Math.random().toString(), msg, color }, ...prev.slice(0, 9)];
+      try {
+        localStorage.setItem(todayKey, JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
   const fetchBossData = async () => {
     try {
       const res = await fetch("/api/combat/boss");
@@ -68,8 +89,7 @@ export function CombatArena({
           setBossState("dead");
         }
       }
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   useEffect(() => {
@@ -205,13 +225,6 @@ export function CombatArena({
     };
   }, []);
 
-  const addLog = (msg: string, color = "#e5e2e1") => {
-    setCombatLog((prev) => [
-      { id: Math.random().toString(), msg, color },
-      ...prev.slice(0, 4),
-    ]);
-  };
-
   const handleSkillCast = (
     skillName: string,
     damageDealt: number,
@@ -225,7 +238,7 @@ export function CombatArena({
   const hpPercentage = Math.max(0, Math.min(100, (boss.current_hp / boss.max_hp) * 100));
 
   return (
-    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4">
+    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono">
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -235,7 +248,7 @@ export function CombatArena({
             </span>
           </div>
 
-          <span className={`px-2 py-0.5 border font-mono text-[10px] uppercase font-bold ${
+          <span className={`px-2 py-0.5 border text-[10px] uppercase font-bold ${
             boss.status === "Defeated"
               ? "border-pixel-green text-pixel-green bg-pixel-green/10"
               : "border-health-red text-health-red bg-health-red/10 shadow-red-glow"
@@ -292,13 +305,14 @@ export function CombatArena({
       />
 
       <div className="border border-pixel-border bg-surface p-3 space-y-1.5 font-mono">
-        <div className="text-[10px] text-gray-400 uppercase tracking-widest border-b border-pixel-border/50 pb-1">
-          COMBAT LOG
+        <div className="flex items-center justify-between border-b border-pixel-border/50 pb-1 text-[10px] text-gray-400 uppercase tracking-widest">
+          <span>DAILY COMBAT LOG ({new Date().toISOString().split("T")[0]})</span>
+          <span className="text-pixel-green font-bold">{combatLog.length} LOGS</span>
         </div>
-        <div className="space-y-1 max-h-24 overflow-y-auto">
+        <div className="space-y-1 max-h-28 overflow-y-auto pt-1">
           {combatLog.length === 0 ? (
             <div className="text-[11px] text-gray-500 italic">
-              No battle actions logged yet. Perform gym sets or cast skills to attack!
+              No battle actions logged today yet. Perform gym sets or cast skills to attack!
             </div>
           ) : (
             combatLog.map((log) => (

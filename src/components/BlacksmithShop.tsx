@@ -64,7 +64,7 @@ export function BlacksmithShop({
   const [loadingChest, setLoadingChest] = useState<string | null>(null);
   const [drawnResult, setDrawnResult] = useState<InventoryRecord | null>(null);
   const [reelStrip, setReelStrip] = useState<EquipmentItem[]>([]);
-  const [targetIndex, setTargetIndex] = useState<number>(25);
+  const [targetIndex, setTargetIndex] = useState<number>(26);
   const [openingPhase, setOpeningPhase] = useState<"rolling" | "revealed" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
 
@@ -238,7 +238,7 @@ export function BlacksmithShop({
                   <h3 className="font-headline font-black text-2xl text-[#00ff41] uppercase tracking-wider animate-pulse">
                     OPENING CACHE REEL...
                   </h3>
-                  <p className="text-xs text-zinc-400">CS:GO ROULETTE REEL IN MOTION</p>
+                  <p className="text-xs text-zinc-400">ROULETTE REEL SPINNER IN MOTION</p>
                 </div>
 
                 <div className="relative w-full max-w-[340px] mx-auto">
