@@ -1,25 +1,25 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS public."Users" (
-    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     username TEXT NOT NULL UNIQUE,
     character_class TEXT DEFAULT 'CYBER KNIGHT',
-    level INT DEFAULT 15,
-    current_hp INT DEFAULT 850,
+    level INT DEFAULT 1,
+    current_hp INT DEFAULT 1000,
     max_hp INT DEFAULT 1000,
-    exp INT DEFAULT 10000,
-    max_exp INT DEFAULT 15000,
-    gold INT DEFAULT 12500,
-    weight_kg NUMERIC(5,2) DEFAULT 75.00,
+    exp INT DEFAULT 0,
+    max_exp INT DEFAULT 1000,
+    gold INT DEFAULT 500,
+    weight_kg NUMERIC(5,2) DEFAULT 70.00,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS public."User_Stats" (
     user_id UUID PRIMARY KEY REFERENCES public."Users"(user_id) ON DELETE CASCADE,
-    str INT DEFAULT 85,
-    agi INT DEFAULT 72,
-    vit INT DEFAULT 54,
-    luk INT DEFAULT 60
+    str INT DEFAULT 75,
+    agi INT DEFAULT 75,
+    vit INT DEFAULT 70,
+    luk INT DEFAULT 70
 );
 
 CREATE TABLE IF NOT EXISTS public."Equipped_Gear" (
@@ -89,21 +89,6 @@ CREATE TABLE IF NOT EXISTS public."Dungeon_Bosses" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-INSERT INTO public."Users" (user_id, username, character_class, level, current_hp, max_hp, exp, max_exp, gold, weight_kg)
-VALUES ('e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Felix', 'CYBER KNIGHT', 15, 850, 1000, 10000, 15000, 12500, 75.00)
-ON CONFLICT (user_id) DO NOTHING;
-
-INSERT INTO public."User_Stats" (user_id, str, agi, vit, luk)
-VALUES ('e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 85, 72, 54, 60)
-ON CONFLICT (user_id) DO NOTHING;
-
-INSERT INTO public."Equipped_Gear" (user_id, slot, name, icon)
-VALUES 
-('e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'weapon', 'Iron Blade...', 'sword'),
-('e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'armor', 'Chainmail', 'shield'),
-('e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'accessory', 'Vitality A...', 'heart')
-ON CONFLICT DO NOTHING;
-
 INSERT INTO public."Exercise_Dictionary" (exercise_id, exercise_name, tier, movement_coefficient)
 VALUES
 ('a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'Barbell Bench Press', 'Tier B', 1.20),
@@ -118,9 +103,23 @@ INSERT INTO public."Dungeon_Bosses" (boss_id, boss_name, current_hp, max_hp, sta
 VALUES ('b055d7ac-1234-4567-89ab-cdef01234567', 'Demon Lord Ignis', 250000, 500000, 'Active')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO public."User_Skills" (skill_id, user_id, skill_name, damage_multiplier, cooldown_minutes, last_used_at)
-VALUES 
-('11111111-1111-1111-1111-111111111111', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Heavy Blade Slash', 2.50, 5, NULL),
-('22222222-2222-2222-2222-222222222222', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Shield Thrust Strike', 1.80, 3, NULL),
-('33333333-3333-3333-3333-333333333333', 'e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c', 'Flame Arrow Volley', 4.00, 10, NULL)
-ON CONFLICT DO NOTHING;
+ALTER TABLE public."Users" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."User_Stats" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."Workout_Sessions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."User_Skills" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users self management" ON public."Users";
+CREATE POLICY "Users self management" ON public."Users"
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "User_Stats self management" ON public."User_Stats";
+CREATE POLICY "User_Stats self management" ON public."User_Stats"
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Workout_Sessions self management" ON public."Workout_Sessions";
+CREATE POLICY "Workout_Sessions self management" ON public."Workout_Sessions"
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "User_Skills self management" ON public."User_Skills";
+CREATE POLICY "User_Skills self management" ON public."User_Skills"
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);

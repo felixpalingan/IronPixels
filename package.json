@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.48.1",
     "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
