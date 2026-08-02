@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Coins, Sparkles, X, Shield, Swords, Flame, Zap, PackageOpen } from "lucide-react";
+import { Coins, Sparkles, X, Shield, Swords, Flame, Zap, PackageOpen, Triangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
-import { InventoryRecord } from "@/lib/equipment";
+import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
 
 interface BlacksmithShopProps {
   userGold: number;
@@ -63,13 +63,14 @@ export function BlacksmithShop({
 }: BlacksmithShopProps) {
   const [loadingChest, setLoadingChest] = useState<string | null>(null);
   const [drawnResult, setDrawnResult] = useState<InventoryRecord | null>(null);
-  const [openingPhase, setOpeningPhase] = useState<"shaking" | "revealed" | null>(null);
+  const [reelStrip, setReelStrip] = useState<EquipmentItem[]>([]);
+  const [targetIndex, setTargetIndex] = useState<number>(25);
+  const [openingPhase, setOpeningPhase] = useState<"rolling" | "revealed" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
 
   const handlePurchaseChest = async (chest: ChestOption) => {
     setErrorMsg("");
     setLoadingChest(chest.id);
-    setOpeningPhase("shaking");
 
     try {
       const res = await fetch("/api/shop/gacha", {
@@ -83,21 +84,36 @@ export function BlacksmithShop({
       if (!res.ok || !data.success) {
         setErrorMsg(data.error || "GACHA PURCHASE FAILED.");
         setLoadingChest(null);
-        setOpeningPhase(null);
       } else {
         onUpdateGold(data.new_gold);
         onAddItemToInventory(data.drawn_item);
 
+        const winItem: EquipmentItem = data.drawn_item.item;
+        const WIN_INDEX = 26;
+
+        const generatedStrip: EquipmentItem[] = [];
+        for (let i = 0; i < 35; i++) {
+          if (i === WIN_INDEX) {
+            generatedStrip.push(winItem);
+          } else {
+            const randItem = EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
+            generatedStrip.push(randItem);
+          }
+        }
+
+        setReelStrip(generatedStrip);
+        setTargetIndex(WIN_INDEX);
+        setDrawnResult(data.drawn_item);
+        setOpeningPhase("rolling");
+        setLoadingChest(null);
+
         setTimeout(() => {
-          setDrawnResult(data.drawn_item);
           setOpeningPhase("revealed");
-          setLoadingChest(null);
-        }, 1800);
+        }, 4600);
       }
     } catch (err: any) {
       setErrorMsg("GACHA CONNECTION ERROR.");
       setLoadingChest(null);
-      setOpeningPhase(null);
     }
   };
 
@@ -113,6 +129,22 @@ export function BlacksmithShop({
         return "border-zinc-600 bg-zinc-900 text-zinc-300";
     }
   };
+
+  const getRarityCardBorder = (rarity: string) => {
+    switch (rarity) {
+      case "legendary":
+        return "border-amber-400 bg-amber-950/30 text-amber-300";
+      case "epic":
+        return "border-fuchsia-500 bg-fuchsia-950/30 text-fuchsia-300";
+      case "rare":
+        return "border-sky-400 bg-sky-950/30 text-sky-300";
+      default:
+        return "border-zinc-700 bg-zinc-950 text-zinc-400";
+    }
+  };
+
+  const ITEM_CARD_WIDTH = 112;
+  const targetX = targetIndex * ITEM_CARD_WIDTH - (320 / 2 - ITEM_CARD_WIDTH / 2);
 
   return (
     <div className="space-y-6 selection:bg-[#00ff41] selection:text-black font-mono">
@@ -198,26 +230,70 @@ export function BlacksmithShop({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
           >
-            {openingPhase === "shaking" && (
-              <div className="text-center space-y-6">
-                <motion.div
-                  animate={{
-                    rotate: [-6, 6, -6, 6, -3, 3, 0],
-                    scale: [1, 1.1, 1, 1.15, 1],
-                  }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="w-32 h-32 border-4 border-[#00ff41] bg-black p-4 flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(0,255,65,0.6)]"
-                >
-                  <Sparkles className="w-16 h-16 text-[#00ff41] animate-spin" />
-                </motion.div>
-
+            {openingPhase === "rolling" && (
+              <div className="w-full max-w-lg space-y-6 text-center">
                 <div className="space-y-1">
                   <h3 className="font-headline font-black text-2xl text-[#00ff41] uppercase tracking-wider animate-pulse">
-                    UNLOCKING CACHE...
+                    OPENING CACHE REEL...
                   </h3>
-                  <p className="text-xs text-zinc-400">HARNESSING ANCIENT LOOT POWER</p>
+                  <p className="text-xs text-zinc-400">CS:GO ROULETTE REEL IN MOTION</p>
+                </div>
+
+                <div className="relative w-full max-w-[340px] mx-auto">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 text-[#00ff41] filter drop-shadow-[0_0_10px_#00ff41]">
+                    <Triangle className="w-6 h-6 fill-[#00ff41] rotate-180" />
+                  </div>
+                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 text-[#00ff41] filter drop-shadow-[0_0_10px_#00ff41]">
+                    <Triangle className="w-6 h-6 fill-[#00ff41]" />
+                  </div>
+                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-[#00ff41] z-20 shadow-[0_0_15px_#00ff41]" />
+
+                  <div className="w-full h-36 border-2 border-zinc-700 bg-[#0a0a0c] overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.9)]">
+                    <motion.div
+                      initial={{ x: 0 }}
+                      animate={{ x: -targetX }}
+                      transition={{
+                        duration: 4.2,
+                        ease: [0.15, 0.85, 0.35, 1.0],
+                      }}
+                      className="flex gap-0 h-full items-center pl-0"
+                    >
+                      {reelStrip.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className={`w-[112px] h-[128px] flex-shrink-0 border-r-2 ${getRarityCardBorder(
+                            item.rarity
+                          )} p-2 flex flex-col items-center justify-between text-center relative bg-black/60`}
+                        >
+                          <span className="text-[8px] font-bold uppercase tracking-wider">
+                            {item.rarity}
+                          </span>
+
+                          <div className="w-12 h-12 flex items-center justify-center my-1">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.item_name}
+                                className="w-full h-full object-contain [image-rendering:pixelated] scale-110"
+                              />
+                            ) : (
+                              <Swords className="w-8 h-8 text-[#00ff41]" />
+                            )}
+                          </div>
+
+                          <span className="text-[9px] font-bold text-white line-clamp-1 w-full">
+                            {item.item_name}
+                          </span>
+                        </div>
+                      ))}
+                    </motion.div>
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-zinc-500 uppercase tracking-widest animate-pulse">
+                  SPINNING LOOT WHEEL...
                 </div>
               </div>
             )}
@@ -240,7 +316,7 @@ export function BlacksmithShop({
 
                 <div className="space-y-1 pt-2">
                   <span className={`inline-block px-3 py-1 border text-xs tracking-widest uppercase font-bold ${getRarityBadgeStyle(drawnResult.item.rarity)}`}>
-                    {drawnResult.item.rarity} LOOT DRAWN!
+                    {drawnResult.item.rarity} LOOT LANDED!
                   </span>
                   <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider pt-2">
                     {drawnResult.item.item_name}
