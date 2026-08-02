@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Scale, Shield, Swords, Sparkles, ArrowRight, CheckCircle2, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StatRadarChart } from "@/components/StatRadarChart";
@@ -41,7 +40,6 @@ const CHARACTER_CLASSES: ClassDetail[] = [
 ];
 
 export default function OnboardingPage() {
-  const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [weightKg, setWeightKg] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<CharacterClass>("WARRIOR");
@@ -85,13 +83,13 @@ export default function OnboardingPage() {
       if (!res.ok) {
         const data = await res.json();
         setErrorMsg(data.error || "Failed to complete onboarding.");
+        setLoading(false);
       } else {
-        router.push("/");
-        router.refresh();
+        document.cookie = "ironpixels_onboarded=true; path=/; max-age=31536000";
+        window.location.href = "/";
       }
     } catch (err) {
       setErrorMsg("An error occurred during onboarding.");
-    } finally {
       setLoading(false);
     }
   };

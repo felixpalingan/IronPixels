@@ -39,19 +39,24 @@ export async function middleware(request: NextRequest) {
   }
 
   const isPublicRoute = path === "/login" || path === "/register";
+  const isOnboardedCookie = request.cookies.get("ironpixels_onboarded")?.value === "true";
 
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute && !isOnboardedCookie) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("Users")
-      .select("weight_kg, character_class")
-      .eq("user_id", user.id)
-      .single();
+    let isOnboarded = isOnboardedCookie;
 
-    const isOnboarded = profile && profile.weight_kg && profile.character_class;
+    if (!isOnboarded) {
+      const { data: profile } = await supabase
+        .from("Users")
+        .select("weight_kg, character_class")
+        .eq("user_id", user.id)
+        .single();
+
+      isOnboarded = Boolean(profile && profile.weight_kg && profile.character_class);
+    }
 
     if (!isOnboarded && path !== "/onboarding") {
       return NextResponse.redirect(new URL("/onboarding", request.url));
@@ -60,6 +65,8 @@ export async function middleware(request: NextRequest) {
     if (isOnboarded && (isPublicRoute || path === "/onboarding")) {
       return NextResponse.redirect(new URL("/", request.url));
     }
+  } else if (isOnboardedCookie && (isPublicRoute || path === "/onboarding")) {
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return response;

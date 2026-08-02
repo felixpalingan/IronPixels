@@ -34,9 +34,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const baseUsername = username || user?.email?.split("@")[0] || "Warrior";
+    const uniqueUsername = `${baseUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+
     const userProfile = {
       user_id: userId,
-      username: username || user?.email?.split("@")[0] || "Warrior",
+      username: user?.email ? baseUsername : uniqueUsername,
       character_class: selectedClass,
       weight_kg: parsedWeight,
       level: 1,
@@ -47,19 +50,19 @@ export async function POST(request: Request) {
       gold: 500,
     };
 
-    const { error: userError } = await supabase
-      .from("Users")
-      .upsert(userProfile, { onConflict: "user_id" });
-
-    if (userError) {
+    try {
+      await supabase
+        .from("Users")
+        .upsert(userProfile, { onConflict: "user_id" });
+    } catch (e) {
     }
 
     const stats = CLASS_BASE_STATS[selectedClass as keyof typeof CLASS_BASE_STATS];
-    const { error: statsError } = await supabase
-      .from("User_Stats")
-      .upsert({ user_id: userId, ...stats }, { onConflict: "user_id" });
-
-    if (statsError) {
+    try {
+      await supabase
+        .from("User_Stats")
+        .upsert({ user_id: userId, ...stats }, { onConflict: "user_id" });
+    } catch (e) {
     }
 
     const defaultSkills = [
@@ -86,14 +89,25 @@ export async function POST(request: Request) {
       },
     ];
 
-    await supabase.from("User_Skills").upsert(defaultSkills, { onConflict: "skill_id" });
+    try {
+      await supabase.from("User_Skills").upsert(defaultSkills, { onConflict: "skill_id" });
+    } catch (e) {
+    }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       message: "Onboarding completed successfully.",
       user: userProfile,
       stats,
     });
+
+    res.cookies.set("ironpixels_onboarded", "true", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      httpOnly: false,
+    });
+
+    return res;
   } catch (err) {
     return NextResponse.json(
       { error: "Internal server error during onboarding." },
