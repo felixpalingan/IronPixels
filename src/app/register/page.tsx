@@ -40,7 +40,19 @@ export default function RegisterPage() {
       });
 
       if (error) {
-        setErrorMsg(error.message.toUpperCase());
+        if (error.message.toLowerCase().includes("already registered") || error.message.toLowerCase().includes("already exists")) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (!signInError && signInData.user) {
+            window.location.href = "/onboarding";
+            return;
+          }
+          setErrorMsg("USER ALREADY REGISTERED. PLEASE LOG IN OR DELETE USER FROM SUPABASE AUTH.");
+        } else {
+          setErrorMsg(error.message.toUpperCase());
+        }
         setLoading(false);
       } else if (data.user) {
         window.location.href = "/onboarding";
@@ -98,10 +110,10 @@ export default function RegisterPage() {
               <input
                 type="text"
                 required
-                placeholder="ENTER USERNAME..."
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-[#0a0a0c] border border-zinc-800 px-3.5 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#00ff41] focus:ring-1 focus:ring-[#00ff41] transition-all font-mono"
+                placeholder="ENTER USERNAME..."
+                className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-[#00ff41] transition-colors"
               />
             </div>
           </div>
@@ -109,16 +121,16 @@ export default function RegisterPage() {
           <div className="space-y-1.5">
             <label className="text-[11px] text-zinc-400 uppercase tracking-wider flex items-center gap-1.5 font-bold">
               <Mail className="w-3.5 h-3.5 text-zinc-400" />
-              OPERATIVE ID (EMAIL)
+              EMAIL ADDRESS
             </label>
             <div className="relative">
               <input
                 type="email"
                 required
-                placeholder="ENTER EMAIL..."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#0a0a0c] border border-zinc-800 px-3.5 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#00ff41] focus:ring-1 focus:ring-[#00ff41] transition-all font-mono"
+                placeholder="ENTER EMAIL..."
+                className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-[#00ff41] transition-colors"
               />
             </div>
           </div>
@@ -128,19 +140,19 @@ export default function RegisterPage() {
               <Key className="w-3.5 h-3.5 text-zinc-400" />
               ACCESS CODE (PASSWORD)
             </label>
-            <div className="relative flex items-center">
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 required
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0a0a0c] border border-zinc-800 pl-3.5 pr-10 py-3 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#00ff41] focus:ring-1 focus:ring-[#00ff41] transition-all font-mono"
+                placeholder="MINIMUM 6 CHARACTERS..."
+                className="w-full bg-black border border-zinc-800 px-3 py-2.5 pr-10 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-[#00ff41] transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-zinc-400 hover:text-white transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -150,23 +162,20 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-12 mt-2 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-black text-sm uppercase tracking-wider transition-all shadow-[0_0_25px_rgba(0,255,65,0.4)] flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
           >
-            {loading ? (
-              <span>INITIALIZING...</span>
-            ) : (
-              <>
-                <CornerDownRight className="w-4 h-4 stroke-[3]" />
-                <span>CREATE OPERATIVE PROFILE</span>
-              </>
-            )}
+            {loading ? "INITIALIZING PROFILE..." : "CREATE RECRUIT ACCOUNT"}
           </button>
         </form>
 
-        <div className="text-center font-mono text-xs text-zinc-400 space-x-1">
-          <span>Already Registered?</span>
-          <Link href="/login" className="text-[#00ff41] underline hover:text-[#00ff41]/80 font-bold">
-            Enter Dungeon
+        <div className="text-center font-mono text-xs">
+          <span className="text-zinc-500">ALREADY HAVE A WARRIOR PROFILE? </span>
+          <Link
+            href="/login"
+            className="text-[#00ff41] hover:underline font-bold inline-flex items-center gap-1"
+          >
+            LOGIN TERMINAL
+            <CornerDownRight className="w-3 h-3" />
           </Link>
         </div>
       </motion.div>
