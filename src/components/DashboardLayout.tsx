@@ -136,6 +136,7 @@ export function DashboardLayout() {
       slot: rec.item.type,
       name: rec.item.item_name,
       icon: rec.item.icon,
+      image_url: rec.item.image_url,
     })),
   };
 

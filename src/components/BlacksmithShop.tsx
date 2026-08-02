@@ -247,11 +247,13 @@ export function BlacksmithShop({
                   </h3>
                 </div>
 
-                <div className="w-24 h-24 bg-black border-2 border-zinc-800 flex items-center justify-center mx-auto my-2">
-                  {drawnResult.item.icon === "flame" ? (
-                    <Flame className="w-12 h-12 text-amber-400" />
-                  ) : drawnResult.item.icon === "zap" ? (
-                    <Zap className="w-12 h-12 text-sky-400" />
+                <div className="w-24 h-24 bg-black border-2 border-zinc-800 flex items-center justify-center mx-auto my-2 p-2">
+                  {drawnResult.item.image_url ? (
+                    <img
+                      src={drawnResult.item.image_url}
+                      alt={drawnResult.item.item_name}
+                      className="w-full h-full object-contain [image-rendering:pixelated] scale-125 drop-shadow-[0_0_10px_rgba(0,255,65,0.4)]"
+                    />
                   ) : (
                     <Swords className="w-12 h-12 text-[#00ff41]" />
                   )}

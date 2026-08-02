@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Swords, Shield, Heart, Sparkles, Check, Package, Flame, Zap } from "lucide-react";
+import { Swords, Shield, Heart, Sparkles, Check, Package } from "lucide-react";
 import { InventoryRecord, ItemType } from "@/lib/equipment";
 
 interface InventoryGridProps {
@@ -15,14 +15,6 @@ export function InventoryGrid({ inventory, onToggleEquip }: InventoryGridProps) 
   const filteredInventory = inventory.filter(
     (rec) => filter === "all" || rec.item.type === filter
   );
-
-  const getItemIcon = (iconStr: string, type: ItemType) => {
-    if (iconStr === "flame") return <Flame className="w-6 h-6 text-amber-400" />;
-    if (iconStr === "zap") return <Zap className="w-6 h-6 text-sky-400" />;
-    if (type === "armor") return <Shield className="w-6 h-6 text-sky-400" />;
-    if (type === "accessory") return <Heart className="w-6 h-6 text-fuchsia-400" />;
-    return <Swords className="w-6 h-6 text-[#00ff41]" />;
-  };
 
   const getRarityBadgeStyle = (rarity: string) => {
     switch (rarity) {
@@ -90,8 +82,20 @@ export function InventoryGrid({ inventory, onToggleEquip }: InventoryGridProps) 
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-black border border-zinc-800 flex items-center justify-center flex-shrink-0">
-                        {getItemIcon(item.icon, item.type)}
+                      <div className="w-12 h-12 bg-black border border-zinc-800 flex items-center justify-center flex-shrink-0 p-1 overflow-hidden">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.item_name}
+                            className="w-full h-full object-contain [image-rendering:pixelated] scale-110"
+                          />
+                        ) : item.type === "armor" ? (
+                          <Shield className="w-6 h-6 text-sky-400" />
+                        ) : item.type === "accessory" ? (
+                          <Heart className="w-6 h-6 text-fuchsia-400" />
+                        ) : (
+                          <Swords className="w-6 h-6 text-[#00ff41]" />
+                        )}
                       </div>
                       <div>
                         <h4 className="font-headline font-bold text-sm text-white uppercase line-clamp-1">
