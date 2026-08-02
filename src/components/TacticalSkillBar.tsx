@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sword, Shield, Flame, Lock } from "lucide-react";
-import { motion } from "framer-motion";
+import { Sword, Shield, Flame, Zap, Sparkles } from "lucide-react";
 
 export interface SkillData {
   skill_id: string;
@@ -17,39 +16,48 @@ export interface SkillData {
 
 interface TacticalSkillBarProps {
   userId?: string;
-  onSkillCast?: (skillName: string, damageDealt: number, newBossHp: number, attackType: "attack01" | "attack02" | "attack03") => void;
+  equippedSkills?: Array<{ name: string; icon?: string }>;
+  playerStr?: number;
+  onSkillCast?: (
+    skillName: string,
+    damageDealt: number,
+    newBossHp: number,
+    attackType: "attack01" | "attack02" | "attack03"
+  ) => void;
 }
 
 export function TacticalSkillBar({
   userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  equippedSkills = [],
+  playerStr = 85,
   onSkillCast,
 }: TacticalSkillBarProps) {
   const [skills, setSkills] = useState<SkillData[]>([
     {
-      skill_id: "11111111-1111-1111-1111-111111111111",
+      skill_id: "s-default-1",
       skill_name: "Heavy Blade Slash",
       damage_multiplier: 2.5,
-      cooldown_minutes: 5,
+      cooldown_minutes: 3,
       remaining_seconds: 0,
       is_ready: true,
       icon: "sword",
       attack_type: "attack01",
     },
     {
-      skill_id: "22222222-2222-2222-2222-222222222222",
+      skill_id: "s-default-2",
       skill_name: "Shield Thrust Strike",
       damage_multiplier: 1.8,
-      cooldown_minutes: 3,
+      cooldown_minutes: 2,
       remaining_seconds: 0,
       is_ready: true,
       icon: "shield",
       attack_type: "attack02",
     },
     {
-      skill_id: "33333333-3333-3333-3333-333333333333",
+      skill_id: "s-default-3",
       skill_name: "Flame Arrow Volley",
       damage_multiplier: 4.0,
-      cooldown_minutes: 10,
+      cooldown_minutes: 5,
       remaining_seconds: 0,
       is_ready: true,
       icon: "flame",
@@ -60,30 +68,42 @@ export function TacticalSkillBar({
   const [executingSkillId, setExecutingSkillId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchSkills() {
-      try {
-        const res = await fetch(`/api/combat/skills?user_id=${userId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.length > 0) {
-            setSkills(
-              data.map((sk: SkillData) => {
-                let attackType: "attack01" | "attack02" | "attack03" = "attack01";
-                if (sk.skill_name.toLowerCase().includes("shield") || sk.skill_name.toLowerCase().includes("thrust")) {
-                  attackType = "attack02";
-                } else if (sk.skill_name.toLowerCase().includes("arrow") || sk.skill_name.toLowerCase().includes("flare")) {
-                  attackType = "attack03";
-                }
-                return { ...sk, attack_type: attackType };
-              })
-            );
-          }
+    if (equippedSkills && equippedSkills.length > 0) {
+      const generatedFromGear: SkillData[] = equippedSkills.map((sk, idx) => {
+        const nameLower = sk.name.toLowerCase();
+        let multiplier = 3.5;
+        let attackType: "attack01" | "attack02" | "attack03" = "attack01";
+        let icon = "sword";
+
+        if (nameLower.includes("void") || nameLower.includes("nova") || nameLower.includes("dragon")) {
+          multiplier = 8.5;
+          attackType = "attack03";
+          icon = "flame";
+        } else if (nameLower.includes("plasma") || nameLower.includes("overload")) {
+          multiplier = 5.5;
+          attackType = "attack02";
+          icon = "zap";
+        } else if (nameLower.includes("shadow") || nameLower.includes("strike")) {
+          multiplier = 4.0;
+          attackType = "attack01";
+          icon = "sword";
         }
-      } catch (err) {
-      }
+
+        return {
+          skill_id: `s-gear-${idx}-${sk.name}`,
+          skill_name: sk.name,
+          damage_multiplier: multiplier,
+          cooldown_minutes: Math.max(2, Math.floor(multiplier)),
+          remaining_seconds: 0,
+          is_ready: true,
+          icon: sk.icon || icon,
+          attack_type: attackType,
+        };
+      });
+
+      setSkills(generatedFromGear);
     }
-    fetchSkills();
-  }, [userId]);
+  }, [equippedSkills]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -101,47 +121,49 @@ export function TacticalSkillBar({
         })
       );
     }, 1000);
-    return () => clearTimeout(timer);
+
+    return () => clearInterval(timer);
   }, []);
 
-  const handleCastSkill = async (skill: SkillData) => {
+  const handleCast = async (skill: SkillData) => {
     if (!skill.is_ready || executingSkillId) return;
+
     setExecutingSkillId(skill.skill_id);
 
+    const baseDmg = playerStr * 20 + Math.floor(Math.random() * 500);
+    const calculatedDamage = Math.round(baseDmg * skill.damage_multiplier);
+
     try {
-      const res = await fetch("/api/combat/execute-skill", {
+      const res = await fetch("/api/combat/attack", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_id: userId,
-          skill_id: skill.skill_id,
-          base_damage: 2500,
+          rvs_damage: calculatedDamage,
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setSkills((prev) =>
-          prev.map((s) => {
-            if (s.skill_id === skill.skill_id) {
-              return {
-                ...s,
-                remaining_seconds: s.cooldown_minutes * 60,
-                is_ready: false,
-              };
-            }
-            return s;
-          })
-        );
+      const data = await res.json();
 
-        if (onSkillCast) {
-          onSkillCast(
-            data.skill_name,
-            data.damage_dealt,
-            data.boss_current_hp,
-            skill.attack_type || "attack01"
-          );
-        }
+      setSkills((prev) =>
+        prev.map((s) =>
+          s.skill_id === skill.skill_id
+            ? {
+                ...s,
+                is_ready: false,
+                remaining_seconds: s.cooldown_minutes * 60,
+              }
+            : s
+        )
+      );
+
+      if (onSkillCast) {
+        onSkillCast(
+          skill.skill_name,
+          calculatedDamage,
+          data.current_hp || 0,
+          skill.attack_type || "attack01"
+        );
       }
     } catch (err) {
     } finally {
@@ -150,60 +172,67 @@ export function TacticalSkillBar({
   };
 
   const formatCd = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  const getIconComponent = (iconName?: string) => {
+    switch (iconName) {
+      case "flame":
+        return <Flame className="w-5 h-5 text-amber-400" />;
+      case "zap":
+        return <Zap className="w-5 h-5 text-sky-400" />;
+      case "shield":
+        return <Shield className="w-5 h-5 text-sky-400" />;
+      default:
+        return <Sword className="w-5 h-5 text-[#00ff41]" />;
+    }
   };
 
   return (
-    <div className="w-full bg-surface border border-pixel-border p-3 my-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] tracking-widest text-pixel-green uppercase font-bold">
-          TACTICAL SKILL BAR
+    <div className="border border-pixel-border bg-surface p-3 space-y-2 font-mono">
+      <div className="flex items-center justify-between text-[10px] text-gray-400 uppercase tracking-widest border-b border-pixel-border/50 pb-1">
+        <span className="flex items-center gap-1">
+          <Sparkles className="w-3.5 h-3.5 text-[#00ff41]" />
+          EQUIPPED TACTICAL SKILLS
         </span>
-        <span className="font-mono text-[9px] text-gray-400">
-          COOLDOWN VERIFIED SERVER-SIDE
-        </span>
+        <span className="text-pixel-green font-bold">POWER: STR {playerStr}</span>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        {skills.map((sk) => {
-          const isCd = !sk.is_ready;
-          const isExecuting = executingSkillId === sk.skill_id;
-
+        {skills.map((skill) => {
+          const isExecuting = executingSkillId === skill.skill_id;
           return (
-            <motion.button
-              key={sk.skill_id}
-              whileTap={{ scale: isCd ? 1 : 0.96 }}
-              disabled={isCd || isExecuting}
-              onClick={() => handleCastSkill(sk)}
-              className={`relative flex flex-col items-center justify-center p-2.5 border transition-all overflow-hidden text-left ${
-                isCd
-                  ? "border-pixel-border/50 bg-black/60 text-gray-500 cursor-not-allowed"
-                  : "border-pixel-green bg-pixel-green/10 text-pixel-green hover:bg-pixel-green/20 shadow-neon cursor-pointer"
+            <button
+              key={skill.skill_id}
+              onClick={() => handleCast(skill)}
+              disabled={!skill.is_ready || isExecuting}
+              className={`p-2 border.2 relative flex flex-col items-center justify-center gap-1.5 transition-all ${
+                skill.is_ready
+                  ? "border-[#00ff41] bg-black hover:bg-[#00ff41]/20 text-white shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+                  : "border-zinc-800 bg-zinc-950 text-zinc-600 cursor-not-allowed"
               }`}
             >
-              {isCd && (
-                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 font-mono text-[11px] font-bold text-health-red">
-                  <Lock className="w-3.5 h-3.5 mb-1" />
-                  <span>{formatCd(sk.remaining_seconds)}</span>
+              <div className="w-8 h-8 flex items-center justify-center">
+                {getIconComponent(skill.icon)}
+              </div>
+
+              <div className="text-[10px] font-bold text-center line-clamp-1 uppercase">
+                {skill.skill_name}
+              </div>
+
+              <div className="text-[9px] text-[#00ff41] font-bold">
+                {skill.damage_multiplier}x DMG
+              </div>
+
+              {!skill.is_ready && (
+                <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-xs font-bold text-health-red">
+                  <span>COOLDOWN</span>
+                  <span>{formatCd(skill.remaining_seconds)}</span>
                 </div>
               )}
-
-              <div className="flex items-center gap-1.5 mb-1">
-                {sk.attack_type === "attack01" && <Sword className="w-4 h-4 text-pixel-green" />}
-                {sk.attack_type === "attack02" && <Shield className="w-4 h-4 text-exp-blue" />}
-                {sk.attack_type === "attack03" && <Flame className="w-4 h-4 text-gold-loot" />}
-                <span className="font-headline font-bold text-xs truncate text-white">
-                  {sk.skill_name}
-                </span>
-              </div>
-
-              <div className="w-full flex justify-between font-mono text-[9px] text-gray-400 mt-1">
-                <span>{sk.damage_multiplier}x DMG</span>
-                <span>{sk.cooldown_minutes}m CD</span>
-              </div>
-            </motion.button>
+            </button>
           );
         })}
       </div>

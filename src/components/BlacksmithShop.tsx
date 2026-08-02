@@ -28,7 +28,7 @@ const CHEST_OPTIONS: ChestOption[] = [
     id: "bronze",
     name: "Bronze Cache",
     rarityTag: "COMMON REWARDS",
-    price: 1000,
+    price: 0,
     borderColor: "border-zinc-700",
     glowColor: "shadow-[0_0_20px_rgba(113,113,122,0.2)]",
     bgGradient: "bg-[#141416]",
@@ -38,7 +38,7 @@ const CHEST_OPTIONS: ChestOption[] = [
     id: "silver",
     name: "Silver Coffer",
     rarityTag: "RARE REWARDS",
-    price: 5000,
+    price: 0,
     borderColor: "border-sky-500/60",
     glowColor: "shadow-[0_0_25px_rgba(14,165,233,0.25)]",
     bgGradient: "bg-[#141416]",
@@ -48,7 +48,7 @@ const CHEST_OPTIONS: ChestOption[] = [
     id: "void",
     name: "Void Reliquary",
     rarityTag: "LEGENDARY REWARDS",
-    price: 25000,
+    price: 0,
     borderColor: "border-[#00ff41]",
     glowColor: "shadow-[0_0_30px_rgba(0,255,65,0.4)]",
     bgGradient: "bg-[#0d1a10]",
@@ -67,11 +67,6 @@ export function BlacksmithShop({
   const [errorMsg, setErrorMsg] = useState<string>("");
 
   const handlePurchaseChest = async (chest: ChestOption) => {
-    if (userGold < chest.price) {
-      setErrorMsg(`INSUFFICIENT GOLD. REQUIRES ${formatNumber(chest.price)} GOLD.`);
-      return;
-    }
-
     setErrorMsg("");
     setLoadingChest(chest.id);
     setOpeningPhase("shaking");
@@ -190,8 +185,8 @@ export function BlacksmithShop({
                   : "border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800"
               } disabled:opacity-50`}
             >
-              <Coins className="w-3.5 h-3.5" />
-              <span>{formatNumber(chest.price)} GOLD</span>
+              <Coins className="w-3.5 h-3.5 text-[#00ff41]" />
+              <span>0 GOLD (FREE TEST)</span>
             </button>
           </div>
         ))}

@@ -23,6 +23,7 @@ interface DamageParticle {
 interface BossData {
   boss_id: string;
   boss_name: string;
+  stage: number;
   current_hp: number;
   max_hp: number;
   status: string;
@@ -31,11 +32,15 @@ interface BossData {
 interface CombatArenaProps {
   userId?: string;
   sessionDamage?: number;
+  equippedSkills?: Array<{ name: string; icon?: string }>;
+  playerStr?: number;
 }
 
 export function CombatArena({
   userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
   sessionDamage = 0,
+  equippedSkills = [],
+  playerStr = 85,
 }: CombatArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<DamageParticle[]>([]);
@@ -43,8 +48,9 @@ export function CombatArena({
   const [boss, setBoss] = useState<BossData>({
     boss_id: "b055d7ac-1234-4567-89ab-cdef01234567",
     boss_name: "Demon Lord Ignis",
-    current_hp: 250000,
-    max_hp: 500000,
+    stage: 1,
+    current_hp: 50000,
+    max_hp: 50000,
     status: "Active",
   });
 
@@ -52,21 +58,22 @@ export function CombatArena({
   const [heroState, setHeroState] = useState<HeroState>("idle");
   const [combatLog, setCombatLog] = useState<Array<{ id: string; msg: string; color: string }>>([]);
 
-  useEffect(() => {
-    async function fetchBoss() {
-      try {
-        const res = await fetch("/api/combat/boss");
-        if (res.ok) {
-          const data = await res.json();
-          setBoss(data);
-          if (data.current_hp === 0 || data.status === "Defeated") {
-            setBossState("dead");
-          }
+  const fetchBossData = async () => {
+    try {
+      const res = await fetch("/api/combat/boss");
+      if (res.ok) {
+        const data = await res.json();
+        setBoss(data);
+        if (data.current_hp === 0 || data.status === "Defeated") {
+          setBossState("dead");
         }
-      } catch (err) {
       }
+    } catch (err) {
     }
-    fetchBoss();
+  };
+
+  useEffect(() => {
+    fetchBossData();
   }, []);
 
   const spawnDamageParticle = (amount: number, isCritical = false, customText?: string) => {
@@ -123,11 +130,16 @@ export function CombatArena({
           ...prev,
           current_hp: data.current_hp,
           status: data.status,
+          boss_name: data.boss_name || prev.boss_name,
         }));
 
         if (data.is_defeated) {
           setBossState("dead");
           addLog(`BOSS DEFEATED! ${boss.boss_name} fell in battle!`, "#00ff41");
+          setTimeout(() => {
+            fetchBossData();
+            setBossState("idle");
+          }, 3200);
         } else {
           setTimeout(() => {
             setBossState((current) => (current === "dead" ? "dead" : "idle"));
@@ -219,7 +231,7 @@ export function CombatArena({
           <div className="flex items-center gap-2">
             <Flame className="w-5 h-5 text-health-red animate-pulse" />
             <span className="font-headline font-extrabold text-base text-white uppercase tracking-wider">
-              {boss.boss_name}
+              STAGE {boss.stage || 1}: {boss.boss_name}
             </span>
           </div>
 
@@ -272,20 +284,25 @@ export function CombatArena({
         </div>
       </div>
 
-      <TacticalSkillBar userId={userId} onSkillCast={handleSkillCast} />
+      <TacticalSkillBar
+        userId={userId}
+        equippedSkills={equippedSkills}
+        playerStr={playerStr}
+        onSkillCast={handleSkillCast}
+      />
 
-      <div className="border border-pixel-border bg-surface p-3 space-y-1.5">
-        <div className="font-mono text-[10px] text-gray-400 uppercase tracking-widest border-b border-pixel-border/50 pb-1">
+      <div className="border border-pixel-border bg-surface p-3 space-y-1.5 font-mono">
+        <div className="text-[10px] text-gray-400 uppercase tracking-widest border-b border-pixel-border/50 pb-1">
           COMBAT LOG
         </div>
         <div className="space-y-1 max-h-24 overflow-y-auto">
           {combatLog.length === 0 ? (
-            <div className="font-mono text-[11px] text-gray-500 italic">
+            <div className="text-[11px] text-gray-500 italic">
               No battle actions logged yet. Perform gym sets or cast skills to attack!
             </div>
           ) : (
             combatLog.map((log) => (
-              <div key={log.id} className="font-mono text-[11px] flex items-center gap-1.5 border-b border-dashed border-pixel-border/30 pb-0.5">
+              <div key={log.id} className="text-[11px] flex items-center gap-1.5 border-b border-dashed border-pixel-border/30 pb-0.5">
                 <Swords className="w-3 h-3 text-pixel-green flex-shrink-0" />
                 <span style={{ color: log.color }}>{log.msg}</span>
               </div>

@@ -7,15 +7,12 @@ export async function POST(request: Request) {
     const { chest_type } = await request.json();
 
     const CHEST_PRICES: Record<string, number> = {
-      bronze: 1000,
-      silver: 5000,
-      void: 25000,
+      bronze: 0,
+      silver: 0,
+      void: 0,
     };
 
-    const price = CHEST_PRICES[chest_type];
-    if (!price) {
-      return NextResponse.json({ error: "Invalid chest type" }, { status: 400 });
-    }
+    const price = CHEST_PRICES[chest_type] ?? 0;
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
@@ -33,13 +30,6 @@ export async function POST(request: Request) {
       if (profile) {
         userGold = profile.gold;
       }
-    }
-
-    if (userGold < price) {
-      return NextResponse.json(
-        { error: `Insufficient Gold. You need ${price.toLocaleString()} Gold.` },
-        { status: 400 }
-      );
     }
 
     const rand = Math.random() * 100;

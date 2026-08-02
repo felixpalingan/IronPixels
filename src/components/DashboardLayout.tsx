@@ -139,6 +139,13 @@ export function DashboardLayout() {
     })),
   };
 
+  const gearSkills = equippedItems
+    .map((rec) => ({
+      name: rec.item.granted_skill_name || rec.item.item_name,
+      icon: rec.item.icon,
+    }))
+    .filter((s) => Boolean(s.name));
+
   const hpPercent = Math.min(100, Math.max(0, (userData.current_hp / userData.max_hp) * 100));
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
 
@@ -404,6 +411,8 @@ export function DashboardLayout() {
                   <CombatArena
                     userId={userData.user_id}
                     sessionDamage={lastSessionDamage}
+                    equippedSkills={gearSkills}
+                    playerStr={userData.stats.str}
                   />
                 )}
               </motion.div>
