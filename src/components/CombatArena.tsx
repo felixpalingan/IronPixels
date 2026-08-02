@@ -77,10 +77,10 @@ export function CombatArena({
     const particle: DamageParticle = {
       id: Math.random().toString(),
       text: textStr,
-      x: canvas.width * 0.7 + (Math.random() * 40 - 20),
-      y: canvas.height * 0.4 + (Math.random() * 30 - 15),
-      vx: (Math.random() - 0.5) * 0.8,
-      vy: -0.8 - Math.random() * 0.5,
+      x: canvas.width * 0.75 + (Math.random() * 30 - 15),
+      y: canvas.height * 0.35 + (Math.random() * 20 - 10),
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: -0.7 - Math.random() * 0.4,
       opacity: 1.0,
       scale: isCritical ? 1.4 : 1.0,
       color: isCritical ? "#FFD60A" : "#ff3b30",
@@ -247,22 +247,26 @@ export function CombatArena({
           </div>
         </div>
 
-        <div className="relative border border-pixel-border dungeon-bg-stage overflow-hidden flex items-end justify-between px-8 pb-4 pt-10 min-h-[220px]">
-          <HeroSprite currentState={heroState} />
+        <div className="relative border border-pixel-border dungeon-bg-stage overflow-hidden flex items-end justify-between px-6 pb-11 pt-12 min-h-[240px]">
+          <div className="z-20 relative bottom-1">
+            <HeroSprite currentState={heroState} />
+          </div>
 
-          <BossSprite
-            currentState={bossState}
-            currentHp={boss.current_hp}
-            maxHp={boss.max_hp}
-            flipHorizontal={true}
-          />
+          <div className="z-20 relative bottom-1">
+            <BossSprite
+              currentState={bossState}
+              currentHp={boss.current_hp}
+              maxHp={boss.max_hp}
+              flipHorizontal={true}
+            />
+          </div>
 
           <div className="dungeon-floor-tile" />
 
           <canvas
             ref={canvasRef}
             width={520}
-            height={220}
+            height={240}
             className="absolute inset-0 w-full h-full pointer-events-none z-30"
           />
         </div>

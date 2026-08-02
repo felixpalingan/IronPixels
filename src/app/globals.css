@@ -124,15 +124,25 @@ body {
 }
 
 .dungeon-bg-stage {
-  background-color: #121214;
-  background-image: radial-gradient(#202028 1px, transparent 1px), radial-gradient(#15151a 1px, #0a0a0c 1px);
-  background-size: 20px 20px;
-  background-position: 0 0, 10px 10px;
+  position: relative;
+  background-color: #0b0b0e;
+  background-image: linear-gradient(to bottom, rgba(5, 5, 8, 0.6), rgba(12, 12, 18, 0.85)), url('/assets/dungeon-tiles.png');
+  background-repeat: repeat;
+  background-size: 192px 192px;
 }
 
 .dungeon-floor-tile {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
   background-image: url('/assets/dungeon-tiles.png');
   background-repeat: repeat-x;
-  background-position: 0 -32px;
+  background-position: 0 0;
+  background-size: 128px 128px;
   image-rendering: pixelated;
+  border-top: 2px solid #48484A;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.9);
+  z-index: 10;
 }
