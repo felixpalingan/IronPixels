@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ShieldAlert, Flame, Swords, RefreshCw } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Flame, Swords } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
+import { BossSprite, BossState } from "@/components/BossSprite";
 
 interface DamageParticle {
   id: string;
@@ -19,7 +19,7 @@ interface DamageParticle {
   isCritical: boolean;
 }
 
-interface BossState {
+interface BossData {
   boss_id: string;
   boss_name: string;
   current_hp: number;
@@ -38,17 +38,16 @@ export function CombatArena({
 }: CombatArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<DamageParticle[]>([]);
-  const dragonImgRef = useRef<HTMLImageElement | null>(null);
-  const bossHitFlashRef = useRef<number>(0);
 
-  const [boss, setBoss] = useState<BossState>({
+  const [boss, setBoss] = useState<BossData>({
     boss_id: "b055d7ac-1234-4567-89ab-cdef01234567",
-    boss_name: "Shadow Dragon Ignis",
+    boss_name: "Demon Lord Ignis",
     current_hp: 250000,
     max_hp: 500000,
     status: "Active",
   });
 
+  const [bossState, setBossState] = useState<BossState>("idle");
   const [combatLog, setCombatLog] = useState<Array<{ id: string; msg: string; color: string }>>([]);
 
   useEffect(() => {
@@ -58,19 +57,14 @@ export function CombatArena({
         if (res.ok) {
           const data = await res.json();
           setBoss(data);
+          if (data.current_hp === 0 || data.status === "Defeated") {
+            setBossState("dead");
+          }
         }
       } catch (err) {
       }
     }
     fetchBoss();
-  }, []);
-
-  useEffect(() => {
-    const img = new Image();
-    img.src = "/shadow-dragon.jpeg";
-    img.onload = () => {
-      dragonImgRef.current = img;
-    };
   }, []);
 
   const spawnDamageParticle = (amount: number, isCritical = false, customText?: string) => {
@@ -92,16 +86,52 @@ export function CombatArena({
     };
 
     particlesRef.current.push(particle);
-    bossHitFlashRef.current = 10;
+  };
+
+  const executeAttack = async (damage: number, actionName: string) => {
+    if (damage <= 0 || bossState === "dead") return;
+
+    setBossState("hit");
+    spawnDamageParticle(damage, true, `${actionName.toUpperCase()} -${formatNumber(damage)}`);
+
+    try {
+      const res = await fetch("/api/combat/attack", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId,
+          boss_id: boss.boss_id,
+          rvs_damage: damage,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setBoss((prev) => ({
+          ...prev,
+          current_hp: data.current_hp,
+          status: data.status,
+        }));
+
+        if (data.is_defeated) {
+          setBossState("dead");
+          addLog(`BOSS DEFEATED! ${boss.boss_name} fell in battle!`, "#00ff41");
+        } else {
+          setTimeout(() => {
+            setBossState((current) => (current === "dead" ? "dead" : "idle"));
+          }, 600);
+        }
+      }
+    } catch (err) {
+      setTimeout(() => {
+        setBossState("idle");
+      }, 600);
+    }
   };
 
   useEffect(() => {
     if (sessionDamage > 0) {
-      spawnDamageParticle(sessionDamage, true, `CRITICAL RVS -${formatNumber(sessionDamage)}`);
-      setBoss((prev) => ({
-        ...prev,
-        current_hp: Math.max(0, prev.current_hp - sessionDamage),
-      }));
+      executeAttack(sessionDamage, "Gym RVS Strike");
       addLog(`RVS Gym Attack dealt ${formatNumber(sessionDamage)} damage to ${boss.boss_name}!`, "#00ff41");
     }
   }, [sessionDamage]);
@@ -113,63 +143,14 @@ export function CombatArena({
     if (!ctx) return;
 
     let animationFrameId: number;
-    let tick = 0;
 
     const render = () => {
-      tick++;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = "#0A0A0A";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.strokeStyle = "#1F1F23";
-      ctx.lineWidth = 1;
-      const gridSize = 20;
-      for (let x = 0; x < canvas.width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-
-      const dragonYOffset = Math.sin(tick * 0.05) * 8;
-      const dragonWidth = 180;
-      const dragonHeight = 160;
-      const dragonX = (canvas.width - dragonWidth) / 2;
-      const dragonY = (canvas.height - dragonHeight) / 2 + dragonYOffset;
-
-      if (dragonImgRef.current) {
-        ctx.save();
-        if (bossHitFlashRef.current > 0) {
-          ctx.filter = "brightness(2.2) sepia(1) hue-rotate(-50deg)";
-          bossHitFlashRef.current--;
-        }
-        ctx.drawImage(dragonImgRef.current, dragonX, dragonY, dragonWidth, dragonHeight);
-        ctx.restore();
-      } else {
-        ctx.fillStyle = bossHitFlashRef.current > 0 ? "#ff3b30" : "#7d01b1";
-        ctx.fillRect(dragonX, dragonY, dragonWidth, dragonHeight);
-        if (bossHitFlashRef.current > 0) bossHitFlashRef.current--;
-      }
-
-      for (let i = 0; i < 5; i++) {
-        const px = dragonX + Math.random() * dragonWidth;
-        const py = dragonY + dragonHeight - Math.random() * 30;
-        ctx.fillStyle = "rgba(0, 255, 65, 0.4)";
-        ctx.fillRect(px, py - (tick % 20), 2, 2);
-      }
 
       particlesRef.current.forEach((p, idx) => {
         p.x += p.vx;
         p.y += p.vy;
         p.opacity -= 0.015;
-        p.scale += 0.003;
 
         if (p.opacity <= 0) {
           particlesRef.current.splice(idx, 1);
@@ -186,11 +167,6 @@ export function CombatArena({
         ctx.fillText(p.text, p.x, p.y);
         ctx.restore();
       });
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
-      for (let y = 0; y < canvas.height; y += 4) {
-        ctx.fillRect(0, y, canvas.width, 2);
-      }
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -210,16 +186,9 @@ export function CombatArena({
   };
 
   const handleSkillCast = (skillName: string, damageDealt: number, newBossHp: number) => {
-    spawnDamageParticle(damageDealt, true, `${skillName.toUpperCase()} -${formatNumber(damageDealt)}`);
-    setBoss((prev) => ({
-      ...prev,
-      current_hp: newBossHp,
-      status: newBossHp === 0 ? "Defeated" : "Active",
-    }));
+    executeAttack(damageDealt, skillName);
     addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${boss.boss_name}.`, "#FFD60A");
   };
-
-  const bossHpPercent = Math.min(100, Math.max(0, (boss.current_hp / boss.max_hp) * 100));
 
   return (
     <div className="w-full max-w-[600px] mx-auto p-4 space-y-4">
@@ -241,31 +210,18 @@ export function CombatArena({
           </span>
         </div>
 
-        <div>
-          <div className="flex justify-between font-mono text-[10px] mb-1">
-            <span className="text-health-red font-bold">BOSS HP</span>
-            <span className="text-gray-300">
-              {formatNumber(boss.current_hp)} / {formatNumber(boss.max_hp)}
-            </span>
-          </div>
-          <div className="w-full h-3.5 bg-black border border-pixel-border overflow-hidden relative">
-            <motion.div
-              initial={{ width: "100%" }}
-              animate={{ width: `${bossHpPercent}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="h-full bg-health-red relative shadow-red-glow"
-            >
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_50%,rgba(0,0,0,0.3)_50%)] bg-[length:4px_100%]" />
-            </motion.div>
-          </div>
-        </div>
+        <div className="relative border border-pixel-border bg-black overflow-hidden flex flex-col justify-center items-center my-2 p-4 min-h-[260px]">
+          <BossSprite
+            currentState={bossState}
+            currentHp={boss.current_hp}
+            maxHp={boss.max_hp}
+          />
 
-        <div className="relative border border-pixel-border bg-black overflow-hidden flex justify-center items-center my-2">
           <canvas
             ref={canvasRef}
             width={520}
-            height={260}
-            className="w-full h-[240px] block object-contain"
+            height={120}
+            className="absolute inset-0 w-full h-full pointer-events-none z-20"
           />
         </div>
       </div>
