@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Coins, Swords, Dumbbell } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
@@ -43,6 +43,11 @@ export function DashboardLayout() {
   const [sessionVictoryModal, setSessionVictoryModal] = useState<{
     totalRvs: number;
     totalVolume: number;
+    healedHp: number;
+  } | null>(null);
+  const [bossAttackModal, setBossAttackModal] = useState<{
+    damageDealt: number;
+    bossName: string;
   } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
@@ -73,7 +78,9 @@ export function DashboardLayout() {
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
   const [userGold, setUserGold] = useState<number>(12500);
 
-  const todayRvsKey = `ironpixels_daily_rvs_${new Date().toISOString().split("T")[0]}`;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const todayRvsKey = `ironpixels_daily_rvs_${todayStr}`;
+  const bossCheckKey = `ironpixels_boss_check_${todayStr}`;
 
   useEffect(() => {
     try {
@@ -84,10 +91,12 @@ export function DashboardLayout() {
     } catch (e) {}
 
     const localProf = localStorage.getItem("ironpixels_profile");
+    let currentProf: UserProfileData | null = null;
     if (localProf) {
       try {
         const parsedProf = JSON.parse(localProf);
         if (parsedProf) {
+          currentProf = parsedProf;
           setProfile(parsedProf);
           if (parsedProf.gold !== undefined) setUserGold(parsedProf.gold);
         }
@@ -110,6 +119,7 @@ export function DashboardLayout() {
         if (resProf.ok) {
           const dataProf = await resProf.json();
           setProfile(dataProf);
+          currentProf = dataProf;
           localStorage.setItem("ironpixels_profile", JSON.stringify(dataProf));
           if (dataProf.gold !== undefined) setUserGold(dataProf.gold);
         }
@@ -123,10 +133,36 @@ export function DashboardLayout() {
           }
         }
       } catch (err) {}
+
+      try {
+        const hasCheckedToday = localStorage.getItem(bossCheckKey);
+        if (!hasCheckedToday) {
+          const yesterdayDate = new Date();
+          yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+          const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
+          const yesterdayRvs = localStorage.getItem(`ironpixels_daily_rvs_${yesterdayStr}`);
+
+          if (!yesterdayRvs || Number(yesterdayRvs) === 0) {
+            const BOSS_PENALTY_DMG = 250;
+            setBossAttackModal({
+              damageDealt: BOSS_PENALTY_DMG,
+              bossName: "Demon Lord Ignis",
+            });
+
+            if (currentProf) {
+              const newHp = Math.max(50, currentProf.current_hp - BOSS_PENALTY_DMG);
+              const updatedProf = { ...currentProf, current_hp: newHp };
+              setProfile(updatedProf);
+              localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+            }
+          }
+          localStorage.setItem(bossCheckKey, "true");
+        }
+      } catch (e) {}
     }
 
     fetchData();
-  }, [todayRvsKey]);
+  }, [todayRvsKey, bossCheckKey]);
 
   const baseStats = profile?.stats || { str: 85, agi: 72, vit: 54, luk: 60 };
   const baseMaxHp = profile?.max_hp || 1000;
@@ -183,10 +219,18 @@ export function DashboardLayout() {
 
   const hpPercent = Math.min(100, Math.max(0, (userData.current_hp / userData.max_hp) * 100));
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
+  const isCriticalHp = hpPercent < 20;
 
   const handleFinishWorkout = (summary: { totalRvs: number; totalVolume: number }) => {
     setLastSessionDamage(summary.totalRvs);
-    setSessionVictoryModal(summary);
+
+    const healAmount = Math.round(summary.totalRvs * 1.5);
+    const newHp = Math.min(userData.max_hp, userData.current_hp + healAmount);
+
+    setSessionVictoryModal({
+      ...summary,
+      healedHp: healAmount,
+    });
 
     const newTotalRvs = dailyRvs + summary.totalRvs;
     setDailyRvs(newTotalRvs);
@@ -200,6 +244,7 @@ export function DashboardLayout() {
     if (profile) {
       const updatedProf = {
         ...profile,
+        current_hp: newHp,
         exp: profile.exp + summary.totalRvs,
         gold: profile.gold + earnedGold,
       };
@@ -256,8 +301,12 @@ export function DashboardLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-white flex justify-center selection:bg-pixel-green selection:text-black">
-      <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-20">
+    <div className="min-h-screen bg-background text-white flex justify-center selection:bg-pixel-green selection:text-black relative">
+      {isCriticalHp && (
+        <div className="pointer-events-none fixed inset-0 border-4 border-red-600/80 shadow-[inset_0_0_80px_rgba(255,0,0,0.5)] animate-pulse z-30" />
+      )}
+
+      <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-20 relative z-10">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-pixel-border/60 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img
@@ -278,12 +327,72 @@ export function DashboardLayout() {
           </button>
         </header>
 
+        {isCriticalHp && (
+          <div className="bg-red-950/90 border-b border-red-600 px-4 py-2 text-xs font-mono font-bold text-red-300 flex items-center justify-between z-40 animate-pulse">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-red-400" />
+              <span>CRITICAL STATUS: HERO EXHAUSTED ({hpPercent.toFixed(0)}% HP). COMPLETE A WORKOUT TO HEAL!</span>
+            </div>
+          </div>
+        )}
+
         <main className="p-4 flex-1 relative">
           <SettingsModal
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
             userData={userData}
           />
+
+          <AnimatePresence>
+            {bossAttackModal && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+              >
+                <div className="w-full max-w-sm border-2 border-red-600 bg-surface p-6 text-center space-y-4 shadow-[0_0_50px_rgba(255,0,0,0.6)] font-mono relative">
+                  <button
+                    onClick={() => setBossAttackModal(null)}
+                    className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
+                  <div className="w-14 h-14 border-2 border-red-600 bg-red-950/60 text-red-500 flex items-center justify-center mx-auto shadow-red-glow animate-bounce">
+                    <ShieldAlert className="w-8 h-8" />
+                  </div>
+
+                  <div>
+                    <h3 className="font-headline font-extrabold text-2xl text-red-500 uppercase tracking-wider">
+                      DAILY BOSS ATTACK!
+                    </h3>
+                    <p className="text-xs text-gray-300 mt-1">
+                      NO GYM WORKOUT WAS LOGGED YESTERDAY.
+                    </p>
+                  </div>
+
+                  <div className="bg-black/80 border border-red-900 p-3 space-y-2 text-left">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">ATTACKER:</span>
+                      <span className="text-red-400 font-bold">{bossAttackModal.bossName}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">HERO DAMAGE TAKEN:</span>
+                      <span className="text-red-500 font-bold">-{formatNumber(bossAttackModal.damageDealt)} HP</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setBossAttackModal(null)}
+                    className="w-full h-12 bg-red-600 hover:bg-red-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-red-glow"
+                  >
+                    ACKNOWLEDGE DAMAGE & RECOVER
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <AnimatePresence>
             {sessionVictoryModal && (
@@ -311,6 +420,13 @@ export function DashboardLayout() {
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">TOTAL RVS DAMAGE:</span>
                       <span className="text-pixel-green font-bold">{formatNumber(sessionVictoryModal.totalRvs)} RVS</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">HERO HEAL RECOVERED:</span>
+                      <span className="text-[#00ff41] font-bold flex items-center gap-1">
+                        <HeartPulse className="w-3.5 h-3.5" />
+                        +{formatNumber(sessionVictoryModal.healedHp)} HP
+                      </span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">TOTAL VOLUME LIFTED:</span>
@@ -342,7 +458,7 @@ export function DashboardLayout() {
               >
                 <div className="border border-pixel-border bg-surface p-4 relative overflow-hidden">
                   <div className="flex gap-4">
-                    <PixelAvatar className="w-24 h-24 flex-shrink-0" />
+                    <PixelAvatar className="w-24 h-24 flex-shrink-0" isCritical={isCriticalHp} />
 
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div className="flex items-start justify-between">
@@ -365,8 +481,10 @@ export function DashboardLayout() {
 
                       <div className="space-y-2 mt-3">
                         <div>
-                          <div className="flex justify-between font-mono text-[10px] mb-1">
-                            <span className="text-health-red font-bold">HP</span>
+                          <div className="flex justify-between font-mono text-[10px] mb-1 font-bold">
+                            <span className={isCriticalHp ? "text-red-500 animate-pulse" : "text-health-red"}>
+                              HP {isCriticalHp ? "(CRITICAL)" : ""}
+                            </span>
                             <span className="text-gray-300">
                               {formatNumber(userData.current_hp)} / {formatNumber(userData.max_hp)}
                             </span>
@@ -376,7 +494,7 @@ export function DashboardLayout() {
                               initial={{ width: 0 }}
                               animate={{ width: `${hpPercent}%` }}
                               transition={{ duration: 0.8, ease: "easeOut" }}
-                              className="h-full bg-health-red relative shadow-red-glow"
+                              className={`h-full relative ${isCriticalHp ? "bg-red-600 shadow-[0_0_15px_rgba(255,0,0,0.8)]" : "bg-health-red shadow-red-glow"}`}
                             >
                               <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_50%,rgba(0,0,0,0.3)_50%)] bg-[length:4px_100%]" />
                             </motion.div>
