@@ -44,7 +44,8 @@ export function TacticalSkillBar({
   const todayStr = new Date().toISOString().split("T")[0];
   const dailySkillKey = `ironpixels_daily_skills_used_${todayStr}`;
 
-  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
+  const GOD_MODE_TEST_BONUS = 25000;
+  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr + GOD_MODE_TEST_BONUS);
 
   useEffect(() => {
     try {
@@ -237,7 +238,7 @@ export function TacticalSkillBar({
       {isCapReached && (
         <div className="bg-red-950/80 border border-red-600 p-2 text-center text-[10px] text-red-300 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 animate-pulse">
           <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
-          <span>DAILY SKILL CAP REACHED (4/4)! LOG GYM WORKOUTS TO DEAL ATTACKS.</span>
+          <span>DAILY SKILL CAP REACHED (4/4)! LOG GYM WORKOUTS TO DEAL REGULAR ATTACKS.</span>
         </div>
       )}
 

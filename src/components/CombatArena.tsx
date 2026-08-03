@@ -69,7 +69,8 @@ export function CombatArena({
     droppedItem: EquipmentItem;
   } | null>(null);
 
-  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
+  const GOD_MODE_TEST_BONUS = 25000;
+  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr + GOD_MODE_TEST_BONUS);
   const todayKey = `ironpixels_combat_log_${new Date().toISOString().split("T")[0]}`;
 
   useEffect(() => {
@@ -223,9 +224,9 @@ export function CombatArena({
 
   useEffect(() => {
     if (sessionDamage > 0) {
-      const totalAttackDmg = sessionDamage + playerStr;
+      const totalAttackDmg = sessionDamage + playerStr + GOD_MODE_TEST_BONUS;
       executeAttack(totalAttackDmg, "Gym RVS Strike", "attack01");
-      addLog(`Gym Workout Attack dealt ${formatNumber(totalAttackDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr})!`, "#00ff41");
+      addLog(`Gym Workout Attack dealt ${formatNumber(totalAttackDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr} + TEST BOOST: 25k)!`, "#00ff41");
     }
   }, [sessionDamage]);
 
@@ -358,7 +359,7 @@ export function CombatArena({
           <span className="text-[#00ff41] text-sm">{formatNumber(baseCombatPower)} DMG</span>
         </div>
         <div className="text-[10px] text-zinc-400">
-          (RVS: <span className="text-white">{formatNumber(dailyRvs)}</span> + STR: <span className="text-amber-400">{playerStr}</span>)
+          (RVS: <span className="text-white">{formatNumber(dailyRvs)}</span> + STR: <span className="text-amber-400">{playerStr}</span> + <span className="text-amber-300 font-bold">BOOST: 25k</span>)
         </div>
       </div>
 
