@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords, Zap, Gift, Sparkles, X } from "lucide-react";
+import { Flame, Swords, Zap, Gift, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
@@ -39,6 +39,7 @@ interface CombatArenaProps {
   equippedSkills?: Array<{ name: string; icon?: string }>;
   playerStr?: number;
   onAddItemToInventory?: (newItem: InventoryRecord) => void;
+  onConsumeSessionDamage?: () => void;
 }
 
 export function CombatArena({
@@ -48,9 +49,11 @@ export function CombatArena({
   equippedSkills = [],
   playerStr = 85,
   onAddItemToInventory,
+  onConsumeSessionDamage,
 }: CombatArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<DamageParticle[]>([]);
+  const hasExecutedRef = useRef<boolean>(false);
 
   const [boss, setBoss] = useState<BossData>({
     boss_id: "b055d7ac-1234-4567-89ab-cdef01234567",
@@ -227,10 +230,15 @@ export function CombatArena({
   };
 
   useEffect(() => {
-    if (sessionDamage > 0) {
+    if (sessionDamage > 0 && !hasExecutedRef.current) {
+      hasExecutedRef.current = true;
       const totalAttackDmg = sessionDamage + playerStr;
       executeAttack(totalAttackDmg, "Gym RVS Strike", "attack01");
       addLog(`Gym Workout Attack dealt ${formatNumber(totalAttackDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr})!`, "#00ff41");
+
+      if (onConsumeSessionDamage) {
+        onConsumeSessionDamage();
+      }
     }
   }, [sessionDamage]);
 

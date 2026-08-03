@@ -740,6 +740,7 @@ export function DashboardLayout() {
                     equippedSkills={gearSkills}
                     playerStr={userData.stats.str}
                     onAddItemToInventory={handleAddItemToInventory}
+                    onConsumeSessionDamage={() => setLastSessionDamage(0)}
                   />
                 )}
               </motion.div>
