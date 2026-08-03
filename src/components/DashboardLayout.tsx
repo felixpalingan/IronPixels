@@ -316,14 +316,23 @@ export function DashboardLayout() {
     }
   };
 
-  const handleFinishWorkout = (summary: { totalRvs: number; totalVolume: number }) => {
+  const handleFinishWorkout = (summary: {
+    totalRvs: number;
+    totalVolume: number;
+    exercisesLog: Array<{
+      exercise_name: string;
+      category?: string;
+      sets: Array<{ set_number: number; weight_kg: number; reps: number }>;
+    }>;
+  }) => {
     setLastSessionDamage(summary.totalRvs);
 
     const healAmount = Math.round(summary.totalRvs * 1.5);
     const newHp = Math.min(userData.max_hp, userData.current_hp + healAmount);
 
     setSessionVictoryModal({
-      ...summary,
+      totalRvs: summary.totalRvs,
+      totalVolume: summary.totalVolume,
       healedHp: healAmount,
     });
 
@@ -343,7 +352,7 @@ export function DashboardLayout() {
         duration_minutes: 45,
         total_rvs: summary.totalRvs,
         total_volume_kg: summary.totalVolume,
-        exercises_log: [],
+        exercises_log: summary.exercisesLog || [],
       };
       const existingHistory = JSON.parse(localStorage.getItem("ironpixels_workout_history") || "[]");
       const updatedHistory = [newSessionRecord, ...existingHistory];
