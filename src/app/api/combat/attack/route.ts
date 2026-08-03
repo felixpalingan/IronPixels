@@ -17,30 +17,46 @@ export async function POST(request: Request) {
 
     try {
       const supabase = await createClient();
-      await supabase
-        .from("dungeon_bosses")
-        .upsert({
-          boss_id: boss.boss_id,
-          boss_name: boss.boss_name,
-          stage: boss.stage,
-          current_hp: boss.current_hp,
-          max_hp: boss.max_hp,
-          status: boss.status,
-        });
+
+      if (is_defeated) {
+        await supabase
+          .from("dungeon_bosses")
+          .update({ current_hp: 0, status: "Defeated" })
+          .eq("boss_id", boss_id || boss.boss_id);
+
+        await supabase
+          .from("dungeon_bosses")
+          .upsert({
+            boss_id: next_boss.boss_id,
+            boss_name: next_boss.boss_name,
+            stage: next_boss.stage,
+            current_hp: next_boss.max_hp,
+            max_hp: next_boss.max_hp,
+            status: "Active",
+          });
+      } else {
+        await supabase
+          .from("dungeon_bosses")
+          .update({
+            current_hp: boss.current_hp,
+            status: boss.status,
+          })
+          .eq("boss_id", boss_id || boss.boss_id);
+      }
     } catch (e) {
     }
 
     return NextResponse.json({
       success: true,
-      boss_id: boss.boss_id,
-      boss_name: boss.boss_name,
-      boss_type: boss.boss_type,
-      stage: boss.stage,
+      boss_id: is_defeated ? next_boss.boss_id : boss.boss_id,
+      boss_name: is_defeated ? next_boss.boss_name : boss.boss_name,
+      boss_type: is_defeated ? next_boss.boss_type : boss.boss_type,
+      stage: is_defeated ? next_boss.stage : boss.stage,
       rvs_damage_dealt: damage_dealt,
-      current_hp: boss.current_hp,
-      max_hp: boss.max_hp,
+      current_hp: is_defeated ? next_boss.current_hp : boss.current_hp,
+      max_hp: is_defeated ? next_boss.max_hp : boss.max_hp,
       is_defeated,
-      status: boss.status,
+      status: is_defeated ? next_boss.status : boss.status,
     });
   } catch (err: any) {
     return NextResponse.json(
