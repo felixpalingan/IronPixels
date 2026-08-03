@@ -10,13 +10,15 @@ export async function GET() {
 
     const targetUserId = user?.id || DEFAULT_USER_ID;
 
-    const { data: profile } = await supabase
+    const { data: profiles, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("user_id", targetUserId)
-      .single();
+      .or(`user_id.eq.${targetUserId},user_id.eq.${DEFAULT_USER_ID}`)
+      .order("created_at", { ascending: false })
+      .limit(1);
 
-    if (profile) {
+    if (!error && profiles && profiles.length > 0) {
+      const profile = profiles[0];
       return NextResponse.json({
         user_id: profile.user_id,
         username: profile.username || "Warrior",

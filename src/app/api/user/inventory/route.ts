@@ -14,7 +14,7 @@ export async function GET() {
     const { data: inventory, error } = await supabase
       .from("user_inventory")
       .select("inventory_id, user_id, item_id, is_equipped, equipment_dictionary(*)")
-      .eq("user_id", targetUserId)
+      .or(`user_id.eq.${targetUserId},user_id.eq.${DEFAULT_USER_ID}`)
       .order("created_at", { ascending: false });
 
     if (!error && inventory && inventory.length > 0) {
