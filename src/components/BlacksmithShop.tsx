@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Coins, Sparkles, X, Shield, Swords, Flame, Zap, PackageOpen, Triangle } from "lucide-react";
+import { Coins, Sparkles, X, Shield, Swords, Flame, Zap, PackageOpen, Triangle, Database } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
@@ -67,9 +67,11 @@ export function BlacksmithShop({
   const [targetIndex, setTargetIndex] = useState<number>(26);
   const [openingPhase, setOpeningPhase] = useState<"rolling" | "revealed" | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
+  const [dbStatusToast, setDbStatusToast] = useState<{ msg: string; isError: boolean } | null>(null);
 
   const handlePurchaseChest = async (chest: ChestOption) => {
     setErrorMsg("");
+    setDbStatusToast(null);
     setLoadingChest(chest.id);
 
     try {
@@ -87,6 +89,14 @@ export function BlacksmithShop({
       } else {
         onUpdateGold(data.new_gold);
         onAddItemToInventory(data.drawn_item);
+
+        if (data.db_status) {
+          const isErr = data.db_status.startsWith("DB_ERROR");
+          setDbStatusToast({
+            msg: isErr ? data.db_status : `SAVED TO SUPABASE (ID: ${data.drawn_item.inventory_id.substring(0, 8)}...)`,
+            isError: isErr,
+          });
+        }
 
         const winItem: EquipmentItem = data.drawn_item.item;
         const WIN_INDEX = 26;
@@ -161,6 +171,24 @@ export function BlacksmithShop({
           <span className="font-bold text-xs">{formatNumber(userGold)} GOLD</span>
         </div>
       </div>
+
+      {dbStatusToast && (
+        <div
+          className={`border p-3 text-xs font-bold uppercase tracking-wider flex items-center justify-between ${
+            dbStatusToast.isError
+              ? "border-red-500/80 bg-red-950/60 text-red-300"
+              : "border-[#00ff41]/80 bg-[#00ff41]/10 text-[#00ff41] shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 flex-shrink-0" />
+            <span>[DB STATUS] {dbStatusToast.msg}</span>
+          </div>
+          <button onClick={() => setDbStatusToast(null)} className="text-zinc-400 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="relative border border-zinc-800 bg-[#121214] p-6 overflow-hidden flex flex-col items-center text-center space-y-3">
         <div className="absolute inset-0 bg-gradient-to-r from-[#00ff41]/5 via-transparent to-[#00ff41]/5 pointer-events-none" />

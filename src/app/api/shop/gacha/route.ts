@@ -60,22 +60,36 @@ export async function POST(request: Request) {
 
     const newGoldBalance = Math.max(0, userGold - price);
 
+    let dbErrorMsg: string | null = null;
+    let insertedInventoryId: string = `inv-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
     try {
       await supabase
         .from("profiles")
         .update({ gold: newGoldBalance })
         .eq("user_id", userId);
 
-      await supabase.from("user_inventory").insert({
-        user_id: userId,
-        item_id: selectedItem.item_id,
-        is_equipped: false,
-      });
-    } catch (e) {
+      const { data: invInsertData, error: invErr } = await supabase
+        .from("user_inventory")
+        .insert({
+          user_id: userId,
+          item_id: selectedItem.item_id,
+          is_equipped: false,
+        })
+        .select("inventory_id")
+        .single();
+
+      if (invErr) {
+        dbErrorMsg = invErr.message;
+      } else if (invInsertData?.inventory_id) {
+        insertedInventoryId = invInsertData.inventory_id;
+      }
+    } catch (e: any) {
+      dbErrorMsg = e.message || "Failed to commit to Supabase";
     }
 
     const newInventoryRecord = {
-      inventory_id: `inv-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      inventory_id: insertedInventoryId,
       user_id: userId,
       item_id: selectedItem.item_id,
       is_equipped: false,
@@ -86,6 +100,7 @@ export async function POST(request: Request) {
       success: true,
       new_gold: newGoldBalance,
       drawn_item: newInventoryRecord,
+      db_status: dbErrorMsg ? `DB_ERROR: ${dbErrorMsg}` : "SAVED_TO_SUPABASE",
     });
   } catch (err: any) {
     return NextResponse.json(

@@ -48,17 +48,25 @@ export async function POST(request: Request) {
       luk: stats.luk,
     };
 
+    let dbErrorMsg: string | null = null;
+
     try {
-      await supabase
+      const { error: upsertErr } = await supabase
         .from("profiles")
         .upsert(profileData, { onConflict: "user_id" });
-    } catch (e) {
+
+      if (upsertErr) {
+        dbErrorMsg = upsertErr.message;
+      }
+    } catch (e: any) {
+      dbErrorMsg = e.message || "Failed to commit profile to Supabase";
     }
 
     return NextResponse.json({
       success: true,
       message: "Onboarding completed successfully.",
       user: profileData,
+      db_status: dbErrorMsg ? `DB_ERROR: ${dbErrorMsg}` : "SAVED_TO_SUPABASE",
     });
   } catch (err: any) {
     return NextResponse.json(
