@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
@@ -13,6 +13,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { SettingsModal } from "@/components/SettingsModal";
 import { BlacksmithShop } from "@/components/BlacksmithShop";
 import { InventoryGrid } from "@/components/InventoryGrid";
+import { DailyQuestsWidget } from "@/components/DailyQuestsWidget";
 import { EQUIPMENT_DICTIONARY, InventoryRecord, ItemType } from "@/lib/equipment";
 
 interface UserProfileData {
@@ -26,6 +27,7 @@ interface UserProfileData {
   max_exp: number;
   gold: number;
   weight_kg: number;
+  available_ap?: number;
   stats: {
     str: number;
     agi: number;
@@ -40,6 +42,7 @@ export function DashboardLayout() {
   const [subView, setSubView] = useState<"workout" | "combat">("workout");
   const [lastSessionDamage, setLastSessionDamage] = useState<number>(0);
   const [dailyRvs, setDailyRvs] = useState<number>(0);
+  const [availableAp, setAvailableAp] = useState<number>(5);
   const [sessionVictoryModal, setSessionVictoryModal] = useState<{
     totalRvs: number;
     totalVolume: number;
@@ -88,6 +91,11 @@ export function DashboardLayout() {
       if (savedRvs) {
         setDailyRvs(Number(savedRvs));
       }
+
+      const savedAp = localStorage.getItem("ironpixels_available_ap");
+      if (savedAp !== null) {
+        setAvailableAp(Number(savedAp));
+      }
     } catch (e) {}
 
     const localProf = localStorage.getItem("ironpixels_profile");
@@ -99,6 +107,7 @@ export function DashboardLayout() {
           currentProf = parsedProf;
           setProfile(parsedProf);
           if (parsedProf.gold !== undefined) setUserGold(parsedProf.gold);
+          if (parsedProf.available_ap !== undefined) setAvailableAp(parsedProf.available_ap);
         }
       } catch (e) {}
     }
@@ -122,6 +131,7 @@ export function DashboardLayout() {
           currentProf = dataProf;
           localStorage.setItem("ironpixels_profile", JSON.stringify(dataProf));
           if (dataProf.gold !== undefined) setUserGold(dataProf.gold);
+          if (dataProf.available_ap !== undefined) setAvailableAp(dataProf.available_ap);
         }
 
         const resInv = await fetch("/api/user/inventory");
@@ -210,6 +220,32 @@ export function DashboardLayout() {
     })),
   };
 
+  const totalCp = Math.round(
+    userData.level * 100 +
+      userData.stats.str * 3.5 +
+      userData.stats.agi * 2.5 +
+      userData.stats.vit * 2.5 +
+      userData.stats.luk * 2.0 +
+      equippedItems.length * 150 +
+      dailyRvs
+  );
+
+  const getClassPerkInfo = (clsName: string) => {
+    const nameUpper = clsName.toUpperCase();
+    if (nameUpper.includes("WARRIOR") || nameUpper.includes("CYBER")) {
+      return { label: "CYBER KNIGHT PERK", perk: "+15% RVS STR Damage Bonus", color: "text-amber-400 border-amber-400/40 bg-amber-950/20" };
+    }
+    if (nameUpper.includes("ROGUE") || nameUpper.includes("NINJA")) {
+      return { label: "SHADOW NINJA PERK", perk: "+20% Critical Hit Chance (AGI)", color: "text-fuchsia-400 border-fuchsia-400/40 bg-fuchsia-950/20" };
+    }
+    if (nameUpper.includes("PALADIN") || nameUpper.includes("VANGUARD")) {
+      return { label: "IRON VANGUARD PERK", perk: "+250 MAX HP & Defensive Shield", color: "text-[#00ff41] border-[#00ff41]/40 bg-[#00ff41]/10" };
+    }
+    return { label: "TITAN BERSERKER PERK", perk: "+20% Extra Gold & Exp Loot", color: "text-sky-400 border-sky-400/40 bg-sky-950/20" };
+  };
+
+  const classPerk = getClassPerkInfo(userData.character_class);
+
   const gearSkills = equippedItems
     .map((rec) => ({
       name: rec.item?.granted_skill_name || rec.item?.item_name,
@@ -221,6 +257,63 @@ export function DashboardLayout() {
   const hpPercent = Math.min(100, Math.max(0, (userData.current_hp / userData.max_hp) * 100));
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
   const isCriticalHp = hpPercent < 20;
+
+  const handleUpgradeStat = (statKey: "str" | "agi" | "vit" | "luk") => {
+    if (availableAp <= 0) return;
+
+    const nextAp = availableAp - 1;
+    setAvailableAp(nextAp);
+    try {
+      localStorage.setItem("ironpixels_available_ap", nextAp.toString());
+    } catch (e) {}
+
+    if (profile) {
+      const updatedStats = {
+        ...profile.stats,
+        [statKey]: profile.stats[statKey] + 1,
+      };
+      const updatedProf = {
+        ...profile,
+        available_ap: nextAp,
+        stats: updatedStats,
+      };
+      setProfile(updatedProf);
+      localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+    }
+  };
+
+  const handleClaimQuestReward = (reward: { gold: number; exp: number }) => {
+    if (reward.gold > 0) {
+      setUserGold((prev) => prev + reward.gold);
+    }
+
+    if (profile) {
+      let newExp = profile.exp + reward.exp;
+      let newLevel = profile.level;
+      let newMaxExp = profile.max_exp;
+      let addedAp = 0;
+
+      if (newExp >= newMaxExp) {
+        newExp = newExp - newMaxExp;
+        newLevel += 1;
+        newMaxExp = Math.round(newMaxExp * 1.5);
+        addedAp = 5;
+        setAvailableAp((prev) => prev + 5);
+      }
+
+      const updatedProf = {
+        ...profile,
+        level: newLevel,
+        exp: newExp,
+        max_exp: newMaxExp,
+        available_ap: (profile.available_ap || 0) + addedAp,
+        gold: profile.gold + reward.gold,
+      };
+
+      setProfile(updatedProf);
+      localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+    }
+  };
 
   const handleFinishWorkout = (summary: { totalRvs: number; totalVolume: number }) => {
     setLastSessionDamage(summary.totalRvs);
@@ -457,17 +550,20 @@ export function DashboardLayout() {
                 transition={{ duration: 0.25 }}
                 className="space-y-4"
               >
-                <div className="border border-pixel-border bg-surface p-4 relative overflow-hidden">
+                <div className="border border-pixel-border bg-surface p-4 relative overflow-hidden font-mono shadow-neon">
                   <div className="flex gap-4">
                     <PixelAvatar className="w-24 h-24 flex-shrink-0" isCritical={isCriticalHp} />
 
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div className="flex items-start justify-between">
                         <div>
-                          <div className="font-headline font-extrabold text-2xl tracking-tight text-white">
-                            Lv. {formatNumber(userData.level)}
+                          <div className="font-headline font-extrabold text-2xl tracking-tight text-white flex items-center gap-2">
+                            <span>Lv. {formatNumber(userData.level)}</span>
+                            <span className="text-[10px] bg-[#00ff41]/20 border border-[#00ff41]/60 text-[#00ff41] px-2 py-0.5 font-bold uppercase tracking-widest">
+                              {userData.username}
+                            </span>
                           </div>
-                          <div className="font-mono text-[11px] text-gray-400 uppercase tracking-wider font-bold">
+                          <div className="font-mono text-[11px] text-gray-400 uppercase tracking-wider font-bold mt-0.5">
                             {userData.character_class} ({userData.weight_kg} KG)
                           </div>
                         </div>
@@ -525,9 +621,71 @@ export function DashboardLayout() {
                   </div>
                 </div>
 
-                <div className="border border-pixel-border bg-surface p-1">
-                  <StatRadarChart stats={userData.stats} />
+                <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between font-mono">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-[#00ff41] animate-pulse" />
+                    <div>
+                      <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">TOTAL COMBAT POWER</div>
+                      <div className="font-headline font-black text-xl text-[#00ff41]">
+                        {formatNumber(totalCp)} CP
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={`px-3 py-1.5 border text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${classPerk.color}`}>
+                    <Award className="w-4 h-4" />
+                    <span>{classPerk.perk}</span>
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-2 font-mono">
+                  <button
+                    onClick={() => {
+                      setActiveTab("quests");
+                      setSubView("workout");
+                    }}
+                    className="p-3 border border-[#00ff41]/80 bg-surface hover:bg-[#00ff41]/10 text-white flex items-center justify-between group transition-all cursor-pointer shadow-neon"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Dumbbell className="w-5 h-5 text-[#00ff41]" />
+                      <div className="text-left">
+                        <div className="font-headline font-extrabold text-xs uppercase">WORKOUT TRACKER</div>
+                        <div className="text-[9px] text-zinc-400">LOG GYM SETS</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-[#00ff41] group-hover:translate-x-1 transition-transform" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab("quests");
+                      setSubView("combat");
+                    }}
+                    className="p-3 border border-health-red/80 bg-surface hover:bg-health-red/10 text-white flex items-center justify-between group transition-all cursor-pointer shadow-red-glow"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Swords className="w-5 h-5 text-health-red" />
+                      <div className="text-left">
+                        <div className="font-headline font-extrabold text-xs uppercase">BOSS ARENA</div>
+                        <div className="text-[9px] text-zinc-400">UNLEASH RVS ATTACK</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-health-red group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+
+                <StatRadarChart
+                  stats={userData.stats}
+                  availableAp={availableAp}
+                  onUpgradeStat={handleUpgradeStat}
+                />
+
+                <DailyQuestsWidget
+                  dailyRvs={dailyRvs}
+                  currentHp={userData.current_hp}
+                  maxHp={userData.max_hp}
+                  onClaimReward={handleClaimQuestReward}
+                />
 
                 <EquippedGearGrid gear={userData.equipped_gear} />
               </motion.div>

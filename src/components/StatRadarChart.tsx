@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-} from "recharts";
-import { formatNumber } from "@/lib/formatters";
+import { Plus } from "lucide-react";
 
 interface StatRadarChartProps {
   stats: {
@@ -17,58 +9,54 @@ interface StatRadarChartProps {
     vit: number;
     luk: number;
   };
+  availableAp?: number;
+  onUpgradeStat?: (statKey: "str" | "agi" | "vit" | "luk") => void;
 }
 
-export function StatRadarChart({ stats }: StatRadarChartProps) {
-  const chartData = [
-    { subject: "STR", value: stats.str, fullMark: 100 },
-    { subject: "AGI", value: stats.agi, fullMark: 100 },
-    { subject: "VIT", value: stats.vit, fullMark: 100 },
-    { subject: "LUK", value: stats.luk, fullMark: 100 },
+export function StatRadarChart({ stats, availableAp = 0, onUpgradeStat }: StatRadarChartProps) {
+  const statList: Array<{ key: "str" | "agi" | "vit" | "luk"; label: string; color: string; val: number }> = [
+    { key: "str", label: "STR (STRENGTH)", color: "text-amber-400", val: stats.str },
+    { key: "agi", label: "AGI (AGILITY)", color: "text-fuchsia-400", val: stats.agi },
+    { key: "vit", label: "VIT (VITALITY)", color: "text-[#00ff41]", val: stats.vit },
+    { key: "luk", label: "LUK (LUCK)", color: "text-sky-400", val: stats.luk },
   ];
 
   return (
-    <div className="relative w-full h-[260px] flex items-center justify-center bg-surface-container/50 border border-pixel-border/40 p-2 my-2">
-      <div className="absolute top-2 left-3 font-mono text-[10px] tracking-widest text-gray-400 uppercase">
-        BASE ATTRIBUTES
+    <div className="bg-surface border border-pixel-border p-3 font-mono space-y-3">
+      <div className="flex items-center justify-between border-b border-pixel-border/50 pb-1">
+        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+          HERO ATTRIBUTE STATS
+        </span>
+        {availableAp > 0 && (
+          <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-wider animate-pulse">
+            AVAILABLE AP: {availableAp} POINTS
+          </span>
+        )}
       </div>
-      
-      <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="52%" outerRadius="65%" data={chartData}>
-          <PolarGrid stroke="#2a2a2a" strokeDasharray="3 3" />
-          <PolarAngleAxis
-            dataKey="subject"
-            tick={({ x, y, payload }) => {
-              const statKey = payload.value.toLowerCase() as keyof typeof stats;
-              const rawVal = stats[statKey];
-              const valFormatted = formatNumber(rawVal);
-              return (
-                <text
-                  x={x}
-                  y={y}
-                  textAnchor="middle"
-                  fill="#00ff41"
-                  className="font-mono text-xs font-bold"
-                >
-                  <tspan x={x} dy="-4">{payload.value}</tspan>
-                  <tspan x={x} dy="14" fill="#ffffff" className="font-extrabold">{valFormatted}</tspan>
-                </text>
-              );
-            }}
-          />
-          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-          <Radar
-            name="Stats"
-            dataKey="value"
-            stroke="#00ff41"
-            fill="#00ff41"
-            fillOpacity={0.25}
-            isAnimationActive={true}
-            animationDuration={1200}
-            animationEasing="ease-out"
-          />
-        </RadarChart>
-      </ResponsiveContainer>
+
+      <div className="grid grid-cols-2 gap-2">
+        {statList.map((st) => (
+          <div
+            key={st.key}
+            className="p-2 border border-pixel-border/60 bg-black/60 flex items-center justify-between"
+          >
+            <div>
+              <div className={`text-[9px] font-bold ${st.color}`}>{st.label}</div>
+              <div className="text-sm font-extrabold text-white">{st.val}</div>
+            </div>
+
+            {availableAp > 0 && onUpgradeStat && (
+              <button
+                onClick={() => onUpgradeStat(st.key)}
+                className="w-7 h-7 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black flex items-center justify-center font-bold transition-all shadow-neon cursor-pointer"
+                title={`Upgrade ${st.label}`}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
