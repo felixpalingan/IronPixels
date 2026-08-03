@@ -214,6 +214,7 @@ export function DashboardLayout() {
     .map((rec) => ({
       name: rec.item?.granted_skill_name || rec.item?.item_name,
       icon: rec.item?.icon,
+      slotType: rec.item?.type as "weapon" | "armor" | "accessory",
     }))
     .filter((s) => Boolean(s.name));
 
@@ -430,7 +431,7 @@ export function DashboardLayout() {
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">TOTAL VOLUME LIFTED:</span>
-                      <span className="text-white font-bold">{formatNumber(sessionVictoryModal.totalVolume)} KG</span>
+                      <span className="text-[#00ff41] font-bold">{formatNumber(sessionVictoryModal.totalVolume)} KG</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">GOLD LOOT REWARD:</span>

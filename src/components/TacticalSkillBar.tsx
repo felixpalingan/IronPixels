@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, ShieldAlert } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 
 export interface SkillData {
   skill_id: string;
   skill_name: string;
+  slotType: "weapon" | "armor" | "accessory";
   damage_multiplier: number;
   cooldown_minutes: number;
   remaining_seconds: number;
@@ -19,7 +20,7 @@ interface TacticalSkillBarProps {
   userId?: string;
   dailyRvs?: number;
   playerStr?: number;
-  equippedSkills?: Array<{ name: string; icon?: string }>;
+  equippedSkills?: Array<{ name: string; icon?: string; slotType?: "weapon" | "armor" | "accessory" }>;
   onSkillCast?: (
     skillName: string,
     damageDealt: number,
@@ -27,8 +28,6 @@ interface TacticalSkillBarProps {
     attackType: "attack01" | "attack02" | "attack03"
   ) => void;
 }
-
-const MAX_DAILY_SKILLS = 4;
 
 export function TacticalSkillBar({
   userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
@@ -39,26 +38,13 @@ export function TacticalSkillBar({
 }: TacticalSkillBarProps) {
   const [skills, setSkills] = useState<SkillData[]>([]);
   const [executingSkillId, setExecutingSkillId] = useState<string | null>(null);
-  const [dailySkillsUsed, setDailySkillsUsed] = useState<number>(0);
-
-  const todayStr = new Date().toISOString().split("T")[0];
-  const dailySkillKey = `ironpixels_daily_skills_used_${todayStr}`;
 
   const GOD_MODE_TEST_BONUS = 25000;
   const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr + GOD_MODE_TEST_BONUS);
 
-  useEffect(() => {
+  const getSavedSlotCdSecs = (slotType: string) => {
     try {
-      const savedCount = localStorage.getItem(dailySkillKey);
-      if (savedCount) {
-        setDailySkillsUsed(Number(savedCount));
-      }
-    } catch (e) {}
-  }, [dailySkillKey]);
-
-  const getSavedCdSecs = (skillName: string) => {
-    try {
-      const cdUntil = localStorage.getItem(`ironpixels_cd_${skillName}`);
+      const cdUntil = localStorage.getItem(`ironpixels_slot_cd_${slotType}`);
       if (!cdUntil) return 0;
       const remainingMs = Number(cdUntil) - Date.now();
       return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
@@ -72,9 +58,9 @@ export function TacticalSkillBar({
 
     if (!sourceSkills || sourceSkills.length === 0) {
       sourceSkills = [
-        { name: "Heavy Iron Slash", icon: "/assets/skills/Icon1.png" },
-        { name: "Novice Shield Thrust", icon: "/assets/skills/Icon10.png" },
-        { name: "Flame Arrow Volley", icon: "/assets/skills/Icon24.png" },
+        { name: "Heavy Iron Slash", icon: "/assets/skills/Icon1.png", slotType: "weapon" },
+        { name: "Novice Shield Thrust", icon: "/assets/skills/Icon10.png", slotType: "armor" },
+        { name: "Flame Arrow Volley", icon: "/assets/skills/Icon24.png", slotType: "accessory" },
       ];
     }
 
@@ -90,6 +76,7 @@ export function TacticalSkillBar({
     ];
 
     const generated: SkillData[] = sourceSkills.map((sk, idx) => {
+      const slot = sk.slotType || (idx === 0 ? "weapon" : idx === 1 ? "armor" : "accessory");
       const nameLower = sk.name.toLowerCase();
       let multiplier = 2.5;
       let attackType: "attack01" | "attack02" | "attack03" = "attack01";
@@ -118,11 +105,12 @@ export function TacticalSkillBar({
         iconUrl = "/assets/skills/Icon10.png";
       }
 
-      const cdSecs = getSavedCdSecs(sk.name);
+      const cdSecs = getSavedSlotCdSecs(slot);
 
       return {
-        skill_id: `s-gear-${idx}-${sk.name}`,
+        skill_id: `s-slot-${slot}-${sk.name}`,
         skill_name: sk.name,
+        slotType: slot,
         damage_multiplier: multiplier,
         cooldown_minutes: cdMins,
         remaining_seconds: cdSecs,
@@ -139,7 +127,7 @@ export function TacticalSkillBar({
     const timer = setInterval(() => {
       setSkills((prevSkills) =>
         prevSkills.map((sk) => {
-          const cdSecs = getSavedCdSecs(sk.skill_name);
+          const cdSecs = getSavedSlotCdSecs(sk.slotType);
           return {
             ...sk,
             remaining_seconds: cdSecs,
@@ -153,11 +141,6 @@ export function TacticalSkillBar({
   }, []);
 
   const handleCast = async (skill: SkillData) => {
-    if (dailySkillsUsed >= MAX_DAILY_SKILLS) {
-      alert("DAILY SKILL CAP REACHED! YOU CAN ONLY CAST 4 SKILLS PER DAY.");
-      return;
-    }
-
     if (!skill.is_ready || executingSkillId) return;
 
     setExecutingSkillId(skill.skill_id);
@@ -166,12 +149,8 @@ export function TacticalSkillBar({
     const cdMs = skill.cooldown_minutes * 60 * 1000;
 
     try {
-      const nextUsedCount = dailySkillsUsed + 1;
-      setDailySkillsUsed(nextUsedCount);
-      localStorage.setItem(dailySkillKey, nextUsedCount.toString());
-
       localStorage.setItem(
-        `ironpixels_cd_${skill.skill_name}`,
+        `ironpixels_slot_cd_${skill.slotType}`,
         (Date.now() + cdMs).toString()
       );
 
@@ -181,6 +160,7 @@ export function TacticalSkillBar({
         body: JSON.stringify({
           user_id: userId,
           skill_id: skill.skill_id,
+          slot_type: skill.slotType,
           cooldown_minutes: skill.cooldown_minutes,
           damage_multiplier: skill.damage_multiplier,
           base_damage: baseCombatPower,
@@ -191,7 +171,7 @@ export function TacticalSkillBar({
 
       setSkills((prev) =>
         prev.map((s) =>
-          s.skill_id === skill.skill_id
+          s.slotType === skill.slotType
             ? {
                 ...s,
                 is_ready: false,
@@ -221,32 +201,23 @@ export function TacticalSkillBar({
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  const isCapReached = dailySkillsUsed >= MAX_DAILY_SKILLS;
-
   return (
     <div className="border border-pixel-border bg-surface p-3 space-y-2 font-mono">
       <div className="flex items-center justify-between text-[10px] text-gray-400 uppercase tracking-widest border-b border-pixel-border/50 pb-1">
         <span className="flex items-center gap-1">
           <Sparkles className="w-3.5 h-3.5 text-[#00ff41]" />
-          EQUIPPED SKILLS (MAX 4 CASTS/DAY)
+          EQUIPPED GEAR SKILLS (SLOT COOLDOWN)
         </span>
-        <span className={`font-bold ${isCapReached ? "text-red-500 animate-pulse" : "text-[#00ff41]"}`}>
-          DAILY SKILLS: {dailySkillsUsed} / {MAX_DAILY_SKILLS} USED
+        <span className="text-[#00ff41] font-bold">
+          COMBAT POWER: {formatNumber(baseCombatPower)}
         </span>
       </div>
-
-      {isCapReached && (
-        <div className="bg-red-950/80 border border-red-600 p-2 text-center text-[10px] text-red-300 font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 animate-pulse">
-          <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
-          <span>DAILY SKILL CAP REACHED (4/4)! LOG GYM WORKOUTS TO DEAL REGULAR ATTACKS.</span>
-        </div>
-      )}
 
       <div className="grid grid-cols-3 gap-2">
         {skills.map((skill) => {
           const isExecuting = executingSkillId === skill.skill_id;
           const projectedSkillDmg = Math.round(baseCombatPower * skill.damage_multiplier);
-          const isDisabled = !skill.is_ready || isExecuting || isCapReached;
+          const isDisabled = !skill.is_ready || isExecuting;
 
           return (
             <button
@@ -271,13 +242,17 @@ export function TacticalSkillBar({
                 {skill.skill_name}
               </div>
 
+              <div className="text-[8px] text-zinc-400 uppercase font-bold">
+                SLOT: {skill.slotType}
+              </div>
+
               <div className="text-[9px] text-[#00ff41] font-bold">
                 {skill.damage_multiplier}x ({formatNumber(projectedSkillDmg)} DMG)
               </div>
 
-              {!skill.is_ready && !isCapReached && (
+              {!skill.is_ready && (
                 <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-xs font-bold text-health-red">
-                  <span>COOLDOWN</span>
+                  <span className="text-[9px]">SLOT COOLDOWN</span>
                   <span>{formatCd(skill.remaining_seconds)}</span>
                 </div>
               )}
