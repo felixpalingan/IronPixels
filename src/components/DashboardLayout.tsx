@@ -73,12 +73,23 @@ export function DashboardLayout() {
   const [userGold, setUserGold] = useState<number>(12500);
 
   useEffect(() => {
+    const localProf = localStorage.getItem("ironpixels_profile");
+    if (localProf) {
+      try {
+        const parsedProf = JSON.parse(localProf);
+        if (parsedProf) {
+          setProfile(parsedProf);
+          if (parsedProf.gold !== undefined) setUserGold(parsedProf.gold);
+        }
+      } catch (e) {}
+    }
+
     const localInv = localStorage.getItem("ironpixels_inventory");
     if (localInv) {
       try {
-        const parsed = JSON.parse(localInv);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setUserInventory(parsed);
+        const parsedInv = JSON.parse(localInv);
+        if (Array.isArray(parsedInv) && parsedInv.length > 0) {
+          setUserInventory(parsedInv);
         }
       } catch (e) {}
     }
@@ -89,6 +100,7 @@ export function DashboardLayout() {
         if (resProf.ok) {
           const dataProf = await resProf.json();
           setProfile(dataProf);
+          localStorage.setItem("ironpixels_profile", JSON.stringify(dataProf));
           if (dataProf.gold !== undefined) setUserGold(dataProf.gold);
         }
 
@@ -135,12 +147,12 @@ export function DashboardLayout() {
   const userData = {
     user_id: profile?.user_id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
     username: profile?.username || "Felix",
-    character_class: profile?.character_class || "CYBER KNIGHT",
-    level: profile?.level || 15,
-    current_hp: Math.min(totalMaxHp, profile?.current_hp || 850),
+    character_class: profile?.character_class || "WARRIOR",
+    level: profile?.level || 1,
+    current_hp: Math.min(totalMaxHp, profile?.current_hp || 1000),
     max_hp: totalMaxHp,
-    exp: profile?.exp || 10000,
-    max_exp: profile?.max_exp || 15000,
+    exp: profile?.exp || 0,
+    max_exp: profile?.max_exp || 1000,
     gold: userGold,
     weight_kg: profile?.weight_kg || 75,
     stats: totalStats,
@@ -170,11 +182,13 @@ export function DashboardLayout() {
     setUserGold((prev) => prev + earnedGold);
 
     if (profile) {
-      setProfile({
+      const updatedProf = {
         ...profile,
         exp: profile.exp + summary.totalRvs,
         gold: profile.gold + earnedGold,
-      });
+      };
+      setProfile(updatedProf);
+      localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
     }
 
     setTimeout(() => {
@@ -320,8 +334,8 @@ export function DashboardLayout() {
                           <div className="font-headline font-extrabold text-2xl tracking-tight text-white">
                             Lv. {formatNumber(userData.level)}
                           </div>
-                          <div className="font-mono text-[11px] text-gray-400 uppercase tracking-wider">
-                            {userData.character_class}
+                          <div className="font-mono text-[11px] text-gray-400 uppercase tracking-wider font-bold">
+                            {userData.character_class} ({userData.weight_kg} KG)
                           </div>
                         </div>
 
@@ -446,7 +460,14 @@ export function DashboardLayout() {
               >
                 <BlacksmithShop
                   userGold={userGold}
-                  onUpdateGold={setUserGold}
+                  onUpdateGold={(newG) => {
+                    setUserGold(newG);
+                    if (profile) {
+                      const updatedProf = { ...profile, gold: newG };
+                      setProfile(updatedProf);
+                      localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+                    }
+                  }}
                   onAddItemToInventory={handleAddItemToInventory}
                 />
               </motion.div>

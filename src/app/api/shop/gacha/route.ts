@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { EQUIPMENT_DICTIONARY, ItemRarity, EquipmentItem } from "@/lib/equipment";
 
+const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
 export async function POST(request: Request) {
   try {
     const { chest_type } = await request.json();
@@ -17,19 +19,20 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
 
+    const userId = authData?.user?.id || DEFAULT_USER_ID;
     let userGold = 12500;
-    let userId = authData?.user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
-    if (authData?.user) {
+    try {
       const { data: profile } = await supabase
         .from("profiles")
         .select("gold")
         .eq("user_id", userId)
         .single();
 
-      if (profile) {
-        userGold = profile.gold;
+      if (profile && profile.gold !== undefined) {
+        userGold = Number(profile.gold);
       }
+    } catch (e) {
     }
 
     const rand = Math.random() * 100;
@@ -55,9 +58,9 @@ export async function POST(request: Request) {
         ? pool[Math.floor(Math.random() * pool.length)]
         : EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
 
-    const newGoldBalance = userGold - price;
+    const newGoldBalance = Math.max(0, userGold - price);
 
-    if (authData?.user) {
+    try {
       await supabase
         .from("profiles")
         .update({ gold: newGoldBalance })
@@ -68,6 +71,7 @@ export async function POST(request: Request) {
         item_id: selectedItem.item_id,
         is_equipped: false,
       });
+    } catch (e) {
     }
 
     const newInventoryRecord = {

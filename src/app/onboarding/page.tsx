@@ -112,11 +112,15 @@ export default function OnboardingPage() {
         }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         setErrorMsg(data.error || "FAILED TO INITIALIZE PROFILE.");
         setLoading(false);
       } else {
+        if (data.user) {
+          localStorage.setItem("ironpixels_profile", JSON.stringify(data.user));
+        }
         document.cookie = "ironpixels_onboarded=true; path=/; max-age=31536000";
         window.location.href = "/";
       }
@@ -127,7 +131,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-between p-4 relative selection:bg-[#00ff41] selection:text-black">
+    <div className="min-h-screen bg-black text-white flex flex-col justify-between p-4 relative selection:bg-[#00ff41] selection:text-black font-mono">
       <header className="w-full max-w-md mx-auto flex items-center justify-between border-b border-zinc-800 pb-3 pt-2">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-zinc-950 border border-zinc-700 p-1 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,65,0.2)] overflow-hidden">
@@ -136,6 +140,12 @@ export default function OnboardingPage() {
           <span className="font-headline font-black text-lg tracking-wider uppercase text-white">
             IRON PIXELS
           </span>
+        </div>
+
+        <div className="flex items-center gap-1 text-[11px] font-bold text-[#00ff41]">
+          <span>STEP {step}</span>
+          <span className="text-zinc-600">/</span>
+          <span>2</span>
         </div>
       </header>
 
@@ -150,190 +160,155 @@ export default function OnboardingPage() {
           {step === 1 ? (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="flex flex-col items-center space-y-8 text-center"
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 15 }}
+              className="border border-zinc-800 bg-[#141416] p-6 space-y-6 shadow-2xl relative"
             >
               <div className="space-y-1">
-                <h1 className="font-headline font-black text-2xl tracking-wider uppercase text-white">
-                  SET YOUR BASE MASS
-                </h1>
-                <p className="font-mono text-xs text-zinc-400 tracking-widest uppercase font-bold">
-                  CALIBRATION PHASE 2/3
+                <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest">
+                  CHARACTER CREATION // STEP 1
+                </span>
+                <h2 className="font-headline font-black text-xl text-white uppercase tracking-wider">
+                  ENTER PHYSICAL BODY MASS
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Your body weight (kg) calibrates damage formulas & Relative Volume Score.
                 </p>
               </div>
 
-              <div className="w-full max-w-xs bg-[#161618] border border-zinc-800 p-6 relative flex items-center justify-center space-x-3">
-                <div className="absolute top-1 left-1 w-2.5 h-2.5 border-t-2 border-l-2 border-[#00ff41]" />
-                <div className="absolute top-1 right-1 w-2.5 h-2.5 border-t-2 border-r-2 border-[#00ff41]" />
-                <div className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b-2 border-l-2 border-[#00ff41]" />
-                <div className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b-2 border-r-2 border-[#00ff41]" />
+              <div className="bg-black border border-zinc-800 p-6 flex flex-col items-center space-y-4 shadow-inner">
+                <div className="flex items-baseline gap-2">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="30"
+                    max="250"
+                    value={weightInputStr}
+                    onChange={handleWeightInputChange}
+                    className="w-32 bg-transparent border-b-2 border-[#00ff41] text-center font-headline font-black text-4xl text-white focus:outline-none"
+                  />
+                  <span className="font-headline font-bold text-lg text-[#00ff41]">KG</span>
+                </div>
 
-                <input
-                  type="number"
-                  step="0.1"
-                  min="20"
-                  max="300"
-                  value={weightInputStr}
-                  onChange={handleWeightInputChange}
-                  className="font-headline font-black text-5xl text-white bg-transparent w-36 text-center focus:outline-none focus:text-[#00ff41] transition-colors tracking-tight"
-                />
-                <span className="font-mono font-bold text-lg text-zinc-400 self-end mb-2">
-                  KG
-                </span>
-              </div>
+                <div className="flex items-center gap-3 w-full max-w-xs">
+                  <button
+                    type="button"
+                    onClick={handleMinus}
+                    className="w-10 h-10 border border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800 flex items-center justify-center font-bold"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
 
-              <div className="w-full max-w-xs flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleMinus}
-                  className="w-11 h-11 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-center text-white transition-colors"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
+                  <input
+                    type="range"
+                    min="30"
+                    max="200"
+                    step="0.5"
+                    value={weightKg}
+                    onChange={handleSliderChange}
+                    className="w-full accent-[#00ff41] cursor-pointer"
+                  />
 
-                <input
-                  type="range"
-                  min="40"
-                  max="160"
-                  step="0.5"
-                  value={weightKg}
-                  onChange={handleSliderChange}
-                  className="flex-1 accent-[#00ff41] bg-zinc-800 h-1.5 cursor-pointer"
-                />
-
-                <button
-                  type="button"
-                  onClick={handlePlus}
-                  className="w-11 h-11 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 flex items-center justify-center text-white transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={handlePlus}
+                    className="w-10 h-10 border border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800 flex items-center justify-center font-bold"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <button
                 type="button"
                 onClick={handleStep1Next}
-                className="w-full h-12 bg-[#c8e6c9] hover:bg-[#b9f6ca] text-black font-mono font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(200,230,201,0.3)] mt-6"
+                className="w-full h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon transition-all flex items-center justify-center gap-2"
               >
-                <span>CONFIRM STATS</span>
-                <ArrowRight className="w-4 h-4 stroke-[3]" />
+                <span>PROCEED TO CLASS SELECTION</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </motion.div>
           ) : (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              className="flex flex-col items-center space-y-6 text-center"
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              className="border border-zinc-800 bg-[#141416] p-6 space-y-6 shadow-2xl relative"
             >
               <div className="space-y-1">
-                <h1 className="font-headline font-black text-2xl tracking-wider uppercase text-white">
+                <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest">
+                  CHARACTER CREATION // STEP 2
+                </span>
+                <h2 className="font-headline font-black text-xl text-white uppercase tracking-wider">
                   CHOOSE YOUR CLASS
-                </h1>
-                <p className="font-mono text-xs text-zinc-400 tracking-widest uppercase font-bold">
-                  SELECT YOUR COMBAT PROTOCOL
+                </h2>
+                <p className="text-xs text-zinc-400">
+                  Select your hero class archetype to determine base attributes & skill affinities.
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 w-full">
-                {CHARACTER_CLASSES.map((cls) => {
-                  const isSelected = selectedClass === cls.name;
-                  return (
-                    <button
-                      key={cls.name}
-                      onClick={() => setSelectedClass(cls.name)}
-                      className={`p-3 border text-center transition-all flex flex-col items-center justify-center space-y-1 ${
-                        isSelected
-                          ? "border-[#00ff41] bg-[#00ff41]/10 text-white shadow-[0_0_15px_rgba(0,255,65,0.2)]"
-                          : "border-zinc-800 bg-[#141416] text-zinc-400 hover:text-white"
-                      }`}
-                    >
-                      <span className="font-headline font-bold text-xs uppercase">
-                        {cls.name}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="grid grid-cols-3 gap-2">
+                {CHARACTER_CLASSES.map((cls) => (
+                  <button
+                    key={cls.name}
+                    type="button"
+                    onClick={() => setSelectedClass(cls.name)}
+                    className={`py-3 px-2 border flex flex-col items-center justify-center gap-1 transition-all ${
+                      selectedClass === cls.name
+                        ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_15px_rgba(0,255,65,0.3)] font-bold"
+                        : "border-zinc-800 bg-black text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    <span className="text-xs font-headline font-extrabold uppercase text-center line-clamp-1">
+                      {cls.name}
+                    </span>
+                  </button>
+                ))}
               </div>
 
-              <div className="w-full bg-[#141416] border border-zinc-800 p-5 space-y-4 text-left">
-                <div className="flex items-center justify-between">
-                  <span className="font-headline font-black text-lg text-white uppercase">
+              <div className="bg-black border border-zinc-800 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                  <span className="font-headline font-black text-sm text-white uppercase">
                     {activeClassDetail.title}
                   </span>
-                  <span className="bg-[#1e2e1e] text-[#00ff41] border border-[#00ff41]/40 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider">
+                  <span className="text-[10px] bg-zinc-900 border border-zinc-700 px-2 py-0.5 text-zinc-300 uppercase font-bold">
                     {activeClassDetail.roleTag}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 font-mono text-xs border-y border-zinc-800/80 py-3">
-                  <div>
-                    <span className="text-zinc-500 block text-[10px]">HP</span>
-                    <span className="text-sky-400 font-bold text-sm">
-                      {activeClassDetail.hp.toLocaleString()}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 block text-[10px]">STR</span>
-                    <span className="text-amber-400 font-bold text-sm">
-                      {activeClassDetail.stats.str}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 block text-[10px]">AGI</span>
-                    <span className="text-fuchsia-400 font-bold text-sm">
-                      {activeClassDetail.stats.agi}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 block text-[10px]">LUK</span>
-                    <span className="text-emerald-400 font-bold text-sm">
-                      {activeClassDetail.stats.luk}
-                    </span>
-                  </div>
-                </div>
+                <p className="text-xs text-zinc-400 italic">
+                  "{activeClassDetail.description}"
+                </p>
 
-                <div className="border border-zinc-800 bg-black/60 p-2">
+                <div className="border-t border-zinc-800 pt-2">
                   <StatRadarChart stats={activeClassDetail.stats} />
                 </div>
               </div>
 
-              <div className="w-full flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="w-1/3 h-12 bg-zinc-900 border border-zinc-800 text-zinc-300 font-mono font-bold text-xs uppercase hover:text-white transition-colors"
+                  className="w-1/3 py-3 border border-zinc-700 bg-zinc-900 text-zinc-300 font-bold text-xs uppercase hover:bg-zinc-800"
                 >
                   BACK
                 </button>
 
                 <button
                   type="button"
-                  disabled={loading}
                   onClick={handleCompleteOnboarding}
-                  className="w-2/3 h-12 bg-[#c8e6c9] hover:bg-[#b9f6ca] text-black font-mono font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(200,230,201,0.3)] disabled:opacity-50"
+                  disabled={loading}
+                  className="w-2/3 h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {loading ? (
-                    <span>INITIALIZING...</span>
-                  ) : (
-                    <>
-                      <span>CONFIRM SELECTION</span>
-                      <ArrowRight className="w-4 h-4 stroke-[3]" />
-                    </>
-                  )}
+                  {loading ? "INITIALIZING HERO..." : "COMPLETE CREATION"}
                 </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
-
-      <footer className="w-full max-w-md mx-auto text-center font-mono text-[10px] text-zinc-600 uppercase tracking-widest pt-2">
-        IRON PIXELS RPG © 2026
-      </footer>
     </div>
   );
 }
