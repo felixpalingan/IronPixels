@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, Star, ShieldCheck } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition } from "@/lib/exercisesData";
@@ -362,7 +362,7 @@ export function WorkoutTrackerForm({
           className="w-full py-3 border-2 border-dashed border-pixel-border bg-black/40 hover:border-[#00ff41] hover:text-[#00ff41] text-zinc-400 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>CHOOSE EXERCISE FROM DATABASE</span>
+          <span>CHOOSE EXERCISE FROM DATABASE ({EXERCISE_DATABASE.length} EXERCISES)</span>
         </button>
 
         <button
@@ -394,7 +394,7 @@ export function WorkoutTrackerForm({
                 <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider">
                   EXERCISE DATABASE
                 </h3>
-                <p className="text-xs text-zinc-400">SELECT AN EXERCISE WITH INSTRUCTIONS & DIFFICULTY RANK</p>
+                <p className="text-xs text-zinc-400">CHOOSE FROM {EXERCISE_DATABASE.length} EXERCISES WITH DIFFICULTY & INSTRUCTIONS</p>
               </div>
 
               <div className="relative">
@@ -408,23 +408,29 @@ export function WorkoutTrackerForm({
                 />
               </div>
 
-              <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1 text-[10px] font-bold uppercase whitespace-nowrap transition-all border ${
-                      selectedCategory === cat
-                        ? "border-[#00ff41] bg-[#00ff41] text-black"
-                        : "border-pixel-border/60 bg-black text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
+              <div className="space-y-1">
+                <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                  FILTER BY MUSCLE GROUP & CATEGORY:
+                </div>
+                <div className="flex flex-wrap gap-1.5 p-2 border border-pixel-border/60 bg-black/80 max-h-28 overflow-y-auto">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1.5 text-xs font-headline font-extrabold uppercase tracking-wider transition-all border cursor-pointer ${
+                        selectedCategory === cat
+                          ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
+                          : "border-zinc-700 bg-surface text-zinc-300 hover:text-white hover:border-zinc-500"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 pt-1">
                 {filteredDatabase.map((def) => (
                   <div
                     key={def.id}
@@ -436,7 +442,7 @@ export function WorkoutTrackerForm({
                           {def.name}
                         </span>
                         <span className={`px-1.5 py-0.5 border text-[8px] font-bold uppercase ${getDifficultyBadgeStyle(def.difficultyLabel)}`}>
-                          {def.difficultyLabel}
+                          {def.difficultyLabel} ({def.difficultyRank}/5 ⭐)
                         </span>
                       </div>
 
