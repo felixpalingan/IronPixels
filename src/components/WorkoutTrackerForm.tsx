@@ -270,21 +270,21 @@ export function WorkoutTrackerForm({
           return (
             <div key={ex.id} className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
               <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 bg-[#00ff41] text-black font-bold text-xs flex items-center justify-center font-headline">
+                <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                  <span className="w-5 h-5 bg-[#00ff41] text-black font-bold text-xs flex items-center justify-center font-headline flex-shrink-0">
                     {exIdx + 1}
                   </span>
-                  <div>
-                    <h4 className="font-headline font-extrabold text-sm text-white uppercase flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-headline font-extrabold text-sm text-white uppercase tracking-wide break-words flex items-center gap-2 flex-wrap">
                       <span>{ex.name}</span>
-                      <span className="text-[9px] px-1.5 py-0.5 border border-zinc-700 bg-black text-zinc-400 font-normal">
+                      <span className="text-[9px] px-1.5 py-0.5 border border-zinc-700 bg-black text-zinc-400 font-normal flex-shrink-0">
                         {ex.category}
                       </span>
                     </h4>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {defObj && (
                     <button
                       onClick={() => setActiveGuideExercise(defObj)}
@@ -457,7 +457,7 @@ export function WorkoutTrackerForm({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1 pt-1 min-h-[220px]">
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 pt-1 min-h-[220px]">
                 {filteredDatabase.length === 0 ? (
                   <div className="p-6 text-center text-xs text-zinc-500 italic border border-dashed border-zinc-800">
                     No exercises match your search query or muscle filter.
@@ -466,44 +466,41 @@ export function WorkoutTrackerForm({
                   filteredDatabase.map((def) => (
                     <div
                       key={def.id}
-                      className="p-3 border border-pixel-border/60 bg-black/60 hover:border-[#00ff41] transition-all flex items-center justify-between gap-3 group"
+                      className="p-3 border border-pixel-border/60 bg-black/80 hover:border-[#00ff41] transition-all space-y-2.5"
                     >
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-headline font-bold text-xs text-white uppercase line-clamp-1">
-                            {def.name}
-                          </span>
-                          <span className={`px-1.5 py-0.5 border text-[8px] font-bold uppercase flex-shrink-0 ${getDifficultyBadgeStyle(def.difficultyLabel)}`}>
-                            {def.difficultyLabel}
-                          </span>
-                        </div>
-
-                        <div className="text-[10px] text-zinc-400 flex items-center gap-2 font-bold">
-                          <span className="text-sky-400">{def.category}</span>
-                          <span>•</span>
-                          <span className="text-amber-400">{def.equipment}</span>
-                          <span>•</span>
-                          <span className="text-zinc-500 truncate">
-                            {def.targetMuscles.slice(0, 2).join(", ")}
-                          </span>
-                        </div>
+                      <div className="font-headline font-black text-sm text-white uppercase tracking-wide leading-snug break-words">
+                        {def.name}
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => setActiveGuideExercise(def)}
-                          className="p-1.5 border border-zinc-700 bg-surface text-zinc-300 hover:text-[#00ff41] hover:border-[#00ff41]"
-                          title="View Instructions"
-                        >
-                          <Info className="w-4 h-4 text-[#00ff41]" />
-                        </button>
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-pixel-border/40">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className={`px-2 py-0.5 border text-[9px] font-extrabold uppercase ${getDifficultyBadgeStyle(def.difficultyLabel)}`}>
+                            {def.difficultyLabel}
+                          </span>
+                          <span className="px-2 py-0.5 border border-sky-500/50 bg-sky-950/30 text-sky-300 text-[9px] font-bold uppercase">
+                            {def.category}
+                          </span>
+                          <span className="px-2 py-0.5 border border-amber-500/50 bg-amber-950/30 text-amber-300 text-[9px] font-bold uppercase">
+                            {def.equipment}
+                          </span>
+                        </div>
 
-                        <button
-                          onClick={() => handleAddExerciseFromPicker(def)}
-                          className="px-3 py-1.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-extrabold text-[10px] uppercase tracking-wider shadow-neon cursor-pointer"
-                        >
-                          ADD
-                        </button>
+                        <div className="flex items-center gap-2 ml-auto">
+                          <button
+                            onClick={() => setActiveGuideExercise(def)}
+                            className="px-2 py-1 border border-zinc-700 bg-surface text-zinc-300 hover:text-[#00ff41] hover:border-[#00ff41] text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Info className="w-3.5 h-3.5 text-[#00ff41]" />
+                            <span>GUIDE</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleAddExerciseFromPicker(def)}
+                            className="px-3 py-1 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-[11px] uppercase tracking-wider shadow-neon cursor-pointer"
+                          >
+                            + ADD
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -540,7 +537,7 @@ export function WorkoutTrackerForm({
                   </span>
                 </div>
 
-                <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider pt-1">
+                <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider pt-1 leading-snug break-words">
                   {activeGuideExercise.name}
                 </h3>
               </div>
@@ -576,7 +573,7 @@ export function WorkoutTrackerForm({
 
               <button
                 onClick={() => setActiveGuideExercise(null)}
-                className="w-full py-3 bg-[#00ff41] text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon"
+                className="w-full py-3 bg-[#00ff41] text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
               >
                 GOT IT, BACK TO WORKOUT
               </button>
