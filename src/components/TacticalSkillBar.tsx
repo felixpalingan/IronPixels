@@ -39,8 +39,7 @@ export function TacticalSkillBar({
   const [skills, setSkills] = useState<SkillData[]>([]);
   const [executingSkillId, setExecutingSkillId] = useState<string | null>(null);
 
-  const GOD_MODE_TEST_BONUS = 25000;
-  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr + GOD_MODE_TEST_BONUS);
+  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
 
   const getSavedSlotCdSecs = (slotType: string) => {
     try {

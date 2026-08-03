@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords, Zap, Gift, Sparkles, X, Skull } from "lucide-react";
+import { Flame, Swords, Zap, Gift, Sparkles, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
@@ -71,8 +71,7 @@ export function CombatArena({
     droppedItem: EquipmentItem;
   } | null>(null);
 
-  const GOD_MODE_TEST_BONUS = 25000;
-  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr + GOD_MODE_TEST_BONUS);
+  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
   const todayKey = `ironpixels_combat_log_${new Date().toISOString().split("T")[0]}`;
 
   useEffect(() => {
@@ -229,9 +228,9 @@ export function CombatArena({
 
   useEffect(() => {
     if (sessionDamage > 0) {
-      const totalAttackDmg = sessionDamage + playerStr + GOD_MODE_TEST_BONUS;
+      const totalAttackDmg = sessionDamage + playerStr;
       executeAttack(totalAttackDmg, "Gym RVS Strike", "attack01");
-      addLog(`Gym Workout Attack dealt ${formatNumber(totalAttackDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr} + TEST BOOST: 25k)!`, "#00ff41");
+      addLog(`Gym Workout Attack dealt ${formatNumber(totalAttackDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr})!`, "#00ff41");
     }
   }, [sessionDamage]);
 
@@ -288,11 +287,6 @@ export function CombatArena({
   ) => {
     executeAttack(damageDealt, skillName, attackType);
     addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${boss.boss_name}.`, "#FFD60A");
-  };
-
-  const handleInstantKill = () => {
-    const lethalDmg = boss.current_hp + 999999;
-    executeAttack(lethalDmg, "Instant Kill Strike", "attack03");
   };
 
   const hpPercentage = Math.max(0, Math.min(100, (boss.current_hp / boss.max_hp) * 100));
@@ -369,13 +363,9 @@ export function CombatArena({
           <span className="text-[#00ff41] text-sm">{formatNumber(baseCombatPower)} DMG</span>
         </div>
 
-        <button
-          onClick={handleInstantKill}
-          className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold text-[10px] uppercase tracking-wider border border-red-400 flex items-center gap-1 shadow-red-glow transition-all"
-        >
-          <Skull className="w-3.5 h-3.5" />
-          <span>INSTANT KILL (TEST)</span>
-        </button>
+        <div className="text-[10px] text-zinc-400 font-bold">
+          (RVS: <span className="text-white">{formatNumber(dailyRvs)}</span> + STR: <span className="text-amber-400">{playerStr}</span>)
+        </div>
       </div>
 
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">

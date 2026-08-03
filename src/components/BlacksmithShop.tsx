@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Coins, Sparkles, X, Shield, Swords, Flame, Zap, PackageOpen, Triangle, Database } from "lucide-react";
+import { Coins, Sparkles, X, Swords, PackageOpen, Triangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
@@ -71,7 +71,6 @@ export function BlacksmithShop({
   } | null>(null);
   const [targetX, setTargetX] = useState<number>(0);
   const [isOpening, setIsOpening] = useState<boolean>(false);
-  const [dbStatusToast, setDbStatusToast] = useState<{ msg: string; isError: boolean } | null>(null);
 
   const generateReelStrip = (winnerItem: EquipmentItem): EquipmentItem[] => {
     const strip: EquipmentItem[] = [];
@@ -88,14 +87,13 @@ export function BlacksmithShop({
       }
     }
     return strip;
-  }
+  };
 
   const handleOpenChest = async (option: ChestOption) => {
     if (userGold < option.price || isOpening) return;
 
     setIsOpening(true);
     setActiveChest(option);
-    setDbStatusToast(null);
 
     const initialWinner =
       EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
@@ -123,14 +121,6 @@ export function BlacksmithShop({
       const updatedStrip = generateReelStrip(finalItem);
       setReelStrip(updatedStrip);
 
-      const dbStatus = data.db_status || "LOCAL_SAVED";
-      const isErr = dbStatus.startsWith("DB_ERROR");
-
-      setDbStatusToast({
-        msg: isErr ? `[DB STATUS] ${dbStatus}` : `[DB STATUS] SAVED TO SUPABASE (ID: ${data.inventory_id || "OK"})`,
-        isError: isErr,
-      });
-
       if (data.new_gold !== undefined) {
         onUpdateGold(data.new_gold);
       } else {
@@ -151,7 +141,7 @@ export function BlacksmithShop({
         setDrawnResult({
           item: finalItem,
           inventory_id: newInvRecord.inventory_id,
-          db_status: dbStatus,
+          db_status: data.db_status,
         });
         setOpeningPhase("revealed");
         setIsOpening(false);
@@ -196,22 +186,6 @@ export function BlacksmithShop({
 
   return (
     <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
-      {dbStatusToast && (
-        <div className={`p-2.5 border text-xs font-bold font-mono tracking-wider flex items-center justify-between shadow-neon ${
-          dbStatusToast.isError
-            ? "border-red-600 bg-red-950/80 text-red-300"
-            : "border-pixel-green bg-pixel-green/10 text-pixel-green"
-        }`}>
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4" />
-            <span>{dbStatusToast.msg}</span>
-          </div>
-          <button onClick={() => setDbStatusToast(null)} className="text-zinc-400 hover:text-white">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
       <div className="border border-pixel-border bg-surface p-4 flex items-center justify-between shadow-neon">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 border border-gold-loot/60 bg-gold-loot/10 flex items-center justify-center text-gold-loot">
