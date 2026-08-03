@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords, Zap, Gift, Sparkles, X } from "lucide-react";
+import { Flame, Swords, Zap, Gift, Sparkles, X, Skull } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
@@ -285,6 +285,11 @@ export function CombatArena({
     addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${boss.boss_name}.`, "#FFD60A");
   };
 
+  const handleInstantKill = () => {
+    const lethalDmg = boss.current_hp + 999999;
+    executeAttack(lethalDmg, "Instant Kill Strike", "attack03");
+  };
+
   const hpPercentage = Math.max(0, Math.min(100, (boss.current_hp / boss.max_hp) * 100));
 
   return (
@@ -345,7 +350,7 @@ export function CombatArena({
                 onClick={() => setBossVictoryLoot(null)}
                 className="w-full h-12 bg-purple-600 hover:bg-purple-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.6)]"
               >
-                CLAIM VOID CHEST LOOT
+                SAVE ITEM
               </button>
             </div>
           </motion.div>
@@ -358,9 +363,14 @@ export function CombatArena({
           <span>BASE COMBAT POWER:</span>
           <span className="text-[#00ff41] text-sm">{formatNumber(baseCombatPower)} DMG</span>
         </div>
-        <div className="text-[10px] text-zinc-400">
-          (RVS: <span className="text-white">{formatNumber(dailyRvs)}</span> + STR: <span className="text-amber-400">{playerStr}</span> + <span className="text-amber-300 font-bold">BOOST: 25k</span>)
-        </div>
+
+        <button
+          onClick={handleInstantKill}
+          className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white font-bold text-[10px] uppercase tracking-wider border border-red-400 flex items-center gap-1 shadow-red-glow transition-all"
+        >
+          <Skull className="w-3.5 h-3.5" />
+          <span>INSTANT KILL (TEST)</span>
+        </button>
       </div>
 
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">

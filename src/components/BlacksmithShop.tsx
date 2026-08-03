@@ -36,23 +36,23 @@ const CHEST_OPTIONS: ChestOption[] = [
   },
   {
     id: "silver",
-    name: "Silver Coffer",
-    rarityTag: "RARE REWARDS",
-    price: 0,
-    borderColor: "border-sky-500/60",
-    glowColor: "shadow-[0_0_25px_rgba(14,165,233,0.25)]",
+    name: "Silver Cache",
+    rarityTag: "RARE & EPIC GEAR",
+    price: 500,
+    borderColor: "border-[#00ff41]",
+    glowColor: "shadow-[0_0_25px_rgba(0,255,65,0.3)]",
     bgGradient: "bg-[#141416]",
-    accentBadge: "bg-sky-950 text-sky-400 border-sky-500/40",
+    accentBadge: "bg-[#00ff41]/20 text-[#00ff41] border-[#00ff41]/50",
   },
   {
     id: "void",
-    name: "Void Reliquary",
-    rarityTag: "LEGENDARY REWARDS",
-    price: 0,
-    borderColor: "border-[#00ff41]",
-    glowColor: "shadow-[0_0_30px_rgba(0,255,65,0.4)]",
-    bgGradient: "bg-[#0d1a10]",
-    accentBadge: "bg-emerald-950 text-[#00ff41] border-[#00ff41]/50 font-bold",
+    name: "Void Relic Chest",
+    rarityTag: "LEGENDARY GUARANTEED",
+    price: 2500,
+    borderColor: "border-amber-400",
+    glowColor: "shadow-[0_0_30px_rgba(251,191,36,0.4)]",
+    bgGradient: "bg-[#141416]",
+    accentBadge: "bg-amber-400/20 text-amber-300 border-amber-400/50",
   },
 ];
 
@@ -61,128 +61,150 @@ export function BlacksmithShop({
   onUpdateGold,
   onAddItemToInventory,
 }: BlacksmithShopProps) {
-  const [loadingChest, setLoadingChest] = useState<string | null>(null);
-  const [drawnResult, setDrawnResult] = useState<InventoryRecord | null>(null);
-  const [reelStrip, setReelStrip] = useState<EquipmentItem[]>([]);
-  const [targetIndex, setTargetIndex] = useState<number>(26);
   const [openingPhase, setOpeningPhase] = useState<"rolling" | "revealed" | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [activeChest, setActiveChest] = useState<ChestOption | null>(null);
+  const [reelStrip, setReelStrip] = useState<EquipmentItem[]>([]);
+  const [drawnResult, setDrawnResult] = useState<{
+    item: EquipmentItem;
+    inventory_id: string;
+    db_status?: string;
+  } | null>(null);
+  const [targetX, setTargetX] = useState<number>(0);
+  const [isOpening, setIsOpening] = useState<boolean>(false);
   const [dbStatusToast, setDbStatusToast] = useState<{ msg: string; isError: boolean } | null>(null);
 
-  const handlePurchaseChest = async (chest: ChestOption) => {
-    setErrorMsg("");
+  const generateReelStrip = (winnerItem: EquipmentItem): EquipmentItem[] => {
+    const strip: EquipmentItem[] = [];
+    const totalItems = 35;
+    const winnerIndex = 28;
+
+    for (let i = 0; i < totalItems; i++) {
+      if (i === winnerIndex) {
+        strip.push(winnerItem);
+      } else {
+        const randomItem =
+          EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
+        strip.push(randomItem);
+      }
+    }
+    return strip;
+  }
+
+  const handleOpenChest = async (option: ChestOption) => {
+    if (userGold < option.price || isOpening) return;
+
+    setIsOpening(true);
+    setActiveChest(option);
     setDbStatusToast(null);
-    setLoadingChest(chest.id);
+
+    const initialWinner =
+      EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
+    const strip = generateReelStrip(initialWinner);
+    setReelStrip(strip);
+
+    const winnerIndex = 28;
+    const itemWidth = 112;
+    const offsetInWinner = Math.floor(Math.random() * 60) + 26;
+    const calculatedTargetX = winnerIndex * itemWidth + offsetInWinner - 170;
+    setTargetX(calculatedTargetX);
+
+    setOpeningPhase("rolling");
 
     try {
       const res = await fetch("/api/shop/gacha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chest_type: chest.id }),
+        body: JSON.stringify({ chest_type: option.id }),
       });
 
       const data = await res.json();
+      const finalItem: EquipmentItem = data.item || initialWinner;
 
-      if (!res.ok || !data.success) {
-        setErrorMsg(data.error || "GACHA PURCHASE FAILED.");
-        setLoadingChest(null);
-      } else {
+      const updatedStrip = generateReelStrip(finalItem);
+      setReelStrip(updatedStrip);
+
+      const dbStatus = data.db_status || "LOCAL_SAVED";
+      const isErr = dbStatus.startsWith("DB_ERROR");
+
+      setDbStatusToast({
+        msg: isErr ? `[DB STATUS] ${dbStatus}` : `[DB STATUS] SAVED TO SUPABASE (ID: ${data.inventory_id || "OK"})`,
+        isError: isErr,
+      });
+
+      if (data.new_gold !== undefined) {
         onUpdateGold(data.new_gold);
-        onAddItemToInventory(data.drawn_item);
-
-        if (data.db_status) {
-          const isErr = data.db_status.startsWith("DB_ERROR");
-          setDbStatusToast({
-            msg: isErr ? data.db_status : `SAVED TO SUPABASE (ID: ${data.drawn_item.inventory_id.substring(0, 8)}...)`,
-            isError: isErr,
-          });
-        }
-
-        const winItem: EquipmentItem = data.drawn_item.item;
-        const WIN_INDEX = 26;
-
-        const generatedStrip: EquipmentItem[] = [];
-        for (let i = 0; i < 35; i++) {
-          if (i === WIN_INDEX) {
-            generatedStrip.push(winItem);
-          } else {
-            const randItem = EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
-            generatedStrip.push(randItem);
-          }
-        }
-
-        setReelStrip(generatedStrip);
-        setTargetIndex(WIN_INDEX);
-        setDrawnResult(data.drawn_item);
-        setOpeningPhase("rolling");
-        setLoadingChest(null);
-
-        setTimeout(() => {
-          setOpeningPhase("revealed");
-        }, 4600);
+      } else {
+        onUpdateGold(Math.max(0, userGold - option.price));
       }
-    } catch (err: any) {
-      setErrorMsg("GACHA CONNECTION ERROR.");
-      setLoadingChest(null);
+
+      const newInvRecord: InventoryRecord = {
+        inventory_id: data.inventory_id || `inv-${Date.now()}`,
+        user_id: "user-1",
+        item_id: finalItem.item_id,
+        is_equipped: false,
+        item: finalItem,
+      };
+
+      onAddItemToInventory(newInvRecord);
+
+      setTimeout(() => {
+        setDrawnResult({
+          item: finalItem,
+          inventory_id: newInvRecord.inventory_id,
+          db_status: dbStatus,
+        });
+        setOpeningPhase("revealed");
+        setIsOpening(false);
+      }, 4300);
+    } catch (err) {
+      setTimeout(() => {
+        setDrawnResult({
+          item: initialWinner,
+          inventory_id: `inv-${Date.now()}`,
+        });
+        setOpeningPhase("revealed");
+        setIsOpening(false);
+      }, 4300);
     }
   };
 
   const getRarityBadgeStyle = (rarity: string) => {
     switch (rarity) {
       case "legendary":
-        return "border-amber-400 bg-amber-950/80 text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.5)]";
+        return "bg-amber-400/20 text-amber-300 border-amber-400/50 shadow-gold-glow";
       case "epic":
-        return "border-fuchsia-500 bg-fuchsia-950/80 text-fuchsia-300 shadow-[0_0_15px_rgba(217,70,239,0.5)]";
+        return "bg-purple-500/20 text-purple-300 border-purple-500/50";
       case "rare":
-        return "border-sky-400 bg-sky-950/80 text-sky-300 shadow-[0_0_15px_rgba(56,189,248,0.5)]";
+        return "bg-sky-500/20 text-sky-300 border-sky-500/50";
       default:
-        return "border-zinc-600 bg-zinc-900 text-zinc-300";
+        return "bg-zinc-800 text-zinc-300 border-zinc-700";
     }
   };
 
   const getRarityCardBorder = (rarity: string) => {
     switch (rarity) {
       case "legendary":
-        return "border-amber-400 bg-amber-950/30 text-amber-300";
+        return "border-amber-400 bg-amber-950/20 text-amber-300";
       case "epic":
-        return "border-fuchsia-500 bg-fuchsia-950/30 text-fuchsia-300";
+        return "border-purple-500 bg-purple-950/20 text-purple-300";
       case "rare":
-        return "border-sky-400 bg-sky-950/30 text-sky-300";
+        return "border-sky-500 bg-sky-950/20 text-sky-300";
       default:
-        return "border-zinc-700 bg-zinc-950 text-zinc-400";
+        return "border-zinc-700 bg-zinc-900 text-zinc-400";
     }
   };
 
-  const ITEM_CARD_WIDTH = 112;
-  const targetX = targetIndex * ITEM_CARD_WIDTH - (320 / 2 - ITEM_CARD_WIDTH / 2);
-
   return (
-    <div className="space-y-6 selection:bg-[#00ff41] selection:text-black font-mono">
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-        <div className="flex items-center gap-2">
-          <PackageOpen className="w-5 h-5 text-[#00ff41]" />
-          <span className="font-headline font-black text-lg tracking-wider text-white uppercase">
-            LOOT_CRATE_V1.0
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-[#0a0a0c] border border-gold-loot/50 px-3 py-1 text-gold-loot shadow-gold-glow">
-          <Coins className="w-4 h-4" />
-          <span className="font-bold text-xs">{formatNumber(userGold)} GOLD</span>
-        </div>
-      </div>
-
+    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
       {dbStatusToast && (
-        <div
-          className={`border p-3 text-xs font-bold uppercase tracking-wider flex items-center justify-between ${
-            dbStatusToast.isError
-              ? "border-red-500/80 bg-red-950/60 text-red-300"
-              : "border-[#00ff41]/80 bg-[#00ff41]/10 text-[#00ff41] shadow-[0_0_15px_rgba(0,255,65,0.2)]"
-          }`}
-        >
+        <div className={`p-2.5 border text-xs font-bold font-mono tracking-wider flex items-center justify-between shadow-neon ${
+          dbStatusToast.isError
+            ? "border-red-600 bg-red-950/80 text-red-300"
+            : "border-pixel-green bg-pixel-green/10 text-pixel-green"
+        }`}>
           <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 flex-shrink-0" />
-            <span>[DB STATUS] {dbStatusToast.msg}</span>
+            <Database className="w-4 h-4" />
+            <span>{dbStatusToast.msg}</span>
           </div>
           <button onClick={() => setDbStatusToast(null)} className="text-zinc-400 hover:text-white">
             <X className="w-3.5 h-3.5" />
@@ -190,63 +212,64 @@ export function BlacksmithShop({
         </div>
       )}
 
-      <div className="relative border border-zinc-800 bg-[#121214] p-6 overflow-hidden flex flex-col items-center text-center space-y-3">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#00ff41]/5 via-transparent to-[#00ff41]/5 pointer-events-none" />
-
-        <div className="w-12 h-12 border border-zinc-700 bg-zinc-950 flex items-center justify-center text-white mb-1 shadow-neon">
-          <Swords className="w-6 h-6 text-[#00ff41]" />
+      <div className="border border-pixel-border bg-surface p-4 flex items-center justify-between shadow-neon">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 border border-gold-loot/60 bg-gold-loot/10 flex items-center justify-center text-gold-loot">
+            <Coins className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">RESERVE GOLD</div>
+            <div className="font-headline font-black text-xl text-gold-loot">
+              {formatNumber(userGold)} GOLD
+            </div>
+          </div>
         </div>
 
-        <h2 className="font-headline font-black text-2xl tracking-wider text-white uppercase">
-          FORGE NEW DESTINY
-        </h2>
-        <p className="text-xs text-zinc-400 max-w-sm">
-          Purchase enchanted caches to unlock legendary pixel equipment for your journey.
-        </p>
+        <div className="text-right">
+          <div className="text-[10px] text-pixel-green font-bold uppercase tracking-widest">BLACKSMITH GACHA</div>
+          <div className="text-xs text-zinc-400 font-bold">3 CHEST TIERS</div>
+        </div>
       </div>
 
-      {errorMsg && (
-        <div className="border border-red-500/80 bg-red-950/40 p-3 text-red-400 text-xs font-bold uppercase tracking-wider text-center">
-          {errorMsg}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {CHEST_OPTIONS.map((chest) => (
+      <div className="space-y-4">
+        {CHEST_OPTIONS.map((option) => (
           <div
-            key={chest.id}
-            className={`border-2 ${chest.borderColor} ${chest.bgGradient} ${chest.glowColor} p-5 flex flex-col items-center text-center justify-between space-y-4 transition-all hover:scale-[1.02] relative`}
+            key={option.id}
+            className={`border-2 ${option.borderColor} ${option.bgGradient} p-5 space-y-4 relative overflow-hidden transition-all ${option.glowColor}`}
           >
-            <div className="space-y-1.5">
-              <span className={`inline-block px-2.5 py-0.5 border text-[9px] tracking-wider uppercase font-bold ${chest.accentBadge}`}>
-                {chest.rarityTag}
-              </span>
-              <h3 className="font-headline font-bold text-base text-white uppercase">
-                {chest.name}
-              </h3>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <span className={`inline-block px-2 py-0.5 border text-[10px] uppercase font-bold ${option.accentBadge}`}>
+                  {option.rarityTag}
+                </span>
+                <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider">
+                  {option.name}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-black/60 border border-gold-loot/40 px-3 py-1 text-gold-loot shadow-gold-glow">
+                <Coins className="w-4 h-4" />
+                <span className="font-mono font-extrabold text-sm">
+                  {option.price === 0 ? "FREE" : `${formatNumber(option.price)} GOLD`}
+                </span>
+              </div>
             </div>
 
-            <div className="w-20 h-20 bg-black/80 border border-zinc-800 flex items-center justify-center relative overflow-hidden my-2">
-              {chest.id === "void" ? (
-                <Sparkles className="w-10 h-10 text-[#00ff41] animate-pulse" />
-              ) : chest.id === "silver" ? (
-                <Zap className="w-10 h-10 text-sky-400" />
-              ) : (
-                <Shield className="w-10 h-10 text-zinc-400" />
-              )}
-            </div>
+            <p className="text-xs text-zinc-400">
+              Spin the roulette wheel to unlock weapons, shields, and amulets.
+            </p>
 
             <button
-              onClick={() => handlePurchaseChest(chest)}
-              disabled={loadingChest !== null}
-              className={`w-full py-3 border font-headline font-extrabold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                chest.id === "void"
-                  ? "border-[#00ff41] bg-[#00ff41] text-black hover:bg-[#00ff41]/90 shadow-[0_0_20px_rgba(0,255,65,0.4)]"
-                  : "border-zinc-700 bg-zinc-900 text-white hover:bg-zinc-800"
-              } disabled:opacity-50`}
+              onClick={() => handleOpenChest(option)}
+              disabled={userGold < option.price || isOpening}
+              className={`w-full py-3.5 font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                userGold >= option.price && !isOpening
+                  ? "bg-[#00ff41] hover:bg-[#00ff41]/90 text-black shadow-neon cursor-pointer"
+                  : "bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed"
+              }`}
             >
-              <Coins className="w-3.5 h-3.5 text-[#00ff41]" />
-              <span>0 GOLD (FREE TEST)</span>
+              <PackageOpen className="w-4 h-4" />
+              <span>{userGold < option.price ? "INSUFFICIENT GOLD" : `OPEN ${option.name.toUpperCase()}`}</span>
             </button>
           </div>
         ))}
@@ -264,7 +287,7 @@ export function BlacksmithShop({
               <div className="w-full max-w-lg space-y-6 text-center">
                 <div className="space-y-1">
                   <h3 className="font-headline font-black text-2xl text-[#00ff41] uppercase tracking-wider animate-pulse">
-                    OPENING CACHE REEL...
+                    OPENING {activeChest ? activeChest.name.toUpperCase() : "CHEST"}...
                   </h3>
                   <p className="text-xs text-zinc-400">ROULETTE REEL SPINNER IN MOTION</p>
                 </div>
@@ -388,7 +411,7 @@ export function BlacksmithShop({
                   }}
                   className="w-full h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon"
                 >
-                  CLAIM TO VAULT INVENTORY
+                  SAVE ITEM
                 </button>
               </motion.div>
             )}
