@@ -210,6 +210,30 @@ export function WorkoutTrackerForm({
     }
   };
 
+  const getCategoryBadgeStyle = (cat: string, isSelected: boolean) => {
+    if (isSelected) {
+      return "bg-[#00ff41] text-black border-[#00ff41] shadow-neon font-black";
+    }
+    switch (cat) {
+      case "Chest":
+        return "border-red-500/60 text-red-300 bg-black/60 hover:bg-red-950/40";
+      case "Back":
+        return "border-sky-500/60 text-sky-300 bg-black/60 hover:bg-sky-950/40";
+      case "Legs":
+        return "border-[#00ff41]/60 text-[#00ff41] bg-black/60 hover:bg-[#00ff41]/20";
+      case "Shoulders":
+        return "border-amber-400/60 text-amber-300 bg-black/60 hover:bg-amber-950/40";
+      case "Arms":
+        return "border-fuchsia-400/60 text-fuchsia-300 bg-black/60 hover:bg-fuchsia-950/40";
+      case "Core":
+        return "border-cyan-400/60 text-cyan-300 bg-black/60 hover:bg-cyan-950/40";
+      case "Cardio":
+        return "border-orange-400/60 text-orange-300 bg-black/60 hover:bg-orange-950/40";
+      default:
+        return "border-zinc-700 text-zinc-300 bg-black/60 hover:bg-zinc-900";
+    }
+  };
+
   return (
     <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
       <div className="border border-pixel-border bg-surface p-4 flex items-center justify-between shadow-neon">
@@ -359,7 +383,7 @@ export function WorkoutTrackerForm({
 
         <button
           onClick={() => setIsPickerOpen(true)}
-          className="w-full py-3 border-2 border-dashed border-pixel-border bg-black/40 hover:border-[#00ff41] hover:text-[#00ff41] text-zinc-400 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+          className="w-full py-3.5 border-2 border-dashed border-pixel-border bg-black/40 hover:border-[#00ff41] hover:text-[#00ff41] text-zinc-400 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>CHOOSE EXERCISE FROM DATABASE ({EXERCISE_DATABASE.length} EXERCISES)</span>
@@ -380,9 +404,9 @@ export function WorkoutTrackerForm({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
           >
-            <div className="w-full max-w-lg border-2 border-pixel-border bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,0,0,0.9)] max-h-[85vh] flex flex-col font-mono relative">
+            <div className="w-full max-w-lg border-2 border-pixel-border bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,0,0,0.9)] max-h-[90vh] flex flex-col font-mono relative">
               <button
                 onClick={() => setIsPickerOpen(false)}
                 className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black"
@@ -390,11 +414,13 @@ export function WorkoutTrackerForm({
                 <X className="w-4 h-4" />
               </button>
 
-              <div>
+              <div className="space-y-1 pr-6">
                 <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider">
                   EXERCISE DATABASE
                 </h3>
-                <p className="text-xs text-zinc-400">CHOOSE FROM {EXERCISE_DATABASE.length} EXERCISES WITH DIFFICULTY & INSTRUCTIONS</p>
+                <p className="text-xs text-zinc-400">
+                  CHOOSE FROM {EXERCISE_DATABASE.length} MUSCLE-SPECIFIC EXERCISES
+                </p>
               </div>
 
               <div className="relative">
@@ -403,78 +429,85 @@ export function WorkoutTrackerForm({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by exercise name or target muscle..."
+                  placeholder="Search by name, muscle (quads, lats...)"
                   className="w-full bg-black border border-pixel-border pl-9 pr-3 py-2 text-xs font-bold text-white focus:border-[#00ff41] outline-none"
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5 border-y border-pixel-border/50 py-2">
                 <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                  FILTER BY MUSCLE GROUP & CATEGORY:
+                  FILTER BY MUSCLE GROUP:
                 </div>
-                <div className="flex flex-wrap gap-1.5 p-2 border border-pixel-border/60 bg-black/80 max-h-28 overflow-y-auto">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-3 py-1.5 text-xs font-headline font-extrabold uppercase tracking-wider transition-all border cursor-pointer ${
-                        selectedCategory === cat
-                          ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
-                          : "border-zinc-700 bg-surface text-zinc-300 hover:text-white hover:border-zinc-500"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-4">
+                  {categories.map((cat) => {
+                    const isSel = selectedCategory === cat;
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`py-1.5 px-2 text-[10px] uppercase font-bold text-center border transition-all truncate cursor-pointer ${getCategoryBadgeStyle(
+                          cat,
+                          isSel
+                        )}`}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1 pt-1">
-                {filteredDatabase.map((def) => (
-                  <div
-                    key={def.id}
-                    className="p-3 border border-pixel-border/60 bg-black/60 hover:border-[#00ff41] transition-all flex items-center justify-between gap-3 group"
-                  >
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-headline font-bold text-xs text-white uppercase line-clamp-1">
-                          {def.name}
-                        </span>
-                        <span className={`px-1.5 py-0.5 border text-[8px] font-bold uppercase ${getDifficultyBadgeStyle(def.difficultyLabel)}`}>
-                          {def.difficultyLabel} ({def.difficultyRank}/5 ⭐)
-                        </span>
-                      </div>
-
-                      <div className="text-[10px] text-zinc-400 flex items-center gap-2 font-bold">
-                        <span className="text-sky-400">{def.category}</span>
-                        <span>•</span>
-                        <span className="text-amber-400">{def.equipment}</span>
-                        <span>•</span>
-                        <span className="text-zinc-500">
-                          {def.targetMuscles.slice(0, 2).join(", ")}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setActiveGuideExercise(def)}
-                        className="p-1.5 border border-zinc-700 bg-surface text-zinc-300 hover:text-[#00ff41] hover:border-[#00ff41]"
-                        title="View Instructions"
-                      >
-                        <Info className="w-4 h-4 text-[#00ff41]" />
-                      </button>
-
-                      <button
-                        onClick={() => handleAddExerciseFromPicker(def)}
-                        className="px-3 py-1.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-extrabold text-[10px] uppercase tracking-wider shadow-neon cursor-pointer"
-                      >
-                        ADD
-                      </button>
-                    </div>
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 pt-1 min-h-[220px]">
+                {filteredDatabase.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-zinc-500 italic border border-dashed border-zinc-800">
+                    No exercises match your search query or muscle filter.
                   </div>
-                ))}
+                ) : (
+                  filteredDatabase.map((def) => (
+                    <div
+                      key={def.id}
+                      className="p-3 border border-pixel-border/60 bg-black/60 hover:border-[#00ff41] transition-all flex items-center justify-between gap-3 group"
+                    >
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-headline font-bold text-xs text-white uppercase line-clamp-1">
+                            {def.name}
+                          </span>
+                          <span className={`px-1.5 py-0.5 border text-[8px] font-bold uppercase flex-shrink-0 ${getDifficultyBadgeStyle(def.difficultyLabel)}`}>
+                            {def.difficultyLabel}
+                          </span>
+                        </div>
+
+                        <div className="text-[10px] text-zinc-400 flex items-center gap-2 font-bold">
+                          <span className="text-sky-400">{def.category}</span>
+                          <span>•</span>
+                          <span className="text-amber-400">{def.equipment}</span>
+                          <span>•</span>
+                          <span className="text-zinc-500 truncate">
+                            {def.targetMuscles.slice(0, 2).join(", ")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => setActiveGuideExercise(def)}
+                          className="p-1.5 border border-zinc-700 bg-surface text-zinc-300 hover:text-[#00ff41] hover:border-[#00ff41]"
+                          title="View Instructions"
+                        >
+                          <Info className="w-4 h-4 text-[#00ff41]" />
+                        </button>
+
+                        <button
+                          onClick={() => handleAddExerciseFromPicker(def)}
+                          className="px-3 py-1.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-extrabold text-[10px] uppercase tracking-wider shadow-neon cursor-pointer"
+                        >
+                          ADD
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </motion.div>
