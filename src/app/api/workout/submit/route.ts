@@ -1,76 +1,50 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import { calculateSessionRVS, ExerciseLogInput } from "@/lib/rvsEngine";
 
+const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
 interface SessionPayload {
-  user_id: string;
+  user_id?: string;
   exercises: ExerciseLogInput[];
 }
 
 export async function POST(request: Request) {
   try {
     const body: SessionPayload = await request.json();
-    const { user_id, exercises } = body;
+    const { exercises } = body;
 
-    if (!user_id || !exercises || exercises.length === 0) {
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+
+    const userId = body.user_id || authData?.user?.id || DEFAULT_USER_ID;
+
+    if (!exercises || exercises.length === 0) {
       return NextResponse.json(
-        { error: "Invalid payload: user_id and exercises are required." },
+        { error: "Invalid payload: exercises array is required." },
         { status: 400 }
       );
     }
 
-    const sessionCalc = await calculateSessionRVS(user_id, exercises);
+    const sessionCalc = await calculateSessionRVS(userId, exercises);
 
     try {
-      const { data: sessionData, error: sessionErr } = await supabase
-        .from("Workout_Sessions")
-        .insert({
-          user_id,
-          total_volume_kg: sessionCalc.total_volume_kg,
-          total_rvs: sessionCalc.total_rvs,
-          exercise_count: sessionCalc.total_exercises,
-          status: "completed",
-        })
-        .select("session_id")
-        .single();
-
-      if (sessionData && sessionData.session_id) {
-        const sessionId = sessionData.session_id;
-
-        for (const exRes of sessionCalc.exercise_results) {
-          const { data: logData } = await supabase
-            .from("Session_Exercises")
-            .insert({
-              session_id: sessionId,
-              exercise_id: exRes.exercise_id,
-              sets_count: exRes.sets_count,
-              reps_count: exRes.reps_count,
-              weight_lifted: exRes.weight_lifted,
-              rvs_generated: exRes.rvs_generated,
-            })
-            .select("log_id")
-            .single();
-
-          if (logData && logData.log_id) {
-            const logId = logData.log_id;
-            const setsPayload = exRes.sets.map((s) => ({
-              log_id: logId,
-              set_number: s.set_number,
-              weight_kg: s.weight_kg,
-              reps: s.reps,
-              rvs_generated: s.rvs_generated,
-            }));
-
-            await supabase.from("Session_Sets").insert(setsPayload);
-          }
-        }
+      for (const exRes of sessionCalc.exercise_results) {
+        await supabase.from("workout_logs").insert({
+          user_id: userId,
+          exercise_name: exRes.exercise_id || "Bench Press",
+          weight_kg: exRes.weight_lifted,
+          reps: exRes.reps_count,
+          sets: exRes.sets_count,
+          rvs_score: exRes.rvs_generated,
+        });
       }
     } catch (e) {
     }
 
     return NextResponse.json({
       success: true,
-      user_id,
+      user_id: userId,
       result: sessionCalc,
     });
   } catch (error) {

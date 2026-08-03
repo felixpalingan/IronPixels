@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
 
 const DEFAULT_EXERCISES = [
   {
@@ -43,20 +42,6 @@ const DEFAULT_EXERCISES = [
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") || "";
-
-  try {
-    let dbQuery = supabase.from("Exercise_Dictionary").select("exercise_id, exercise_name, tier, movement_coefficient");
-    if (query.trim()) {
-      dbQuery = dbQuery.ilike("exercise_name", `%${query.trim()}%`);
-    }
-
-    const { data: exercises, error } = await dbQuery;
-
-    if (!error && exercises && exercises.length > 0) {
-      return NextResponse.json(exercises);
-    }
-  } catch (err) {
-  }
 
   const filtered = DEFAULT_EXERCISES.filter((ex) =>
     ex.exercise_name.toLowerCase().includes(query.toLowerCase())

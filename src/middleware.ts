@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
 
     if (!isOnboarded) {
       const { data: profile } = await supabase
-        .from("Users")
+        .from("profiles")
         .select("weight_kg, character_class")
         .eq("user_id", user.id)
         .single();

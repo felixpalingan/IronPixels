@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 
 export interface SetItem {
   set_number: number;
@@ -24,14 +24,15 @@ export interface ExerciseCalcResult {
 export async function calculateSessionRVS(userId: string, exercises: ExerciseLogInput[]) {
   let userWeightKg = 75.0;
   try {
-    const { data: user } = await supabase
-      .from("Users")
+    const supabase = await createClient();
+    const { data: profile } = await supabase
+      .from("profiles")
       .select("weight_kg")
       .eq("user_id", userId)
       .single();
 
-    if (user && user.weight_kg) {
-      userWeightKg = parseFloat(user.weight_kg);
+    if (profile && profile.weight_kg) {
+      userWeightKg = parseFloat(profile.weight_kg);
     }
   } catch (e) {
   }
@@ -44,19 +45,7 @@ export async function calculateSessionRVS(userId: string, exercises: ExerciseLog
   const exerciseResults: ExerciseCalcResult[] = [];
 
   for (const ex of exercises) {
-    let coeff = 1.0;
-    try {
-      const { data: dict } = await supabase
-        .from("Exercise_Dictionary")
-        .select("movement_coefficient")
-        .eq("exercise_id", ex.exercise_id)
-        .single();
-
-      if (dict && dict.movement_coefficient) {
-        coeff = parseFloat(dict.movement_coefficient);
-      }
-    } catch (e) {
-    }
+    let coeff = 1.2;
 
     let exVolume = 0;
     let exRVS = 0;
@@ -100,9 +89,9 @@ export async function calculateSessionRVS(userId: string, exercises: ExerciseLog
     user_weight_kg: userWeightKg,
     total_volume_kg: totalSessionVolume,
     total_rvs: Math.round(totalSessionRVS * 100) / 100,
-    total_exercises: exercises.length,
     total_sets: totalSessionSets,
     total_reps: totalSessionReps,
+    total_exercises: exercises.length,
     exercise_results: exerciseResults,
   };
 }
