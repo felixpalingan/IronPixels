@@ -18,7 +18,7 @@ export const STAGE_BOSSES: Array<{ name: string; hp: number; type: BossInfo["bos
 ];
 
 let currentBossInstance: BossInfo = {
-  boss_id: "b055d7ac-1234-4567-89ab-cdef01234567",
+  boss_id: "boss-stage-1-init",
   boss_name: STAGE_BOSSES[0].name,
   stage: 1,
   current_hp: STAGE_BOSSES[0].hp,
@@ -35,6 +35,7 @@ export function updateBossHp(rvsDamage: number): {
   boss: BossInfo;
   is_defeated: boolean;
   damage_dealt: number;
+  next_boss: BossInfo;
 } {
   const damage = Math.round(rvsDamage);
   const newHp = Math.max(0, currentBossInstance.current_hp - damage);
@@ -42,28 +43,31 @@ export function updateBossHp(rvsDamage: number): {
 
   currentBossInstance.current_hp = newHp;
 
+  let nextBossInstance = { ...currentBossInstance };
+
   if (isDefeated) {
     currentBossInstance.status = "Defeated";
 
-    setTimeout(() => {
-      const nextStage = currentBossInstance.stage + 1;
-      const bossConfig = STAGE_BOSSES[(nextStage - 1) % STAGE_BOSSES.length];
+    const nextStage = currentBossInstance.stage + 1;
+    const bossConfig = STAGE_BOSSES[(nextStage - 1) % STAGE_BOSSES.length];
 
-      currentBossInstance = {
-        boss_id: `boss-stage-${nextStage}-${Date.now()}`,
-        boss_name: bossConfig.name,
-        stage: nextStage,
-        current_hp: bossConfig.hp,
-        max_hp: bossConfig.hp,
-        status: "Active",
-        boss_type: bossConfig.type,
-      };
-    }, 3000);
+    nextBossInstance = {
+      boss_id: `boss-stage-${nextStage}-${Date.now()}`,
+      boss_name: bossConfig.name,
+      stage: nextStage,
+      current_hp: bossConfig.hp,
+      max_hp: bossConfig.hp,
+      status: "Active",
+      boss_type: bossConfig.type,
+    };
+
+    currentBossInstance = nextBossInstance;
   }
 
   return {
     boss: currentBossInstance,
     is_defeated: isDefeated,
     damage_dealt: damage,
+    next_boss: nextBossInstance,
   };
 }

@@ -7,7 +7,7 @@ import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
 import { BossSprite, BossState } from "@/components/BossSprite";
 import { HeroSprite, HeroState } from "@/components/HeroSprite";
-import { EQUIPMENT_DICTIONARY, EquipmentItem } from "@/lib/equipment";
+import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
 
 interface DamageParticle {
   id: string;
@@ -38,6 +38,7 @@ interface CombatArenaProps {
   dailyRvs?: number;
   equippedSkills?: Array<{ name: string; icon?: string }>;
   playerStr?: number;
+  onAddItemToInventory?: (newItem: InventoryRecord) => void;
 }
 
 export function CombatArena({
@@ -46,6 +47,7 @@ export function CombatArena({
   dailyRvs = 0,
   equippedSkills = [],
   playerStr = 85,
+  onAddItemToInventory,
 }: CombatArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<DamageParticle[]>([]);
@@ -100,6 +102,8 @@ export function CombatArena({
         setBoss(data);
         if (data.current_hp === 0 || data.status === "Defeated") {
           setBossState("dead");
+        } else {
+          setBossState("idle");
         }
       }
     } catch (err) {}
@@ -109,22 +113,14 @@ export function CombatArena({
     fetchBossData();
   }, []);
 
-  const awardVoidChestLoot = (defeatedBossName: string, stage: number) => {
+  const awardVoidChestLoot = async (defeatedBossName: string, stage: number) => {
     const topTierItems = EQUIPMENT_DICTIONARY.filter(
       (item) => item.rarity === "legendary" || item.rarity === "epic"
     );
     const droppedItem =
       topTierItems[Math.floor(Math.random() * topTierItems.length)] || EQUIPMENT_DICTIONARY[0];
 
-    const localInv = localStorage.getItem("ironpixels_inventory");
-    let currentInv = [];
-    if (localInv) {
-      try {
-        currentInv = JSON.parse(localInv);
-      } catch (e) {}
-    }
-
-    const newRecord = {
+    const newRecord: InventoryRecord = {
       inventory_id: `inv-boss-drop-${Date.now()}`,
       user_id: userId,
       item_id: droppedItem.item_id,
@@ -132,8 +128,17 @@ export function CombatArena({
       item: droppedItem,
     };
 
-    const updatedInv = [newRecord, ...currentInv];
-    localStorage.setItem("ironpixels_inventory", JSON.stringify(updatedInv));
+    if (onAddItemToInventory) {
+      onAddItemToInventory(newRecord);
+    }
+
+    try {
+      await fetch("/api/shop/gacha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chest_type: "void" }),
+      });
+    } catch (err) {}
 
     setBossVictoryLoot({
       bossName: defeatedBossName,
@@ -192,12 +197,6 @@ export function CombatArena({
 
       if (res.ok) {
         const data = await res.json();
-        setBoss((prev) => ({
-          ...prev,
-          current_hp: data.current_hp,
-          status: data.status,
-          boss_name: data.boss_name || prev.boss_name,
-        }));
 
         if (data.is_defeated) {
           setBossState("dead");
@@ -207,9 +206,15 @@ export function CombatArena({
 
           setTimeout(() => {
             fetchBossData();
-            setBossState("idle");
-          }, 3200);
+          }, 2500);
         } else {
+          setBoss((prev) => ({
+            ...prev,
+            current_hp: data.current_hp,
+            status: data.status,
+            boss_name: data.boss_name || prev.boss_name,
+            boss_type: data.boss_type || prev.boss_type,
+          }));
           setTimeout(() => {
             setBossState((current) => (current === "dead" ? "dead" : "idle"));
           }, 600);

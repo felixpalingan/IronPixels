@@ -580,6 +580,7 @@ export function DashboardLayout() {
                     dailyRvs={dailyRvs}
                     equippedSkills={gearSkills}
                     playerStr={userData.stats.str}
+                    onAddItemToInventory={handleAddItemToInventory}
                   />
                 )}
               </motion.div>

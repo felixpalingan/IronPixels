@@ -13,17 +13,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const { boss, is_defeated, damage_dealt } = updateBossHp(rvs_damage);
+    const { boss, is_defeated, damage_dealt, next_boss } = updateBossHp(rvs_damage);
 
     try {
       const supabase = await createClient();
       await supabase
         .from("dungeon_bosses")
-        .update({
+        .upsert({
+          boss_id: boss.boss_id,
+          boss_name: boss.boss_name,
+          stage: boss.stage,
           current_hp: boss.current_hp,
+          max_hp: boss.max_hp,
           status: boss.status,
-        })
-        .eq("boss_id", boss_id || boss.boss_id);
+        });
     } catch (e) {
     }
 
@@ -31,6 +34,7 @@ export async function POST(request: Request) {
       success: true,
       boss_id: boss.boss_id,
       boss_name: boss.boss_name,
+      boss_type: boss.boss_type,
       stage: boss.stage,
       rvs_damage_dealt: damage_dealt,
       current_hp: boss.current_hp,
