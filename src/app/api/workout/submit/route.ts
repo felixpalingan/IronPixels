@@ -1,55 +1,42 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { calculateSessionRVS, ExerciseLogInput } from "@/lib/rvsEngine";
-
-const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
-
-interface SessionPayload {
-  user_id?: string;
-  exercises: ExerciseLogInput[];
-}
 
 export async function POST(request: Request) {
   try {
-    const body: SessionPayload = await request.json();
-    const { exercises } = body;
+    const body = await request.json();
+    const { user_id, date, duration_minutes, total_rvs, total_volume_kg, exercises_log } = body;
 
-    const supabase = await createClient();
-    const { data: authData } = await supabase.auth.getUser();
-
-    const userId = body.user_id || authData?.user?.id || DEFAULT_USER_ID;
-
-    if (!exercises || exercises.length === 0) {
+    if (!user_id || !total_rvs) {
       return NextResponse.json(
-        { error: "Invalid payload: exercises array is required." },
+        { error: "Invalid workout payload." },
         { status: 400 }
       );
     }
 
-    const sessionCalc = await calculateSessionRVS(userId, exercises);
+    const sessionRecord = {
+      session_id: `ws-${Date.now()}`,
+      user_id,
+      date: date || new Date().toISOString().split("T")[0],
+      duration_minutes: duration_minutes || 45,
+      total_rvs: total_rvs || 0,
+      total_volume_kg: total_volume_kg || 0,
+      exercises_log: exercises_log || [],
+      created_at: new Date().toISOString(),
+    };
 
     try {
-      for (const exRes of sessionCalc.exercise_results) {
-        await supabase.from("workout_logs").insert({
-          user_id: userId,
-          exercise_name: exRes.exercise_id || "Bench Press",
-          weight_kg: exRes.weight_lifted,
-          reps: exRes.reps_count,
-          sets: exRes.sets_count,
-          rvs_score: exRes.rvs_generated,
-        });
-      }
+      const supabase = await createClient();
+      await supabase.from("workout_sessions").insert(sessionRecord);
     } catch (e) {
     }
 
     return NextResponse.json({
       success: true,
-      user_id: userId,
-      result: sessionCalc,
+      session: sessionRecord,
     });
-  } catch (error) {
+  } catch (err: any) {
     return NextResponse.json(
-      { error: "Failed to submit workout session." },
+      { error: err.message || "Failed to log workout session." },
       { status: 500 }
     );
   }

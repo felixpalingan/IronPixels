@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
 import { StatRadarChart } from "@/components/StatRadarChart";
 import { EquippedGearGrid } from "@/components/EquippedGearGrid";
 import { WorkoutTrackerForm } from "@/components/WorkoutTrackerForm";
+import { WorkoutHistoryList } from "@/components/WorkoutHistoryList";
 import { CombatArena } from "@/components/CombatArena";
 import { BottomNav } from "@/components/BottomNav";
 import { SettingsModal } from "@/components/SettingsModal";
@@ -39,7 +40,7 @@ interface UserProfileData {
 export function DashboardLayout() {
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [activeTab, setActiveTab] = useState<string>("hub");
-  const [subView, setSubView] = useState<"workout" | "combat">("workout");
+  const [subView, setSubView] = useState<"workout" | "history" | "combat">("workout");
   const [lastSessionDamage, setLastSessionDamage] = useState<number>(0);
   const [dailyRvs, setDailyRvs] = useState<number>(0);
   const [availableAp, setAvailableAp] = useState<number>(5);
@@ -334,6 +335,20 @@ export function DashboardLayout() {
 
     const earnedGold = Math.round(summary.totalVolume / 10);
     setUserGold((prev) => prev + earnedGold);
+
+    try {
+      const newSessionRecord = {
+        session_id: `ws-${Date.now()}`,
+        date: todayStr,
+        duration_minutes: 45,
+        total_rvs: summary.totalRvs,
+        total_volume_kg: summary.totalVolume,
+        exercises_log: [],
+      };
+      const existingHistory = JSON.parse(localStorage.getItem("ironpixels_workout_history") || "[]");
+      const updatedHistory = [newSessionRecord, ...existingHistory];
+      localStorage.setItem("ironpixels_workout_history", JSON.stringify(updatedHistory));
+    } catch (e) {}
 
     if (profile) {
       const updatedProf = {
@@ -700,28 +715,40 @@ export function DashboardLayout() {
                 transition={{ duration: 0.25 }}
                 className="space-y-4"
               >
-                <div className="grid grid-cols-2 gap-2 bg-surface border border-pixel-border p-1">
+                <div className="grid grid-cols-3 gap-1 bg-surface border border-pixel-border p-1">
                   <button
                     onClick={() => setSubView("workout")}
-                    className={`py-2 px-3 flex items-center justify-center gap-2 font-mono text-xs font-bold transition-all ${
+                    className={`py-2 px-2 flex items-center justify-center gap-1.5 font-mono text-[11px] font-bold transition-all ${
                       subView === "workout"
                         ? "bg-pixel-green text-black shadow-neon"
                         : "text-gray-400 hover:text-white"
                     }`}
                   >
-                    <Dumbbell className="w-4 h-4" />
-                    <span>WORKOUT TRACKER</span>
+                    <Dumbbell className="w-3.5 h-3.5" />
+                    <span>LOG WORKOUT</span>
+                  </button>
+
+                  <button
+                    onClick={() => setSubView("history")}
+                    className={`py-2 px-2 flex items-center justify-center gap-1.5 font-mono text-[11px] font-bold transition-all ${
+                      subView === "history"
+                        ? "bg-gold-loot text-black shadow-gold-glow"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span>HISTORY</span>
                   </button>
 
                   <button
                     onClick={() => setSubView("combat")}
-                    className={`py-2 px-3 flex items-center justify-center gap-2 font-mono text-xs font-bold transition-all ${
+                    className={`py-2 px-2 flex items-center justify-center gap-1.5 font-mono text-[11px] font-bold transition-all ${
                       subView === "combat"
                         ? "bg-health-red text-white shadow-red-glow"
                         : "text-gray-400 hover:text-white"
                     }`}
                   >
-                    <Swords className="w-4 h-4" />
+                    <Swords className="w-3.5 h-3.5" />
                     <span>BOSS ARENA</span>
                   </button>
                 </div>
@@ -732,6 +759,8 @@ export function DashboardLayout() {
                     userWeightKg={userData.weight_kg}
                     onFinishSession={handleFinishWorkout}
                   />
+                ) : subView === "history" ? (
+                  <WorkoutHistoryList userId={userData.user_id} />
                 ) : (
                   <CombatArena
                     userId={userData.user_id}
