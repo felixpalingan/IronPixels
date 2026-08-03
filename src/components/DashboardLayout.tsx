@@ -39,6 +39,7 @@ export function DashboardLayout() {
   const [activeTab, setActiveTab] = useState<string>("hub");
   const [subView, setSubView] = useState<"workout" | "combat">("workout");
   const [lastSessionDamage, setLastSessionDamage] = useState<number>(0);
+  const [dailyRvs, setDailyRvs] = useState<number>(0);
   const [sessionVictoryModal, setSessionVictoryModal] = useState<{
     totalRvs: number;
     totalVolume: number;
@@ -72,7 +73,16 @@ export function DashboardLayout() {
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
   const [userGold, setUserGold] = useState<number>(12500);
 
+  const todayRvsKey = `ironpixels_daily_rvs_${new Date().toISOString().split("T")[0]}`;
+
   useEffect(() => {
+    try {
+      const savedRvs = localStorage.getItem(todayRvsKey);
+      if (savedRvs) {
+        setDailyRvs(Number(savedRvs));
+      }
+    } catch (e) {}
+
     const localProf = localStorage.getItem("ironpixels_profile");
     if (localProf) {
       try {
@@ -116,7 +126,7 @@ export function DashboardLayout() {
     }
 
     fetchData();
-  }, []);
+  }, [todayRvsKey]);
 
   const baseStats = profile?.stats || { str: 85, agi: 72, vit: 54, luk: 60 };
   const baseMaxHp = profile?.max_hp || 1000;
@@ -177,6 +187,12 @@ export function DashboardLayout() {
   const handleFinishWorkout = (summary: { totalRvs: number; totalVolume: number }) => {
     setLastSessionDamage(summary.totalRvs);
     setSessionVictoryModal(summary);
+
+    const newTotalRvs = dailyRvs + summary.totalRvs;
+    setDailyRvs(newTotalRvs);
+    try {
+      localStorage.setItem(todayRvsKey, newTotalRvs.toString());
+    } catch (e) {}
 
     const earnedGold = Math.round(summary.totalVolume / 10);
     setUserGold((prev) => prev + earnedGold);
@@ -443,6 +459,7 @@ export function DashboardLayout() {
                   <CombatArena
                     userId={userData.user_id}
                     sessionDamage={lastSessionDamage}
+                    dailyRvs={dailyRvs}
                     equippedSkills={gearSkills}
                     playerStr={userData.stats.str}
                   />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords } from "lucide-react";
+import { Flame, Swords, Zap, ShieldAlert } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
 import { BossSprite, BossState } from "@/components/BossSprite";
@@ -32,6 +32,7 @@ interface BossData {
 interface CombatArenaProps {
   userId?: string;
   sessionDamage?: number;
+  dailyRvs?: number;
   equippedSkills?: Array<{ name: string; icon?: string }>;
   playerStr?: number;
 }
@@ -39,6 +40,7 @@ interface CombatArenaProps {
 export function CombatArena({
   userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
   sessionDamage = 0,
+  dailyRvs = 0,
   equippedSkills = [],
   playerStr = 85,
 }: CombatArenaProps) {
@@ -58,6 +60,7 @@ export function CombatArena({
   const [heroState, setHeroState] = useState<HeroState>("idle");
   const [combatLog, setCombatLog] = useState<Array<{ id: string; msg: string; color: string }>>([]);
 
+  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
   const todayKey = `ironpixels_combat_log_${new Date().toISOString().split("T")[0]}`;
 
   useEffect(() => {
@@ -175,8 +178,9 @@ export function CombatArena({
 
   useEffect(() => {
     if (sessionDamage > 0) {
-      executeAttack(sessionDamage, "Gym RVS Strike", "attack01");
-      addLog(`RVS Gym Attack dealt ${formatNumber(sessionDamage)} damage to ${boss.boss_name}!`, "#00ff41");
+      const totalAttackDmg = sessionDamage + playerStr;
+      executeAttack(totalAttackDmg, "Gym RVS Strike", "attack01");
+      addLog(`Gym Workout Attack dealt ${formatNumber(totalAttackDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr})!`, "#00ff41");
     }
   }, [sessionDamage]);
 
@@ -239,6 +243,17 @@ export function CombatArena({
 
   return (
     <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono">
+      <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between text-xs font-bold border-l-4 border-l-[#00ff41] shadow-neon">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-[#00ff41]" />
+          <span>BASE COMBAT POWER:</span>
+          <span className="text-[#00ff41] text-sm">{formatNumber(baseCombatPower)} DMG</span>
+        </div>
+        <div className="text-[10px] text-zinc-400">
+          (RVS: <span className="text-white">{formatNumber(dailyRvs)}</span> + STR: <span className="text-amber-400">{playerStr}</span>)
+        </div>
+      </div>
+
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -299,8 +314,9 @@ export function CombatArena({
 
       <TacticalSkillBar
         userId={userId}
-        equippedSkills={equippedSkills}
+        dailyRvs={dailyRvs}
         playerStr={playerStr}
+        equippedSkills={equippedSkills}
         onSkillCast={handleSkillCast}
       />
 

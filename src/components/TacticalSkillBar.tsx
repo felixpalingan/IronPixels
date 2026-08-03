@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Sword, Shield, Flame, Zap, Sparkles } from "lucide-react";
+import { formatNumber } from "@/lib/formatters";
 
 export interface SkillData {
   skill_id: string;
@@ -16,8 +17,9 @@ export interface SkillData {
 
 interface TacticalSkillBarProps {
   userId?: string;
-  equippedSkills?: Array<{ name: string; icon?: string }>;
+  dailyRvs?: number;
   playerStr?: number;
+  equippedSkills?: Array<{ name: string; icon?: string }>;
   onSkillCast?: (
     skillName: string,
     damageDealt: number,
@@ -28,12 +30,15 @@ interface TacticalSkillBarProps {
 
 export function TacticalSkillBar({
   userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-  equippedSkills = [],
+  dailyRvs = 0,
   playerStr = 85,
+  equippedSkills = [],
   onSkillCast,
 }: TacticalSkillBarProps) {
   const [skills, setSkills] = useState<SkillData[]>([]);
   const [executingSkillId, setExecutingSkillId] = useState<string | null>(null);
+
+  const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
 
   const getSavedCdSecs = (skillName: string) => {
     try {
@@ -59,23 +64,23 @@ export function TacticalSkillBar({
 
     const generated: SkillData[] = sourceSkills.map((sk, idx) => {
       const nameLower = sk.name.toLowerCase();
-      let multiplier = 3.5;
+      let multiplier = 2.5;
       let attackType: "attack01" | "attack02" | "attack03" = "attack01";
       let icon = "sword";
       let cdMins = 3;
 
       if (nameLower.includes("void") || nameLower.includes("nova") || nameLower.includes("dragon")) {
-        multiplier = 8.5;
+        multiplier = 4.5;
         attackType = "attack03";
         icon = "flame";
         cdMins = 5;
       } else if (nameLower.includes("plasma") || nameLower.includes("overload")) {
-        multiplier = 5.5;
+        multiplier = 3.5;
         attackType = "attack02";
         icon = "zap";
         cdMins = 4;
       } else if (nameLower.includes("shadow") || nameLower.includes("strike")) {
-        multiplier = 4.0;
+        multiplier = 2.8;
         attackType = "attack01";
         icon = "sword";
         cdMins = 3;
@@ -120,8 +125,7 @@ export function TacticalSkillBar({
 
     setExecutingSkillId(skill.skill_id);
 
-    const baseDmg = playerStr * 20 + Math.floor(Math.random() * 500);
-    const calculatedDamage = Math.round(baseDmg * skill.damage_multiplier);
+    const calculatedDamage = Math.round(baseCombatPower * skill.damage_multiplier);
     const cdMs = skill.cooldown_minutes * 60 * 1000;
 
     try {
@@ -138,7 +142,7 @@ export function TacticalSkillBar({
           skill_id: skill.skill_id,
           cooldown_minutes: skill.cooldown_minutes,
           damage_multiplier: skill.damage_multiplier,
-          base_damage: baseDmg,
+          base_damage: baseCombatPower,
         }),
       });
 
@@ -196,12 +200,16 @@ export function TacticalSkillBar({
           <Sparkles className="w-3.5 h-3.5 text-[#00ff41]" />
           EQUIPPED TACTICAL SKILLS
         </span>
-        <span className="text-pixel-green font-bold">POWER: STR {playerStr}</span>
+        <span className="text-pixel-green font-bold">
+          BASE POWER: {formatNumber(baseCombatPower)}
+        </span>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
         {skills.map((skill) => {
           const isExecuting = executingSkillId === skill.skill_id;
+          const projectedSkillDmg = Math.round(baseCombatPower * skill.damage_multiplier);
+
           return (
             <button
               key={skill.skill_id}
@@ -222,7 +230,7 @@ export function TacticalSkillBar({
               </div>
 
               <div className="text-[9px] text-[#00ff41] font-bold">
-                {skill.damage_multiplier}x DMG
+                {skill.damage_multiplier}x ({formatNumber(projectedSkillDmg)} DMG)
               </div>
 
               {!skill.is_ready && (
