@@ -228,6 +228,26 @@ export async function POST(request: Request) {
       return NextResponse.json(activePartyCache);
     }
 
+    if (action === "kick_member" && activePartyCache) {
+      activePartyCache.members = activePartyCache.members.filter((m) => m.user_id !== target_user_id);
+      activePartyCache.total_party_cp = activePartyCache.members.reduce((sum, m) => sum + m.combat_power, 0);
+
+      try {
+        await supabase
+          .from("Party_Members")
+          .delete()
+          .eq("party_id", activePartyCache.party_id)
+          .eq("user_id", target_user_id);
+
+        await supabase
+          .from("Party")
+          .update({ total_party_cp: activePartyCache.total_party_cp })
+          .eq("party_id", activePartyCache.party_id);
+      } catch (e) {}
+
+      return NextResponse.json(activePartyCache);
+    }
+
     if (action === "leave_party") {
       if (activePartyCache) {
         try {

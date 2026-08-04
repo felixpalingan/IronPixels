@@ -928,8 +928,40 @@ export function MultiplayerHub({
                           </div>
                         </div>
 
-                        <div className="text-[10px] text-[#00ff41] font-bold">
-                          ONLINE
+                        <div className="flex items-center gap-2">
+                          {member.user_id !== "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" && (
+                            <div className="flex items-center gap-1">
+                              {member.role === "co_leader" ? (
+                                <button
+                                  onClick={() => handlePartyAction("update_role", { target_user_id: member.user_id, new_role: "member" })}
+                                  className="px-1.5 py-0.5 border border-amber-500 bg-amber-950/60 hover:bg-amber-500 hover:text-black text-amber-300 text-[8px] font-extrabold uppercase transition-all cursor-pointer"
+                                  title="Demote to Member"
+                                >
+                                  DEMOTE
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handlePartyAction("update_role", { target_user_id: member.user_id, new_role: "co_leader" })}
+                                  className="px-1.5 py-0.5 border border-purple-500 bg-purple-950/60 hover:bg-purple-600 text-purple-300 hover:text-white text-[8px] font-extrabold uppercase transition-all cursor-pointer"
+                                  title="Promote to Second-in-Command"
+                                >
+                                  + CO-LEADER
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => handlePartyAction("kick_member", { target_user_id: member.user_id })}
+                                className="px-1.5 py-0.5 border border-red-600 bg-red-950/60 hover:bg-red-600 text-red-300 hover:text-white text-[8px] font-extrabold uppercase transition-all cursor-pointer"
+                                title="Kick Member from Party"
+                              >
+                                KICK
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="text-[10px] text-[#00ff41] font-bold">
+                            ONLINE
+                          </div>
                         </div>
                       </div>
                     ))}
