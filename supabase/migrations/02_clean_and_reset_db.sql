@@ -1,36 +1,24 @@
 -- ========================================================
 -- IRONPIXELS DATABASE CLEANUP & RESET SCRIPT
 -- Clears all user test data & tidies up PostgreSQL schema
+-- Safely checks IF EXISTS for all tables to prevent 42P01 errors
 -- ========================================================
 
--- 1. TRUNCATE ALL DYNAMIC USER DATA
-TRUNCATE TABLE public."Session_Sets" CASCADE;
-TRUNCATE TABLE public."Session_Exercises" CASCADE;
-TRUNCATE TABLE public."Workout_Sessions" CASCADE;
-TRUNCATE TABLE public."Equipped_Gear" CASCADE;
-TRUNCATE TABLE public."User_Skills" CASCADE;
-
--- Truncate party and friends data if tables exist
+-- 1. TRUNCATE ALL DYNAMIC USER DATA SAFELY
 DO $$
+DECLARE
+    tbl text;
+    tbls text[] := ARRAY[
+        'Session_Sets', 'Session_Exercises', 'Workout_Sessions',
+        'Equipped_Gear', 'User_Skills', 'Party_Members',
+        'Party', 'friends', 'profiles', 'Users', 'User_Stats'
+    ];
 BEGIN
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Party_Members') THEN
-        EXECUTE 'TRUNCATE TABLE public."Party_Members" CASCADE;';
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Party') THEN
-        EXECUTE 'TRUNCATE TABLE public."Party" CASCADE;';
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'friends') THEN
-        EXECUTE 'TRUNCATE TABLE public."friends" CASCADE;';
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'profiles') THEN
-        EXECUTE 'TRUNCATE TABLE public."profiles" CASCADE;';
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Users') THEN
-        EXECUTE 'TRUNCATE TABLE public."Users" CASCADE;';
-    END IF;
-    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'User_Stats') THEN
-        EXECUTE 'TRUNCATE TABLE public."User_Stats" CASCADE;';
-    END IF;
+    FOREACH tbl IN ARRAY tbls LOOP
+        IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = tbl) THEN
+            EXECUTE format('TRUNCATE TABLE public.%I CASCADE;', tbl);
+        END IF;
+    END LOOP;
 END $$;
 
 -- 2. ENSURE PROFILES TABLE SCHEMA IS NEAT & COMPLETE
@@ -56,7 +44,7 @@ CREATE TABLE IF NOT EXISTS public."profiles" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. ENSURE PARTY TABLES SCHEMA IS NEAT & COMPLETE
+-- 3. ENSURE PARTY & FRIENDS TABLES SCHEMA IS NEAT & COMPLETE
 CREATE TABLE IF NOT EXISTS public."Party" (
     party_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     party_name TEXT NOT NULL,
