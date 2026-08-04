@@ -22,7 +22,7 @@ interface ChestOption {
   glowColor: string;
   bgGradient: string;
   accentBadge: string;
-  closedFrame: string;
+  cardDisplayFrame: string;
   openPrefix: string;
 }
 
@@ -32,11 +32,11 @@ const CHEST_OPTIONS: ChestOption[] = [
     name: "Bronze Cache",
     rarityTag: "COMMON & RARE",
     price: 500,
-    borderColor: "border-zinc-700",
-    glowColor: "shadow-[0_0_20px_rgba(113,113,122,0.2)]",
+    borderColor: "border-zinc-600",
+    glowColor: "shadow-[0_0_20px_rgba(113,113,122,0.3)]",
     bgGradient: "bg-[#141416]",
     accentBadge: "bg-zinc-800 text-zinc-300 border-zinc-700",
-    closedFrame: "/assets/dungeon/chests/chest_empty_open_anim_f0.png",
+    cardDisplayFrame: "/assets/dungeon/chests/chest_empty_open_anim_f0.png",
     openPrefix: "chest_empty_open_anim",
   },
   {
@@ -45,10 +45,10 @@ const CHEST_OPTIONS: ChestOption[] = [
     rarityTag: "RARE & EPIC GEAR",
     price: 2500,
     borderColor: "border-[#00ff41]",
-    glowColor: "shadow-[0_0_25px_rgba(0,255,65,0.3)]",
+    glowColor: "shadow-[0_0_25px_rgba(0,255,65,0.4)]",
     bgGradient: "bg-[#141416]",
     accentBadge: "bg-[#00ff41]/20 text-[#00ff41] border-[#00ff41]/50",
-    closedFrame: "/assets/dungeon/chests/chest_full_open_anim_f0.png",
+    cardDisplayFrame: "/assets/dungeon/chests/chest_full_open_anim_f2.png",
     openPrefix: "chest_full_open_anim",
   },
   {
@@ -57,10 +57,10 @@ const CHEST_OPTIONS: ChestOption[] = [
     rarityTag: "LEGENDARY RELICS",
     price: 10000,
     borderColor: "border-amber-400",
-    glowColor: "shadow-[0_0_30px_rgba(251,191,36,0.4)]",
+    glowColor: "shadow-[0_0_30px_rgba(251,191,36,0.5)]",
     bgGradient: "bg-[#141416]",
     accentBadge: "bg-amber-400/20 text-amber-300 border-amber-400/50",
-    closedFrame: "/assets/dungeon/chests/chest_mimic_open_anim_f0.png",
+    cardDisplayFrame: "/assets/dungeon/chests/chest_mimic_open_anim_f2.png",
     openPrefix: "chest_mimic_open_anim",
   },
 ];
@@ -287,7 +287,7 @@ export function BlacksmithShop({
 
                 <div className="w-16 h-16 mx-auto my-3 border border-pixel-border bg-black/80 flex items-center justify-center shadow-neon">
                   <img
-                    src={opt.closedFrame}
+                    src={opt.cardDisplayFrame}
                     alt={opt.name}
                     className="w-12 h-12 object-contain pixelated scale-125 hover:scale-135 transition-transform"
                   />

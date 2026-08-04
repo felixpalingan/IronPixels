@@ -445,8 +445,8 @@ export function CombatArena({
           </div>
         </div>
 
-        <div className="relative border border-pixel-border bg-black/90 overflow-hidden flex items-end justify-between px-6 pb-10 pt-12 min-h-[240px]">
-          <div className="z-20 relative bottom-1">
+        <div className="relative border border-pixel-border dungeon-bg-stage overflow-hidden flex items-end justify-between px-8 pb-10 pt-12 min-h-[220px]">
+          <div className="z-20 relative bottom-2">
             <HeroSprite
               currentState={heroState}
               characterClass={characterClass}
@@ -454,7 +454,7 @@ export function CombatArena({
             />
           </div>
 
-          <div className="z-20 relative bottom-1">
+          <div className="z-20 relative bottom-2">
             <BossSprite
               currentState={bossState}
               currentHp={boss.current_hp}
@@ -464,10 +464,12 @@ export function CombatArena({
             />
           </div>
 
+          <div className="dungeon-floor-tile" />
+
           <canvas
             ref={canvasRef}
             width={520}
-            height={240}
+            height={220}
             className="absolute inset-0 w-full h-full pointer-events-none z-30"
           />
         </div>

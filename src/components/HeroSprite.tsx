@@ -17,7 +17,7 @@ export function HeroSprite({
   currentState = "idle",
   characterClass = "knight",
   gender = "m",
-  scale = 3.5,
+  scale = 2.2,
 }: HeroSpriteProps) {
   const [frameIndex, setFrameIndex] = useState<number>(0);
 
@@ -52,13 +52,13 @@ export function HeroSprite({
   return (
     <div className="flex flex-col items-center justify-center select-none">
       <div
-        className="transform-gpu relative transition-transform"
+        className="transform-gpu relative transition-transform origin-bottom"
         style={{ transform: `scale(${scale})` }}
       >
         <img
           src={framePath}
           alt={`${heroKey} Hero`}
-          className="w-7 h-9 object-contain pixelated drop-shadow-[0_0_8px_rgba(0,255,65,0.5)]"
+          className="w-5 h-7 object-contain pixelated drop-shadow-[0_0_6px_rgba(0,255,65,0.6)]"
         />
       </div>
     </div>
