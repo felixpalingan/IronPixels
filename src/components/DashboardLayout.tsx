@@ -15,6 +15,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import { BlacksmithShop } from "@/components/BlacksmithShop";
 import { InventoryGrid } from "@/components/InventoryGrid";
 import { DailyQuestsWidget } from "@/components/DailyQuestsWidget";
+import { MultiplayerHub } from "@/components/MultiplayerHub";
 import { EQUIPMENT_DICTIONARY, InventoryRecord, ItemType } from "@/lib/equipment";
 
 interface UserProfileData {
@@ -805,6 +806,23 @@ export function DashboardLayout() {
                     onConsumeSessionDamage={() => setLastSessionDamage(0)}
                   />
                 )}
+              </motion.div>
+            )}
+
+            {activeTab === "multiplayer" && (
+              <motion.div
+                key="multiplayer"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                <MultiplayerHub
+                  userCp={totalCp}
+                  userLevel={userData.level}
+                  userClass={userData.character_class}
+                  userRvs={dailyRvs}
+                />
               </motion.div>
             )}
 
