@@ -95,14 +95,25 @@ export function BlacksmithShop({
     setIsOpening(true);
     setActiveChest(option);
 
-    const initialWinner =
-      EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
-    const strip = generateReelStrip(initialWinner);
+    let candidates = EQUIPMENT_DICTIONARY;
+    if (option.id === "silver") {
+      candidates = EQUIPMENT_DICTIONARY.filter(
+        (item) => item.rarity === "rare" || item.rarity === "epic"
+      );
+    } else if (option.id === "void") {
+      candidates = EQUIPMENT_DICTIONARY.filter(
+        (item) => item.rarity === "legendary" || item.rarity === "mythic"
+      );
+    }
+
+    const lockedWinner =
+      candidates[Math.floor(Math.random() * candidates.length)] || EQUIPMENT_DICTIONARY[0];
+    const strip = generateReelStrip(lockedWinner);
     setReelStrip(strip);
 
     const winnerIndex = 28;
     const itemWidth = 112;
-    const offsetInWinner = Math.floor(Math.random() * 60) + 26;
+    const offsetInWinner = Math.floor(Math.random() * 50) + 30;
     const calculatedTargetX = winnerIndex * itemWidth + offsetInWinner - 170;
     setTargetX(calculatedTargetX);
 
@@ -116,10 +127,7 @@ export function BlacksmithShop({
       });
 
       const data = await res.json();
-      const finalItem: EquipmentItem = data.item || initialWinner;
-
-      const updatedStrip = generateReelStrip(finalItem);
-      setReelStrip(updatedStrip);
+      const finalItem: EquipmentItem = data.item || lockedWinner;
 
       if (data.new_gold !== undefined) {
         onUpdateGold(data.new_gold);
@@ -149,7 +157,7 @@ export function BlacksmithShop({
     } catch (err) {
       setTimeout(() => {
         setDrawnResult({
-          item: initialWinner,
+          item: lockedWinner,
           inventory_id: `inv-${Date.now()}`,
         });
         setOpeningPhase("revealed");
@@ -160,6 +168,8 @@ export function BlacksmithShop({
 
   const getRarityBadgeStyle = (rarity: string) => {
     switch (rarity) {
+      case "mythic":
+        return "bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-red-glow";
       case "legendary":
         return "bg-amber-400/20 text-amber-300 border-amber-400/50 shadow-gold-glow";
       case "epic":
@@ -173,12 +183,14 @@ export function BlacksmithShop({
 
   const getRarityCardBorder = (rarity: string) => {
     switch (rarity) {
+      case "mythic":
+        return "border-rose-500 bg-rose-950/30 text-rose-300";
       case "legendary":
-        return "border-amber-400 bg-amber-950/20 text-amber-300";
+        return "border-amber-400 bg-amber-950/30 text-amber-300";
       case "epic":
-        return "border-purple-500 bg-purple-950/20 text-purple-300";
+        return "border-purple-500 bg-purple-950/30 text-purple-300";
       case "rare":
-        return "border-sky-500 bg-sky-950/20 text-sky-300";
+        return "border-sky-500 bg-sky-950/30 text-sky-300";
       default:
         return "border-zinc-700 bg-zinc-900 text-zinc-400";
     }
@@ -255,10 +267,10 @@ export function BlacksmithShop({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
           >
             {openingPhase === "rolling" && (
-              <div className="w-full max-w-lg space-y-6 text-center">
+              <div className="w-full max-w-lg space-y-8 text-center my-auto py-6">
                 <div className="space-y-1">
                   <h3 className="font-headline font-black text-2xl text-[#00ff41] uppercase tracking-wider animate-pulse">
                     OPENING {activeChest ? activeChest.name.toUpperCase() : "CHEST"}...
@@ -266,14 +278,14 @@ export function BlacksmithShop({
                   <p className="text-xs text-zinc-400">ROULETTE REEL SPINNER IN MOTION</p>
                 </div>
 
-                <div className="relative w-full max-w-[340px] mx-auto">
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 text-[#00ff41] filter drop-shadow-[0_0_10px_#00ff41]">
+                <div className="relative w-full max-w-[340px] mx-auto py-4">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 text-[#00ff41] filter drop-shadow-[0_0_10px_#00ff41]">
                     <Triangle className="w-6 h-6 fill-[#00ff41] rotate-180" />
                   </div>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 text-[#00ff41] filter drop-shadow-[0_0_10px_#00ff41]">
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-30 text-[#00ff41] filter drop-shadow-[0_0_10px_#00ff41]">
                     <Triangle className="w-6 h-6 fill-[#00ff41]" />
                   </div>
-                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-[#00ff41] z-20 shadow-[0_0_15px_#00ff41]" />
+                  <div className="absolute top-4 bottom-4 left-1/2 -translate-x-1/2 w-0.5 bg-[#00ff41] z-20 shadow-[0_0_15px_#00ff41]" />
 
                   <div className="w-full h-36 border-2 border-zinc-700 bg-[#0a0a0c] overflow-hidden relative shadow-[0_0_30px_rgba(0,0,0,0.9)]">
                     <motion.div
@@ -301,7 +313,7 @@ export function BlacksmithShop({
                               <img
                                 src={item.image_url}
                                 alt={item.item_name}
-                                className="w-full h-full object-contain [image-rendering:pixelated] scale-110"
+                                className="w-full h-full object-contain pixelated scale-110"
                               />
                             ) : (
                               <Swords className="w-8 h-8 text-[#00ff41]" />
@@ -327,14 +339,14 @@ export function BlacksmithShop({
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-sm border-2 border-zinc-800 bg-[#141416] p-6 text-center space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.9)] relative"
+                className="w-full max-w-sm border-2 border-zinc-800 bg-[#141416] p-6 text-center space-y-5 shadow-[0_0_50px_rgba(0,0,0,0.9)] relative my-auto"
               >
                 <button
                   onClick={() => {
                     setOpeningPhase(null);
                     setDrawnResult(null);
                   }}
-                  className="absolute top-4 right-4 p-1 border border-zinc-800 bg-black text-zinc-400 hover:text-white"
+                  className="absolute top-4 right-4 p-1 border border-zinc-800 bg-black text-zinc-400 hover:text-white cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -348,12 +360,12 @@ export function BlacksmithShop({
                   </h3>
                 </div>
 
-                <div className="w-24 h-24 bg-black border-2 border-zinc-800 flex items-center justify-center mx-auto my-2 p-2">
+                <div className="w-24 h-24 bg-black border-2 border-zinc-800 flex items-center justify-center mx-auto my-2 p-2 shadow-neon">
                   {drawnResult.item.image_url ? (
                     <img
                       src={drawnResult.item.image_url}
                       alt={drawnResult.item.item_name}
-                      className="w-full h-full object-contain [image-rendering:pixelated] scale-125 drop-shadow-[0_0_10px_rgba(0,255,65,0.4)]"
+                      className="w-full h-full object-contain pixelated scale-125 drop-shadow-[0_0_10px_rgba(0,255,65,0.4)]"
                     />
                   ) : (
                     <Swords className="w-12 h-12 text-[#00ff41]" />
@@ -383,9 +395,9 @@ export function BlacksmithShop({
                     setOpeningPhase(null);
                     setDrawnResult(null);
                   }}
-                  className="w-full h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon"
+                  className="w-full h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
                 >
-                  SAVE ITEM
+                  SAVE ITEM TO INVENTORY
                 </button>
               </motion.div>
             )}

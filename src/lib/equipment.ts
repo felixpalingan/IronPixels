@@ -40,7 +40,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Heavy Slash",
     granted_skill_icon: "/assets/skills/swordsman/Icon1.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/Icon1.png",
+    image_url: "/assets/items/weapons/01.png",
     description: "A heavy, battered blade forged from simple iron.",
   },
   {
@@ -72,7 +72,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Lucky Charm",
     granted_skill_icon: "/assets/skills/undead/Icon3.png",
     icon: "heart",
-    image_url: "/assets/items/amulets/Icon25.png",
+    image_url: "/assets/items/amulets/Icon37.png",
     description: "A tarnished copper charm granting minor luck and stats.",
   },
   {
@@ -88,7 +88,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Staff Strike",
     granted_skill_icon: "/assets/skills/swordsman/Icon4.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/Icon2.png",
+    image_url: "/assets/items/weapons/02.png",
     description: "Simple wooden staff used by novice martial artists.",
   },
   {
@@ -104,7 +104,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Quick Arrow",
     granted_skill_icon: "/assets/skills/swordsman/Icon5.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/Icon3.png",
+    image_url: "/assets/items/weapons/03.png",
     description: "Flexible wooden bow crafted for forest rangers.",
   },
   {
@@ -152,7 +152,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Iron Surge",
     granted_skill_icon: "/assets/skills/swordsman/Icon8.png",
     icon: "flame",
-    image_url: "/assets/items/amulets/Icon26.png",
+    image_url: "/assets/items/amulets/Icon38.png",
     description: "Solid iron band granting steady physical strength.",
   },
   {
@@ -168,7 +168,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Wind Haste",
     granted_skill_icon: "/assets/skills/swordsman/Icon9.png",
     icon: "zap",
-    image_url: "/assets/items/amulets/Icon27.png",
+    image_url: "/assets/items/amulets/Icon39.png",
     description: "Enchanted anklet boosting agility and footwork.",
   },
   {
@@ -184,7 +184,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Shadow Slash EX",
     granted_skill_icon: "/assets/skills/swordsman/Icon10.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/Icon10.png",
+    image_url: "/assets/items/weapons/06.png",
     description: "Razor-sharp blade infused with dark steel.",
   },
   {
@@ -216,7 +216,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Reflex Boost",
     granted_skill_icon: "/assets/skills/swordsman/Icon12.png",
     icon: "zap",
-    image_url: "/assets/items/amulets/Icon28.png",
+    image_url: "/assets/items/amulets/Icon40.png",
     description: "Lightweight silver ring that accelerates reflexes.",
   },
   {
@@ -232,7 +232,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Flame Dual Slash",
     granted_skill_icon: "/assets/skills/swordsman/Icon13.png",
     icon: "flame",
-    image_url: "/assets/items/weapons/Icon13.png",
+    image_url: "/assets/items/weapons/08.png",
     description: "Pair of obsidian daggers burning with intense heat.",
   },
   {
@@ -248,7 +248,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Earth Shatter Smash",
     granted_skill_icon: "/assets/skills/swordsman/Icon14.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/Icon14.png",
+    image_url: "/assets/items/weapons/14.png",
     description: "Massive warhammer capable of shattering armor.",
   },
   {
@@ -280,7 +280,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Vampiric Drain",
     granted_skill_icon: "/assets/skills/undead/Icon16.png",
     icon: "heart",
-    image_url: "/assets/items/amulets/Icon29.png",
+    image_url: "/assets/items/amulets/Icon41.png",
     description: "Crimson ring absorbing vitality from defeated foes.",
   },
   {
@@ -296,7 +296,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Fortune Amulet",
     granted_skill_icon: "/assets/skills/undead/Icon17.png",
     icon: "sparkles",
-    image_url: "/assets/items/amulets/Icon30.png",
+    image_url: "/assets/items/amulets/Icon42.png",
     description: "Enchanted medallion dramatically boosting loot drop luck.",
   },
   {
@@ -312,7 +312,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Plasma Cannon Slash",
     granted_skill_icon: "/assets/skills/swordsman/Icon18.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/Icon18.png",
+    image_url: "/assets/items/weapons/18.png",
     description: "Futuristic blade glowing with supercharged plasma energy.",
   },
   {
@@ -344,7 +344,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Celestial Glow",
     granted_skill_icon: "/assets/skills/undead/Icon20.png",
     icon: "sparkles",
-    image_url: "/assets/items/amulets/Icon31.png",
+    image_url: "/assets/items/amulets/Icon43.png",
     description: "Mystical amulet humming with celestial energy.",
   },
   {
@@ -360,7 +360,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Glacial Ice Stab",
     granted_skill_icon: "/assets/skills/swordsman/Icon21.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/Icon21.png",
+    image_url: "/assets/items/weapons/22.png",
     description: "Crystalline spear frozen in eternal sub-zero ice.",
   },
   {
@@ -392,7 +392,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Phoenix Spark",
     granted_skill_icon: "/assets/skills/swordsman/Icon23.png",
     icon: "flame",
-    image_url: "/assets/items/amulets/Icon32.png",
+    image_url: "/assets/items/amulets/Icon44.png",
     description: "Ring imbued with the rebirth flame of the eternal phoenix.",
   },
   {
@@ -408,7 +408,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Void Annihilation Nova",
     granted_skill_icon: "/assets/skills/undead/Icon24.png",
     icon: "flame",
-    image_url: "/assets/items/weapons/Icon24.png",
+    image_url: "/assets/items/weapons/24.png",
     description: "Mythical blade forged in the abyss, capable of tearing reality.",
   },
   {
@@ -440,7 +440,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Starlight Aura",
     granted_skill_icon: "/assets/skills/undead/Icon26.png",
     icon: "sparkles",
-    image_url: "/assets/items/amulets/Icon33.png",
+    image_url: "/assets/items/amulets/Icon45.png",
     description: "An ancient artifact containing the power of a collapsed star.",
   },
   {
@@ -456,7 +456,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Divine Holy Judgment",
     granted_skill_icon: "/assets/skills/swordsman/Icon27.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/Icon27.png",
+    image_url: "/assets/items/weapons/31.png",
     description: "Radiant holy blade capable of purifying any dark boss.",
   },
   {
@@ -488,7 +488,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Infinity Blessing",
     granted_skill_icon: "/assets/skills/undead/Icon29.png",
     icon: "sparkles",
-    image_url: "/assets/items/amulets/Icon34.png",
+    image_url: "/assets/items/amulets/Icon46.png",
     description: "Cosmic ring bestowing ultimate critical strikes and fortune.",
   },
   {
@@ -504,7 +504,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Quantum Obliteration",
     granted_skill_icon: "/assets/skills/swordsman/Icon30.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/Icon30.png",
+    image_url: "/assets/items/weapons/37.png",
     description: "Godly weapon unleashing miniature black holes upon foes.",
   },
   {
@@ -520,7 +520,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Nether Core Barrier",
     granted_skill_icon: "/assets/skills/undead/Icon31.png",
     icon: "shield",
-    image_url: "/assets/items/shields/Icon10.png",
+    image_url: "/assets/items/shields/Icon15.png",
     description: "Apocalyptic mechanical suit powered by nether star energy.",
   },
   {
@@ -536,7 +536,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Sovereign Grace",
     granted_skill_icon: "/assets/skills/undead/Icon32.png",
     icon: "sparkles",
-    image_url: "/assets/items/amulets/Icon35.png",
+    image_url: "/assets/items/amulets/Icon48.png",
     description: "Supreme crown worn by the master of all pixel realms.",
   },
 ];
