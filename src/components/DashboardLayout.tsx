@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
@@ -737,6 +737,50 @@ export function DashboardLayout() {
                 />
 
                 <EquippedGearGrid gear={userData.equipped_gear} />
+
+                <div className="border border-pixel-border bg-surface p-3 space-y-2 font-mono shadow-neon">
+                  <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                      <Trophy className="w-4 h-4 text-gold-loot animate-pulse" />
+                      <span>WARRIORS & GUILD PARTY LEADERBOARD</span>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab("multiplayer")}
+                      className="text-[10px] text-[#00ff41] font-bold uppercase hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>VIEW ALL</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="p-2 border border-amber-500/40 bg-black flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        <div>
+                          <div className="font-bold text-white">Vanguard_Zero</div>
+                          <div className="text-[9px] text-zinc-400">CYBER KNIGHT &bull; Lv.48</div>
+                        </div>
+                      </div>
+                      <div className="font-headline font-black text-sm text-[#00ff41]">
+                        18,500 CP
+                      </div>
+                    </div>
+
+                    <div className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-purple-400" />
+                        <div>
+                          <div className="font-bold text-purple-300">Apex Cyber Vanguard</div>
+                          <div className="text-[9px] text-zinc-400">#1 GUILD PARTY &bull; 4 Members</div>
+                        </div>
+                      </div>
+                      <div className="font-headline font-black text-sm text-[#00ff41]">
+                        59,800 CP
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
 

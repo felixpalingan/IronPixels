@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Users, Swords, Search, UserPlus, Check, X, Flame, Zap, Shield, Crown, Sparkles, UserCheck } from "lucide-react";
+import { Trophy, Users, Swords, Search, UserPlus, Check, X, Flame, Zap, Shield, Crown, Sparkles, UserCheck, ShieldAlert, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
-import { LeaderboardEntry } from "@/app/api/multiplayer/leaderboard/route";
+import { LeaderboardEntry, PartyLeaderboardEntry } from "@/app/api/multiplayer/leaderboard/route";
 import { FriendUser } from "@/app/api/multiplayer/friends/route";
 import { PartyState } from "@/app/api/multiplayer/party/route";
 
@@ -22,8 +22,9 @@ export function MultiplayerHub({
   userRvs = 0,
 }: MultiplayerHubProps) {
   const [subTab, setSubTab] = useState<"leaderboard" | "friends" | "party">("leaderboard");
-  const [lbCategory, setLbCategory] = useState<"cp" | "rvs" | "streak">("cp");
+  const [lbCategory, setLbCategory] = useState<"cp" | "rvs" | "streak" | "party">("cp");
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>([]);
+  const [partyLeaderboardList, setPartyLeaderboardList] = useState<PartyLeaderboardEntry[]>([]);
   const [friendsData, setFriendsData] = useState<{ friends: FriendUser[]; pending: FriendUser[] }>({
     friends: [],
     pending: [],
@@ -33,13 +34,19 @@ export function MultiplayerHub({
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [party, setParty] = useState<PartyState | null>(null);
   const [partyNotice, setPartyNotice] = useState<string | null>(null);
+  const [inputPartyName, setInputPartyName] = useState<string>("Iron Legion Squad");
+  const [isCreatingPartyModal, setIsCreatingPartyModal] = useState<boolean>(false);
 
-  const fetchLeaderboard = async (cat: "cp" | "rvs" | "streak") => {
+  const fetchLeaderboard = async (cat: "cp" | "rvs" | "streak" | "party") => {
     try {
       const res = await fetch(`/api/multiplayer/leaderboard?category=${cat}`);
       if (res.ok) {
         const data = await res.json();
-        setLeaderboardList(data);
+        if (cat === "party") {
+          setPartyLeaderboardList(data);
+        } else {
+          setLeaderboardList(data);
+        }
       }
     } catch (e) {}
   };
@@ -119,9 +126,17 @@ export function MultiplayerHub({
     } catch (e) {}
   };
 
+  const handleCreateNewParty = async () => {
+    if (!inputPartyName.trim()) return;
+    await handlePartyAction("create_party", { party_name: inputPartyName.trim() });
+    setIsCreatingPartyModal(false);
+    setPartyNotice(`Guild Party "${inputPartyName.trim()}" successfully created!`);
+    setTimeout(() => setPartyNotice(null), 3000);
+  };
+
   const handleInviteToParty = async (friend: FriendUser) => {
     if (!party) {
-      await handlePartyAction("create_party", { party_name: "Iron Legion Squad" });
+      await handlePartyAction("create_party", { party_name: inputPartyName });
     }
     await handlePartyAction("invite_member", {
       invite_user_id: friend.user_id,
@@ -136,13 +151,9 @@ export function MultiplayerHub({
   const getRankBadge = (rank: number) => {
     if (rank === 1) return { bg: "bg-amber-400 text-black border-amber-300 shadow-gold-glow", icon: Crown, label: "#1 GOLD" };
     if (rank === 2) return { bg: "bg-zinc-300 text-black border-zinc-100 shadow-neon", icon: Trophy, label: "#2 SILVER" };
-    if (rank === 3) return { bg: "bg-amber-700 text-amber-100 border-amber-600 shadow-red-glow", icon: AwardBadge, label: "#3 BRONZE" };
+    if (rank === 3) return { bg: "bg-amber-700 text-amber-100 border-amber-600 shadow-red-glow", icon: Sparkles, label: "#3 BRONZE" };
     return { bg: "bg-surface text-zinc-400 border-pixel-border", icon: Shield, label: `#${rank}` };
   };
-
-  function AwardBadge(props: any) {
-    return <Sparkles {...props} />;
-  }
 
   return (
     <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
@@ -219,10 +230,10 @@ export function MultiplayerHub({
             exit={{ opacity: 0, y: -10 }}
             className="space-y-3"
           >
-            <div className="grid grid-cols-3 gap-1 bg-black border border-pixel-border p-1">
+            <div className="grid grid-cols-4 gap-1 bg-black border border-pixel-border p-1">
               <button
                 onClick={() => setLbCategory("cp")}
-                className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
+                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
                   lbCategory === "cp"
                     ? "bg-[#00ff41] text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
@@ -234,95 +245,158 @@ export function MultiplayerHub({
 
               <button
                 onClick={() => setLbCategory("rvs")}
-                className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
+                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
                   lbCategory === "rvs"
                     ? "bg-amber-400 text-black shadow-gold-glow"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
                 <Flame className="w-3 h-3" />
-                <span>DAILY RVS</span>
+                <span>RVS</span>
               </button>
 
               <button
                 onClick={() => setLbCategory("streak")}
-                className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
+                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
                   lbCategory === "streak"
                     ? "bg-rose-500 text-white shadow-red-glow"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
                 <Sparkles className="w-3 h-3" />
-                <span>WORKOUT STREAK</span>
+                <span>STREAK</span>
+              </button>
+
+              <button
+                onClick={() => setLbCategory("party")}
+                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
+                  lbCategory === "party"
+                    ? "bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Shield className="w-3 h-3" />
+                <span>PARTY</span>
               </button>
             </div>
 
             <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
-              {leaderboardList.map((entry, idx) => {
-                const rank = idx + 1;
-                const badge = getRankBadge(rank);
-                const BadgeIcon = badge.icon;
+              {lbCategory === "party" ? (
+                partyLeaderboardList.map((entry, idx) => {
+                  const rank = idx + 1;
+                  const badge = getRankBadge(rank);
+                  const BadgeIcon = badge.icon;
 
-                return (
-                  <div
-                    key={entry.user_id}
-                    className={`border border-pixel-border bg-surface p-3 flex items-center justify-between transition-all ${
-                      rank <= 3 ? "shadow-neon border-pixel-green/60" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 border flex items-center justify-center font-extrabold text-xs ${badge.bg}`}
-                      >
-                        <BadgeIcon className="w-4 h-4" />
+                  return (
+                    <div
+                      key={entry.party_id}
+                      className="border border-purple-500/60 bg-purple-950/20 p-3 flex items-center justify-between shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 border flex items-center justify-center font-extrabold text-xs ${badge.bg}`}
+                        >
+                          <BadgeIcon className="w-4 h-4" />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {entry.leader_weapon && (
+                            <div className="w-8 h-8 bg-black border border-purple-800 p-0.5 flex items-center justify-center">
+                              <img
+                                src={entry.leader_weapon}
+                                alt="Weapon"
+                                className="w-full h-full object-contain pixelated"
+                              />
+                            </div>
+                          )}
+
+                          <div>
+                            <div className="font-headline font-extrabold text-xs text-purple-300 flex items-center gap-1.5 uppercase">
+                              <span>{entry.party_name}</span>
+                            </div>
+                            <div className="text-[9px] text-zinc-400 font-bold">
+                              Leader: {entry.leader_name} &bull; {entry.member_count}/4 Members
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        {entry.equipped_weapon && (
-                          <div className="w-8 h-8 bg-black border border-pixel-border p-0.5 flex items-center justify-center">
-                            <img
-                              src={entry.equipped_weapon}
-                              alt="Weapon"
-                              className="w-full h-full object-contain pixelated"
-                            />
+                      <div className="text-right">
+                        <div className="font-headline font-black text-sm text-[#00ff41]">
+                          {formatNumber(entry.total_party_cp)} CP
+                        </div>
+                        <div className="text-[8px] text-purple-400 font-bold uppercase">COMBINED CP</div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                leaderboardList.map((entry, idx) => {
+                  const rank = idx + 1;
+                  const badge = getRankBadge(rank);
+                  const BadgeIcon = badge.icon;
+
+                  return (
+                    <div
+                      key={entry.user_id}
+                      className={`border border-pixel-border bg-surface p-3 flex items-center justify-between transition-all ${
+                        rank <= 3 ? "shadow-neon border-pixel-green/60" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 border flex items-center justify-center font-extrabold text-xs ${badge.bg}`}
+                        >
+                          <BadgeIcon className="w-4 h-4" />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {entry.equipped_weapon && (
+                            <div className="w-8 h-8 bg-black border border-pixel-border p-0.5 flex items-center justify-center">
+                              <img
+                                src={entry.equipped_weapon}
+                                alt="Weapon"
+                                className="w-full h-full object-contain pixelated"
+                              />
+                            </div>
+                          )}
+
+                          <div>
+                            <div className="font-headline font-bold text-xs text-white flex items-center gap-1.5">
+                              <span>{entry.username}</span>
+                              <span className="text-[9px] text-zinc-400 font-normal">
+                                Lv.{entry.level}
+                              </span>
+                            </div>
+                            <div className="text-[9px] text-zinc-500 uppercase font-bold">
+                              {entry.character_class}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        {lbCategory === "cp" && (
+                          <div className="font-headline font-black text-sm text-[#00ff41]">
+                            {formatNumber(entry.combat_power)} CP
                           </div>
                         )}
-
-                        <div>
-                          <div className="font-headline font-bold text-xs text-white flex items-center gap-1.5">
-                            <span>{entry.username}</span>
-                            <span className="text-[9px] text-zinc-400 font-normal">
-                              Lv.{entry.level}
-                            </span>
+                        {lbCategory === "rvs" && (
+                          <div className="font-headline font-black text-sm text-amber-400">
+                            {formatNumber(entry.daily_rvs)} RVS
                           </div>
-                          <div className="text-[9px] text-zinc-500 uppercase font-bold">
-                            {entry.character_class}
+                        )}
+                        {lbCategory === "streak" && (
+                          <div className="font-headline font-black text-sm text-rose-400 flex items-center gap-1 justify-end">
+                            <Flame className="w-3.5 h-3.5" />
+                            <span>{entry.workout_streak} DAYS</span>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
-
-                    <div className="text-right">
-                      {lbCategory === "cp" && (
-                        <div className="font-headline font-black text-sm text-[#00ff41]">
-                          {formatNumber(entry.combat_power)} CP
-                        </div>
-                      )}
-                      {lbCategory === "rvs" && (
-                        <div className="font-headline font-black text-sm text-amber-400">
-                          {formatNumber(entry.daily_rvs)} RVS
-                        </div>
-                      )}
-                      {lbCategory === "streak" && (
-                        <div className="font-headline font-black text-sm text-rose-400 flex items-center gap-1 justify-end">
-                          <Flame className="w-3.5 h-3.5" />
-                          <span>{entry.workout_streak} DAYS</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </motion.div>
         )}
@@ -491,6 +565,35 @@ export function MultiplayerHub({
               </div>
             )}
 
+            {isCreatingPartyModal && (
+              <div className="border border-[#00ff41] bg-surface p-4 space-y-3 shadow-neon">
+                <div className="text-xs text-[#00ff41] font-extrabold uppercase tracking-wider">
+                  CREATE CUSTOM GUILD PARTY
+                </div>
+                <input
+                  type="text"
+                  value={inputPartyName}
+                  onChange={(e) => setInputPartyName(e.target.value)}
+                  placeholder="Enter Party Guild Name..."
+                  className="w-full px-3 py-2 bg-black border border-pixel-border text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#00ff41]"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCreateNewParty}
+                    className="flex-1 py-2 bg-[#00ff41] text-black font-extrabold text-xs uppercase shadow-neon cursor-pointer"
+                  >
+                    CONFIRM & CREATE
+                  </button>
+                  <button
+                    onClick={() => setIsCreatingPartyModal(false)}
+                    className="px-3 py-2 border border-zinc-700 bg-black text-zinc-400 text-xs font-bold uppercase cursor-pointer"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              </div>
+            )}
+
             {!party ? (
               <div className="border border-pixel-border bg-surface p-6 text-center space-y-4 shadow-neon">
                 <div className="w-14 h-14 border border-red-500 bg-red-950/40 text-red-400 flex items-center justify-center mx-auto shadow-red-glow">
@@ -507,7 +610,7 @@ export function MultiplayerHub({
                 </div>
 
                 <button
-                  onClick={() => handlePartyAction("create_party")}
+                  onClick={() => setIsCreatingPartyModal(true)}
                   className="w-full py-3.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
                 >
                   CREATE 4-PLAYER PARTY
@@ -534,7 +637,7 @@ export function MultiplayerHub({
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {party.members.map((member, idx) => (
+                  {party.members.map((member) => (
                     <div
                       key={member.user_id}
                       className="border border-pixel-border bg-black p-2.5 flex items-center gap-2 relative"

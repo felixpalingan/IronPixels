@@ -13,6 +13,15 @@ export interface LeaderboardEntry {
   equipped_weapon?: string;
 }
 
+export interface PartyLeaderboardEntry {
+  party_id: string;
+  party_name: string;
+  leader_name: string;
+  member_count: number;
+  total_party_cp: number;
+  leader_weapon?: string;
+}
+
 const MOCK_LEADERBOARD: LeaderboardEntry[] = [
   {
     user_id: "user-top-1",
@@ -86,9 +95,48 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
   },
 ];
 
+const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
+  {
+    party_id: "party-top-1",
+    party_name: "Apex Cyber Vanguard",
+    leader_name: "Vanguard_Zero",
+    member_count: 4,
+    total_party_cp: 59800,
+    leader_weapon: "/assets/items/weapons/37.png",
+  },
+  {
+    party_id: "party-top-2",
+    party_name: "Iron Titan Legion",
+    leader_name: "IronSlayer99",
+    member_count: 4,
+    total_party_cp: 52300,
+    leader_weapon: "/assets/items/weapons/31.png",
+  },
+  {
+    party_id: "party-top-3",
+    party_name: "Shadow Assassins Squad",
+    leader_name: "ShadowKage",
+    member_count: 3,
+    total_party_cp: 35500,
+    leader_weapon: "/assets/items/weapons/24.png",
+  },
+  {
+    party_id: "party-top-4",
+    party_name: "IronPixels Champions",
+    leader_name: "Felix",
+    member_count: 2,
+    total_party_cp: 16650,
+    leader_weapon: "/assets/items/weapons/01.png",
+  },
+];
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category") || "cp";
+
+  if (category === "party") {
+    return NextResponse.json(MOCK_PARTY_LEADERBOARD);
+  }
 
   let list = [...MOCK_LEADERBOARD];
 
