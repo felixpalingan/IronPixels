@@ -1,7 +1,7 @@
 -- ========================================================
 -- IRONPIXELS DATABASE CLEANUP & RESET SCRIPT
 -- Clears all user test data & tidies up PostgreSQL schema
--- Safely checks IF EXISTS for all tables to prevent 42P01 errors
+-- Safely checks IF EXISTS for all tables and columns
 -- ========================================================
 
 -- 1. TRUNCATE ALL DYNAMIC USER DATA SAFELY
@@ -44,6 +44,16 @@ CREATE TABLE IF NOT EXISTS public."profiles" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Safely alter table to add any missing columns if profiles table already existed
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS max_floor INT DEFAULT 1;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS daily_rvs NUMERIC(10,2) DEFAULT 0;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS workout_streak INT DEFAULT 1;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS str INT DEFAULT 85;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS agi INT DEFAULT 70;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS vit INT DEFAULT 60;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS luk INT DEFAULT 50;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS character_class TEXT DEFAULT 'WARRIOR';
+
 -- 3. ENSURE PARTY & FRIENDS TABLES SCHEMA IS NEAT & COMPLETE
 CREATE TABLE IF NOT EXISTS public."Party" (
     party_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -55,6 +65,11 @@ CREATE TABLE IF NOT EXISTS public."Party" (
     party_streak INT DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public."Party" ADD COLUMN IF NOT EXISTS total_party_floor INT DEFAULT 1;
+ALTER TABLE public."Party" ADD COLUMN IF NOT EXISTS total_party_cp INT DEFAULT 0;
+ALTER TABLE public."Party" ADD COLUMN IF NOT EXISTS total_party_rvs INT DEFAULT 0;
+ALTER TABLE public."Party" ADD COLUMN IF NOT EXISTS party_streak INT DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS public."Party_Members" (
     member_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

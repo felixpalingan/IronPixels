@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS public."profiles" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS max_floor INT DEFAULT 1;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS daily_rvs NUMERIC(10,2) DEFAULT 0;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS workout_streak INT DEFAULT 1;
+
 CREATE TABLE IF NOT EXISTS public."Equipped_Gear" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
@@ -90,6 +94,8 @@ CREATE TABLE IF NOT EXISTS public."Party" (
     party_streak INT DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public."Party" ADD COLUMN IF NOT EXISTS total_party_floor INT DEFAULT 1;
 
 CREATE TABLE IF NOT EXISTS public."Party_Members" (
     member_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
