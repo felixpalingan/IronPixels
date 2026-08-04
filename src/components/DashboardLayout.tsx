@@ -797,7 +797,7 @@ export function DashboardLayout() {
                           </div>
                         </div>
                         <div className="font-headline font-black text-xs text-[#00ff41]">
-                          18,500 CP
+                          FLOOR 28
                         </div>
                       </div>
 
@@ -813,7 +813,7 @@ export function DashboardLayout() {
                           </div>
                         </div>
                         <div className="font-headline font-black text-xs text-[#00ff41]">
-                          15,400 CP
+                          FLOOR 24
                         </div>
                       </div>
 
@@ -829,7 +829,7 @@ export function DashboardLayout() {
                           </div>
                         </div>
                         <div className="font-headline font-black text-xs text-[#00ff41]">
-                          13,900 CP
+                          FLOOR 20
                         </div>
                       </div>
                     </div>
@@ -852,7 +852,7 @@ export function DashboardLayout() {
                           </div>
                         </div>
                         <div className="font-headline font-black text-xs text-[#00ff41]">
-                          59,800 CP
+                          FLOOR 38
                         </div>
                       </div>
 
@@ -868,7 +868,7 @@ export function DashboardLayout() {
                           </div>
                         </div>
                         <div className="font-headline font-black text-xs text-[#00ff41]">
-                          52,300 CP
+                          FLOOR 32
                         </div>
                       </div>
 
@@ -884,7 +884,7 @@ export function DashboardLayout() {
                           </div>
                         </div>
                         <div className="font-headline font-black text-xs text-[#00ff41]">
-                          35,500 CP
+                          FLOOR 25
                         </div>
                       </div>
                     </div>

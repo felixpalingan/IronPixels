@@ -6,6 +6,7 @@ export interface LeaderboardEntry {
   username: string;
   character_class: string;
   level: number;
+  max_floor: number;
   combat_power: number;
   daily_rvs: number;
   workout_streak: number;
@@ -18,6 +19,7 @@ export interface PartyLeaderboardEntry {
   party_name: string;
   leader_name: string;
   member_count: number;
+  total_party_floor: number;
   total_party_cp: number;
   total_party_rvs: number;
   party_streak: number;
@@ -30,6 +32,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     username: "Vanguard_Zero",
     character_class: "CYBER KNIGHT",
     level: 48,
+    max_floor: 28,
     combat_power: 18500,
     daily_rvs: 1450,
     workout_streak: 24,
@@ -40,6 +43,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     username: "IronSlayer99",
     character_class: "TITAN BERSERKER",
     level: 42,
+    max_floor: 24,
     combat_power: 15400,
     daily_rvs: 1200,
     workout_streak: 19,
@@ -50,6 +54,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     username: "ShadowKage",
     character_class: "SHADOW NINJA",
     level: 39,
+    max_floor: 20,
     combat_power: 13900,
     daily_rvs: 1100,
     workout_streak: 15,
@@ -60,6 +65,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     username: "CyberAegis",
     character_class: "IRON VANGUARD",
     level: 36,
+    max_floor: 16,
     combat_power: 12200,
     daily_rvs: 950,
     workout_streak: 12,
@@ -70,6 +76,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     username: "PhoenixRider",
     character_class: "WARRIOR",
     level: 32,
+    max_floor: 12,
     combat_power: 10800,
     daily_rvs: 850,
     workout_streak: 9,
@@ -80,6 +87,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     username: "GlacialStorm",
     character_class: "SHADOW NINJA",
     level: 28,
+    max_floor: 9,
     combat_power: 9400,
     daily_rvs: 720,
     workout_streak: 7,
@@ -90,6 +98,7 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     username: "RagnarokStriker",
     character_class: "TITAN BERSERKER",
     level: 25,
+    max_floor: 6,
     combat_power: 8300,
     daily_rvs: 650,
     workout_streak: 5,
@@ -103,6 +112,7 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     party_name: "Apex Cyber Vanguard",
     leader_name: "Vanguard_Zero",
     member_count: 4,
+    total_party_floor: 38,
     total_party_cp: 59800,
     total_party_rvs: 4700,
     party_streak: 28,
@@ -113,6 +123,7 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     party_name: "Iron Titan Legion",
     leader_name: "IronSlayer99",
     member_count: 4,
+    total_party_floor: 32,
     total_party_cp: 52300,
     total_party_rvs: 4100,
     party_streak: 22,
@@ -123,6 +134,7 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     party_name: "Shadow Assassins Squad",
     leader_name: "ShadowKage",
     member_count: 3,
+    total_party_floor: 25,
     total_party_cp: 35500,
     total_party_rvs: 2800,
     party_streak: 16,
@@ -133,6 +145,7 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     party_name: "IronPixels Champions",
     leader_name: "Felix",
     member_count: 2,
+    total_party_floor: 15,
     total_party_cp: 16650,
     total_party_rvs: 1350,
     party_streak: 10,
@@ -142,7 +155,7 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const category = searchParams.get("category") || "user_cp";
+  const category = searchParams.get("category") || "user_floor";
 
   if (category.startsWith("party")) {
     let partyList = [...MOCK_PARTY_LEADERBOARD];
@@ -151,7 +164,7 @@ export async function GET(request: Request) {
     } else if (category === "party_streak") {
       partyList.sort((a, b) => b.party_streak - a.party_streak);
     } else {
-      partyList.sort((a, b) => b.total_party_cp - a.total_party_cp);
+      partyList.sort((a, b) => b.total_party_floor - a.total_party_floor);
     }
     return NextResponse.json(partyList);
   }
@@ -175,6 +188,7 @@ export async function GET(request: Request) {
           username: prof.username || "Felix",
           character_class: prof.character_class || "WARRIOR",
           level: prof.level || 1,
+          max_floor: prof.max_floor || 5,
           combat_power: Math.round(cp),
           daily_rvs: 500,
           workout_streak: prof.workout_streak || 3,
@@ -189,7 +203,7 @@ export async function GET(request: Request) {
   } else if (category === "user_streak" || category === "streak") {
     list.sort((a, b) => b.workout_streak - a.workout_streak);
   } else {
-    list.sort((a, b) => b.combat_power - a.combat_power);
+    list.sort((a, b) => b.max_floor - a.max_floor);
   }
 
   return NextResponse.json(list.slice(0, 20));

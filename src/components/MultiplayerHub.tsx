@@ -23,7 +23,7 @@ export function MultiplayerHub({
 }: MultiplayerHubProps) {
   const [subTab, setSubTab] = useState<"leaderboard" | "friends" | "party">("leaderboard");
   const [lbGroup, setLbGroup] = useState<"user" | "party">("user");
-  const [lbMetric, setLbMetric] = useState<"cp" | "rvs" | "streak">("cp");
+  const [lbMetric, setLbMetric] = useState<"floor" | "rvs" | "streak">("floor");
 
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>([]);
   const [partyLeaderboardList, setPartyLeaderboardList] = useState<PartyLeaderboardEntry[]>([]);
@@ -45,7 +45,7 @@ export function MultiplayerHub({
   const [isEditingPartyName, setIsEditingPartyName] = useState<boolean>(false);
   const [editPartyNameInput, setEditPartyNameInput] = useState<string>("");
 
-  const fetchLeaderboard = async (group: "user" | "party", metric: "cp" | "rvs" | "streak") => {
+  const fetchLeaderboard = async (group: "user" | "party", metric: "floor" | "rvs" | "streak") => {
     const catQuery = `${group}_${metric}`;
     try {
       const res = await fetch(`/api/multiplayer/leaderboard?category=${catQuery}`);
@@ -198,31 +198,27 @@ export function MultiplayerHub({
 
               <div className="flex items-center gap-3 border-b border-pixel-border pb-3">
                 <div className="w-12 h-12 bg-black border border-pixel-green p-1 flex items-center justify-center shadow-neon">
-                  {inspectUser.equipped_weapon ? (
-                    <img src={inspectUser.equipped_weapon} alt="Weapon" className="w-full h-full object-contain pixelated" />
-                  ) : (
-                    <Trophy className="w-6 h-6 text-pixel-green" />
-                  )}
+                  <img
+                    src={inspectUser.equipped_weapon || "/assets/items/weapons/01.png"}
+                    alt="Hero Weapon"
+                    className="w-full h-full object-contain pixelated"
+                  />
                 </div>
-
                 <div>
-                  <div className="text-[10px] text-pixel-green font-extrabold uppercase tracking-widest">
-                    WARRIOR PROFILE
-                  </div>
-                  <h3 className="font-headline font-black text-xl text-white">
+                  <h3 className="font-headline font-black text-xl text-white uppercase">
                     {inspectUser.username}
                   </h3>
                   <div className="text-[10px] text-zinc-400 font-bold uppercase">
-                    {inspectUser.character_class} &bull; Lv. {inspectUser.level}
+                    {inspectUser.character_class} &bull; LEVEL {inspectUser.level}
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-1 bg-black border border-pixel-border p-2 text-center">
                 <div>
-                  <div className="text-[9px] text-zinc-500 font-bold">COMBAT POWER</div>
+                  <div className="text-[9px] text-zinc-500 font-bold">MAX FLOOR</div>
                   <div className="font-headline font-black text-sm text-[#00ff41]">
-                    {formatNumber(inspectUser.combat_power)} CP
+                    FLOOR {inspectUser.max_floor}
                   </div>
                 </div>
 
@@ -258,15 +254,10 @@ export function MultiplayerHub({
 
                 <button
                   onClick={() => {
-                    handleInviteToParty(
-                      inspectUser.username,
-                      inspectUser.user_id,
-                      inspectUser.character_class,
-                      inspectUser.combat_power
-                    );
+                    handleInviteToParty(inspectUser.username, inspectUser.user_id, inspectUser.character_class, inspectUser.combat_power);
                     setInspectUser(null);
                   }}
-                  className="w-full py-2.5 border border-purple-500 bg-purple-950/40 hover:bg-purple-600 text-purple-300 hover:text-white font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                  className="w-full py-2.5 border border-purple-500 bg-purple-950/40 hover:bg-purple-600 text-purple-300 hover:text-white font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   <Swords className="w-4 h-4" />
                   <span>INVITE TO PARTY</span>
@@ -341,9 +332,9 @@ export function MultiplayerHub({
 
               <div className="grid grid-cols-2 gap-2 bg-black border border-purple-900 p-2.5 text-center">
                 <div>
-                  <div className="text-[9px] text-zinc-500 font-bold uppercase">COMBINED PARTY CP</div>
+                  <div className="text-[9px] text-zinc-500 font-bold uppercase">TOTAL PARTY FLOOR</div>
                   <div className="font-headline font-black text-sm text-[#00ff41]">
-                    {formatNumber(inspectParty.total_party_cp)} CP
+                    FLOOR {inspectParty.total_party_floor}
                   </div>
                 </div>
 
@@ -378,10 +369,10 @@ export function MultiplayerHub({
                 <button
                   onClick={() => {
                     setPartyNotice(`Join request sent to Party Leader ${inspectParty.leader_name}!`);
-                    setInspectParty(null);
                     setTimeout(() => setPartyNotice(null), 3000);
+                    setInspectParty(null);
                   }}
-                  className="w-full py-3 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black font-headline font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-neon"
+                  className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-headline font-bold text-xs uppercase tracking-wider shadow-neon cursor-pointer"
                 >
                   REQUEST TO JOIN PARTY
                 </button>
@@ -393,24 +384,33 @@ export function MultiplayerHub({
 
       <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between shadow-neon">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 border border-pixel-green bg-pixel-green/10 text-pixel-green flex items-center justify-center">
-            <Users className="w-5 h-5" />
+          <div className="w-9 h-9 border border-[#00ff41] bg-[#00ff41]/10 text-[#00ff41] flex items-center justify-center">
+            <Trophy className="w-5 h-5" />
           </div>
           <div>
             <div className="font-headline font-black text-sm text-white uppercase tracking-wider">
-              MULTIPLAYER REALM
+              MULTIPLAYER REALM & GUILDS
             </div>
             <div className="text-[10px] text-zinc-400 font-bold">
-              FRIENDS, PARTY RAIDS & 6 LEADERBOARDS
+              RANKINGS, FRIENDS & 10-PLAYER PARTIES
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 bg-black border border-pixel-green/60 px-2.5 py-1 text-pixel-green text-xs font-bold shadow-neon">
-          <Zap className="w-3.5 h-3.5" />
-          <span>{formatNumber(userCp)} CP</span>
-        </div>
+        <button
+          onClick={() => setIsCreatingPartyModal(true)}
+          className="px-2.5 py-1.5 border border-purple-500 bg-purple-950/60 hover:bg-purple-600 text-purple-300 hover:text-white font-headline font-bold text-[10px] uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>CREATE PARTY</span>
+        </button>
       </div>
+
+      {partyNotice && (
+        <div className="bg-[#00ff41]/20 border border-[#00ff41] p-2.5 text-xs font-bold text-[#00ff41] text-center shadow-neon animate-pulse">
+          {partyNotice}
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-1 bg-surface border border-pixel-border p-1">
         <button
@@ -492,15 +492,15 @@ export function MultiplayerHub({
 
             <div className="grid grid-cols-3 gap-1 bg-black border border-pixel-border p-1">
               <button
-                onClick={() => setLbMetric("cp")}
+                onClick={() => setLbMetric("floor")}
                 className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
-                  lbMetric === "cp"
+                  lbMetric === "floor"
                     ? "bg-[#00ff41] text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                <Zap className="w-3 h-3" />
-                <span>TOP CP</span>
+                <Swords className="w-3 h-3" />
+                <span>TOP FLOOR</span>
               </button>
 
               <button
@@ -571,9 +571,9 @@ export function MultiplayerHub({
                       </div>
 
                       <div className="text-right">
-                        {lbMetric === "cp" && (
+                        {lbMetric === "floor" && (
                           <div className="font-headline font-black text-sm text-[#00ff41]">
-                            {formatNumber(entry.total_party_cp)} CP
+                            FLOOR {entry.total_party_floor}
                           </div>
                         )}
                         {lbMetric === "rvs" && (
@@ -638,9 +638,9 @@ export function MultiplayerHub({
                       </div>
 
                       <div className="text-right">
-                        {lbMetric === "cp" && (
+                        {lbMetric === "floor" && (
                           <div className="font-headline font-black text-sm text-[#00ff41]">
-                            {formatNumber(entry.combat_power)} CP
+                            FLOOR {entry.max_floor}
                           </div>
                         )}
                         {lbMetric === "rvs" && (
@@ -671,145 +671,178 @@ export function MultiplayerHub({
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
-            <div className="relative w-full">
-              <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
+            <div className="relative">
               <input
                 type="text"
+                placeholder="Search players by username..."
                 value={searchQuery}
                 onChange={(e) => handleSearchPlayers(e.target.value)}
-                placeholder="Search player username to add..."
-                className="w-full pl-9 pr-4 py-2.5 bg-black border border-pixel-border text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#00ff41]"
+                className="w-full bg-black border border-pixel-border focus:border-[#00ff41] px-3 py-2.5 pl-9 text-xs text-white placeholder:text-zinc-600 outline-none transition-colors"
               />
+              <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
+              {searchQuery && (
+                <button
+                  onClick={() => handleSearchPlayers("")}
+                  className="absolute right-3 top-3 text-zinc-500 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
-            {isSearching && (
-              <div className="space-y-2 border border-pixel-border bg-surface p-3">
-                <div className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider mb-2">
+            {isSearching ? (
+              <div className="space-y-2">
+                <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
                   SEARCH RESULTS ({searchResults.length})
                 </div>
                 {searchResults.length === 0 ? (
-                  <div className="text-xs text-zinc-500 italic">No warriors found matching "{searchQuery}"</div>
+                  <div className="border border-dashed border-pixel-border p-4 text-center text-xs text-zinc-500">
+                    No players found matching "{searchQuery}".
+                  </div>
                 ) : (
                   searchResults.map((user) => (
                     <div
                       key={user.user_id}
-                      className="border border-pixel-border bg-black p-2.5 flex items-center justify-between text-xs"
+                      className="border border-pixel-border bg-surface p-3 flex items-center justify-between"
                     >
-                      <div>
-                        <div className="font-bold text-white flex items-center gap-1.5">
-                          <span>{user.username}</span>
-                          <span className="text-[9px] text-[#00ff41]">Lv.{user.level}</span>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 bg-black border border-pixel-border p-0.5 flex items-center justify-center">
+                          <img
+                            src={user.weapon_icon || "/assets/items/weapons/01.png"}
+                            alt="Weapon"
+                            className="w-full h-full object-contain pixelated"
+                          />
                         </div>
-                        <div className="text-[9px] text-zinc-400">{user.character_class} ({formatNumber(user.combat_power)} CP)</div>
+                        <div>
+                          <div className="font-bold text-xs text-white">
+                            {user.username} (Lv.{user.level})
+                          </div>
+                          <div className="text-[9px] text-zinc-400 font-bold">
+                            {user.character_class} &bull; {formatNumber(user.combat_power)} CP
+                          </div>
+                        </div>
                       </div>
 
                       {user.status === "friend" ? (
-                        <span className="text-[10px] text-pixel-green font-bold flex items-center gap-1">
-                          <UserCheck className="w-3.5 h-3.5" />
-                          FRIENDS
-                        </span>
-                      ) : user.status === "pending_outgoing" ? (
-                        <span className="text-[10px] text-amber-400 font-bold">REQUEST SENT</span>
+                        <div className="px-2.5 py-1 bg-[#00ff41]/20 border border-[#00ff41] text-[#00ff41] font-bold text-[10px] uppercase flex items-center gap-1">
+                          <UserCheck className="w-3 h-3" />
+                          <span>FRIEND</span>
+                        </div>
+                      ) : user.status.startsWith("pending") || friendStatusMap[user.user_id] === "pending_outgoing" ? (
+                        <div className="px-2.5 py-1 bg-amber-950/40 border border-amber-500 text-amber-400 font-bold text-[10px] uppercase">
+                          PENDING
+                        </div>
                       ) : (
                         <button
                           onClick={() => handleFriendAction(user.user_id, "send_request")}
-                          className="px-2.5 py-1 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] text-[10px] font-bold uppercase flex items-center gap-1 hover:bg-[#00ff41] hover:text-black cursor-pointer"
+                          className="px-2.5 py-1 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black font-bold text-[10px] uppercase flex items-center gap-1 transition-all cursor-pointer shadow-neon"
                         >
-                          <UserPlus className="w-3.5 h-3.5" />
-                          ADD FRIEND
+                          <UserPlus className="w-3 h-3" />
+                          <span>ADD</span>
                         </button>
                       )}
                     </div>
                   ))
                 )}
               </div>
-            )}
-
-            {friendsData.pending.length > 0 && (
-              <div className="border border-amber-500/60 bg-amber-950/20 p-3 space-y-2">
-                <div className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
-                  PENDING FRIEND REQUESTS ({friendsData.pending.length})
-                </div>
-                {friendsData.pending.map((req) => (
-                  <div
-                    key={req.user_id}
-                    className="border border-amber-500/40 bg-black/80 p-2.5 flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="font-bold text-white">{req.username}</div>
-                      <div className="text-[9px] text-zinc-400">{req.character_class} ({formatNumber(req.combat_power)} CP)</div>
+            ) : (
+              <div className="space-y-4">
+                {friendsData.pending.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5" />
+                      <span>PENDING FRIEND REQUESTS ({friendsData.pending.length})</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleFriendAction(req.user_id, "accept_request")}
-                        className="px-2 py-1 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] text-[10px] font-bold uppercase flex items-center gap-1 hover:bg-[#00ff41] hover:text-black cursor-pointer"
+                    {friendsData.pending.map((req) => (
+                      <div
+                        key={req.user_id}
+                        className="border border-amber-500/60 bg-amber-950/20 p-3 flex items-center justify-between"
                       >
-                        <Check className="w-3.5 h-3.5" />
-                        ACCEPT
-                      </button>
-                      <button
-                        onClick={() => handleFriendAction(req.user_id, "reject_request")}
-                        className="px-2 py-1 border border-red-500 bg-red-950/40 text-red-400 text-[10px] font-bold uppercase flex items-center gap-1 hover:bg-red-600 hover:text-white cursor-pointer"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
-                MY FRIENDS ({friendsData.friends.length})
-              </div>
-
-              {friendsData.friends.length === 0 ? (
-                <div className="text-xs text-zinc-500 italic p-4 text-center border border-dashed border-pixel-border">
-                  No friends added yet. Use the search bar above to invite warriors!
-                </div>
-              ) : (
-                friendsData.friends.map((friend) => (
-                  <div
-                    key={friend.user_id}
-                    className="border border-pixel-border bg-surface p-3 flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      {friend.weapon_icon && (
-                        <div className="w-9 h-9 bg-black border border-pixel-border p-1 flex items-center justify-center">
-                          <img
-                            src={friend.weapon_icon}
-                            alt="Weapon"
-                            className="w-full h-full object-contain pixelated"
-                          />
+                        <div>
+                          <div className="font-bold text-xs text-white">
+                            {req.username} (Lv.{req.level})
+                          </div>
+                          <div className="text-[9px] text-zinc-400 font-bold">
+                            {req.character_class} &bull; {formatNumber(req.combat_power)} CP
+                          </div>
                         </div>
-                      )}
 
-                      <div>
-                        <div className="font-headline font-bold text-xs text-white flex items-center gap-2">
-                          <span>{friend.username}</span>
-                          <span className="text-[9px] text-[#00ff41] font-bold">
-                            Lv.{friend.level}
-                          </span>
-                        </div>
-                        <div className="text-[9px] text-zinc-400 font-bold">
-                          {friend.character_class} &bull; {formatNumber(friend.combat_power)} CP
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleFriendAction(req.user_id, "accept_request")}
+                            className="px-2 py-1 bg-[#00ff41] text-black font-bold text-[10px] uppercase shadow-neon cursor-pointer flex items-center gap-1"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>ACCEPT</span>
+                          </button>
+                          <button
+                            onClick={() => handleFriendAction(req.user_id, "reject_request")}
+                            className="px-2 py-1 bg-red-950 border border-red-600 text-red-400 font-bold text-[10px] uppercase cursor-pointer"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </div>
                       </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleInviteToParty(friend.username, friend.user_id, friend.character_class, friend.combat_power)}
-                      className="px-2.5 py-1 border border-[#00ff41] bg-[#00ff41]/10 hover:bg-[#00ff41] text-[#00ff41] hover:text-black text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer shadow-neon"
-                    >
-                      <Swords className="w-3.5 h-3.5" />
-                      <span>INVITE TO PARTY</span>
-                    </button>
+                    ))}
                   </div>
-                ))
-              )}
-            </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="text-[10px] text-[#00ff41] font-bold uppercase tracking-wider flex items-center justify-between">
+                    <span>MY FRIENDS LIST ({friendsData.friends.length})</span>
+                    <span className="text-zinc-500 text-[9px]">ACTIVE WARRIORS</span>
+                  </div>
+
+                  {friendsData.friends.length === 0 ? (
+                    <div className="border border-dashed border-pixel-border p-6 text-center text-xs text-zinc-500 space-y-2">
+                      <Users className="w-6 h-6 mx-auto text-zinc-600" />
+                      <div>YOU HAVE NO FRIENDS ADDED YET.</div>
+                      <div className="text-[10px] text-zinc-600">
+                        Use the search bar above to find gym friends by username!
+                      </div>
+                    </div>
+                  ) : (
+                    friendsData.friends.map((friend) => (
+                      <div
+                        key={friend.user_id}
+                        className="border border-pixel-border bg-surface p-3 flex items-center justify-between hover:border-[#00ff41] transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-black border border-pixel-border p-0.5 flex items-center justify-center">
+                            <img
+                              src={friend.weapon_icon || "/assets/items/weapons/01.png"}
+                              alt="Weapon"
+                              className="w-full h-full object-contain pixelated"
+                            />
+                          </div>
+
+                          <div>
+                            <div className="font-bold text-xs text-white flex items-center gap-2">
+                              <span>{friend.username}</span>
+                              <span className="text-[9px] bg-[#00ff41]/20 border border-[#00ff41]/60 text-[#00ff41] px-1 py-0.2 font-extrabold">
+                                ONLINE
+                              </span>
+                            </div>
+                            <div className="text-[9px] text-zinc-400 font-bold">
+                              Lv.{friend.level} {friend.character_class} &bull; {formatNumber(friend.combat_power)} CP
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleInviteToParty(friend.username, friend.user_id, friend.character_class, friend.combat_power)}
+                          className="px-2.5 py-1 border border-purple-500 bg-purple-950/40 hover:bg-purple-600 text-purple-300 hover:text-white font-bold text-[10px] uppercase flex items-center gap-1 transition-all cursor-pointer"
+                        >
+                          <Swords className="w-3 h-3" />
+                          <span>PARTY</span>
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -821,140 +854,152 @@ export function MultiplayerHub({
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
-            {partyNotice && (
-              <div className="bg-[#00ff41]/20 border border-[#00ff41] p-2 text-xs font-bold text-[#00ff41] text-center animate-pulse">
-                {partyNotice}
-              </div>
-            )}
+            {party ? (
+              <div className="border-2 border-purple-500 bg-surface p-4 space-y-4 shadow-[0_0_25px_rgba(168,85,247,0.4)] relative">
+                <div className="flex items-start justify-between border-b border-purple-900 pb-3">
+                  <div>
+                    <div className="text-[10px] text-purple-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>ACTIVE GUILD PARTY (MAX 10 WARRIORS)</span>
+                    </div>
+                    <h3 className="font-headline font-black text-xl text-white uppercase mt-0.5">
+                      {party.party_name}
+                    </h3>
+                  </div>
 
-            {isCreatingPartyModal && (
-              <div className="border border-[#00ff41] bg-surface p-4 space-y-3 shadow-neon">
-                <div className="text-xs text-[#00ff41] font-extrabold uppercase tracking-wider">
-                  CREATE CUSTOM GUILD PARTY
-                </div>
-                <input
-                  type="text"
-                  value={inputPartyName}
-                  onChange={(e) => setInputPartyName(e.target.value)}
-                  placeholder="Enter Party Guild Name..."
-                  className="w-full px-3 py-2 bg-black border border-pixel-border text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#00ff41]"
-                />
-                <div className="flex gap-2">
                   <button
-                    onClick={handleCreateNewParty}
-                    className="flex-1 py-2 bg-[#00ff41] text-black font-extrabold text-xs uppercase shadow-neon cursor-pointer"
+                    onClick={() => handlePartyAction("leave_party")}
+                    className="px-2.5 py-1 bg-red-950 border border-red-600 text-red-400 hover:bg-red-600 hover:text-white text-[10px] font-bold uppercase transition-all cursor-pointer"
                   >
-                    CONFIRM & CREATE
-                  </button>
-                  <button
-                    onClick={() => setIsCreatingPartyModal(false)}
-                    className="px-3 py-2 border border-zinc-700 bg-black text-zinc-400 text-xs font-bold uppercase cursor-pointer"
-                  >
-                    CANCEL
+                    LEAVE PARTY
                   </button>
                 </div>
-              </div>
-            )}
 
-            {!party ? (
-              <div className="border border-pixel-border bg-surface p-6 text-center space-y-4 shadow-neon">
-                <div className="w-14 h-14 border border-red-500 bg-red-950/40 text-red-400 flex items-center justify-center mx-auto shadow-red-glow">
-                  <Swords className="w-8 h-8" />
+                <div className="grid grid-cols-2 gap-2 bg-black border border-purple-900 p-3 text-center">
+                  <div>
+                    <div className="text-[9px] text-zinc-500 font-bold uppercase">COMBINED PARTY CP</div>
+                    <div className="font-headline font-black text-base text-[#00ff41]">
+                      {formatNumber(party.total_party_cp)} CP
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[9px] text-zinc-500 font-bold uppercase">PARTY MEMBERS</div>
+                    <div className="font-headline font-black text-base text-purple-300">
+                      {party.members.length} / 10 WARRIORS
+                    </div>
+                  </div>
                 </div>
+
+                <div className="space-y-2">
+                  <div className="text-[10px] text-purple-300 font-bold uppercase tracking-wider flex items-center justify-between">
+                    <span>PARTY ROSTER ({party.members.length}/10)</span>
+                    <span className="text-zinc-500 text-[9px]">SHARED HEALTH & CP</span>
+                  </div>
+
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                    {party.members.map((member, idx) => (
+                      <div
+                        key={member.user_id}
+                        className="bg-black/60 border border-purple-900/60 p-2.5 flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          {idx === 0 ? (
+                            <Crown className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                          ) : (
+                            <Shield className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                          )}
+                          <div>
+                            <div className="font-bold text-white flex items-center gap-1.5">
+                              <span>{member.username}</span>
+                              {idx === 0 && (
+                                <span className="text-[8px] bg-amber-400 text-black px-1 font-extrabold">
+                                  LEADER
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[9px] text-zinc-400 font-bold">
+                              {member.character_class} &bull; {formatNumber(member.combat_power)} CP
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-[10px] text-[#00ff41] font-bold">
+                          ONLINE
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="border border-dashed border-pixel-border bg-surface p-6 text-center space-y-4">
+                <Shield className="w-10 h-10 text-purple-400 mx-auto animate-pulse" />
 
                 <div>
-                  <h3 className="font-headline font-extrabold text-xl text-white uppercase tracking-wider">
-                    NO ACTIVE RAID PARTY
+                  <h3 className="font-headline font-black text-base text-white uppercase">
+                    NO GUILD PARTY JOINED YET
                   </h3>
-                  <p className="text-xs text-zinc-400 mt-1">
-                    Assemble a 10-Player Guild Party to tackle World Boss Raids with combined Combat Power!
+                  <p className="text-xs text-zinc-400 mt-1 max-w-sm mx-auto">
+                    Form a 10-player Guild Party with your gym friends to combine your Combat Power and defeat mega raid bosses together!
                   </p>
                 </div>
 
                 <button
                   onClick={() => setIsCreatingPartyModal(true)}
-                  className="w-full py-3.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
+                  className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-headline font-extrabold text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.6)] cursor-pointer transition-all"
                 >
-                  CREATE 10-PLAYER PARTY
+                  CREATE A 10-PLAYER GUILD PARTY
                 </button>
               </div>
-            ) : (
-              <div className="border-2 border-red-600 bg-surface p-4 space-y-4 shadow-red-glow">
-                <div className="flex items-center justify-between border-b border-red-900 pb-2">
-                  <div>
-                    <span className="text-[9px] text-red-400 font-bold uppercase tracking-widest">
-                      ACTIVE RAID SQUAD (10-SLOT MAX)
-                    </span>
-                    <h3 className="font-headline font-black text-lg text-white uppercase">
-                      {party.party_name}
-                    </h3>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="text-[9px] text-zinc-400 font-bold uppercase">COMBINED PARTY CP</div>
-                    <div className="font-headline font-black text-base text-[#00ff41]">
-                      {formatNumber(party.total_party_cp)} CP
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
-                  {party.members.map((member) => (
-                    <div
-                      key={member.user_id}
-                      className="border border-pixel-border bg-black p-2.5 flex items-center gap-2 relative"
-                    >
-                      <div className="w-8 h-8 bg-surface border border-pixel-border flex items-center justify-center p-0.5">
-                        {member.weapon_icon ? (
-                          <img src={member.weapon_icon} alt="Weapon" className="w-full h-full object-contain pixelated" />
-                        ) : (
-                          <Shield className="w-4 h-4 text-[#00ff41]" />
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-[11px] text-white truncate flex items-center gap-1">
-                          <span>{member.username}</span>
-                          {member.role === "leader" && (
-                            <Crown className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                          )}
-                        </div>
-                        <div className="text-[9px] text-[#00ff41] font-bold">
-                          {formatNumber(member.combat_power)} CP
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {Array.from({ length: Math.max(0, 10 - party.members.length) }).map((_, emptyIdx) => (
-                    <div
-                      key={emptyIdx}
-                      className="border border-dashed border-zinc-800 bg-black/40 p-2.5 flex items-center justify-center text-center"
-                    >
-                      <span className="text-[10px] text-zinc-600 font-bold uppercase">
-                        EMPTY SLOT #{party.members.length + emptyIdx + 1}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setSubTab("friends")}
-                    className="flex-1 py-2.5 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black font-headline font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-neon"
-                  >
-                    + INVITE FRIENDS
-                  </button>
-
-                  <button
-                    onClick={() => handlePartyAction("leave_party")}
-                    className="py-2.5 px-4 border border-red-600 bg-red-950/40 hover:bg-red-600 text-red-400 hover:text-white font-headline font-bold text-xs uppercase transition-all cursor-pointer"
-                  >
-                    LEAVE PARTY
-                  </button>
-                </div>
-              </div>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isCreatingPartyModal && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <div className="w-full max-w-sm border-2 border-purple-500 bg-surface p-5 space-y-4 shadow-[0_0_30px_rgba(168,85,247,0.5)] relative">
+              <button
+                onClick={() => setIsCreatingPartyModal(false)}
+                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div>
+                <h3 className="font-headline font-black text-lg text-purple-300 uppercase">
+                  CREATE GUILD PARTY
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Set a name for your 10-Player Guild Squad.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-zinc-400 font-bold uppercase">GUILD PARTY NAME</label>
+                <input
+                  type="text"
+                  value={inputPartyName}
+                  onChange={(e) => setInputPartyName(e.target.value)}
+                  className="w-full bg-black border border-purple-500 focus:border-purple-300 px-3 py-2 text-xs text-white outline-none"
+                  placeholder="e.g. Apex Cyber Vanguard"
+                />
+              </div>
+
+              <button
+                onClick={handleCreateNewParty}
+                className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-headline font-extrabold text-xs uppercase tracking-wider shadow-neon cursor-pointer"
+              >
+                CREATE PARTY (MAX 10 WARRIORS)
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
