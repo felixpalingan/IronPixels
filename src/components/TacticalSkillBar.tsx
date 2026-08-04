@@ -53,19 +53,15 @@ export function TacticalSkillBar({
   };
 
   useEffect(() => {
-    let sourceSkills = equippedSkills;
-
-    if (!sourceSkills || sourceSkills.length === 0) {
-      sourceSkills = [
-        { name: "Heavy Iron Slash", icon: "/assets/skills/swordsman/Icon1.png", slotType: "weapon" },
-        { name: "Novice Shield Thrust", icon: "/assets/skills/swordsman/Icon2.png", slotType: "armor" },
-        { name: "Copper Lucky Charm", icon: "/assets/skills/undead/Icon3.png", slotType: "accessory" },
-        { name: "Iron Power Surge", icon: "/assets/skills/swordsman/Icon8.png", slotType: "accessory" },
-      ];
-    }
+    let sourceSkills = equippedSkills && equippedSkills.length > 0 ? equippedSkills.slice(0, 4) : [
+      { name: "Heavy Iron Slash", icon: "/assets/skills/swordsman/Icon1.png", slotType: "weapon" as const },
+      { name: "Novice Shield Thrust", icon: "/assets/skills/swordsman/Icon2.png", slotType: "armor" as const },
+      { name: "Copper Lucky Charm", icon: "/assets/skills/undead/Icon3.png", slotType: "accessory" as const },
+      { name: "Iron Power Surge", icon: "/assets/skills/swordsman/Icon8.png", slotType: "accessory" as const },
+    ];
 
     let accCount = 0;
-    const generated: SkillData[] = sourceSkills.map((sk, idx) => {
+    const generated: SkillData[] = sourceSkills.slice(0, 4).map((sk, idx) => {
       const type = sk.slotType || (idx === 0 ? "weapon" : idx === 1 ? "armor" : "accessory");
       let slotKey: string = type;
       if (type === "accessory") {
@@ -211,10 +207,10 @@ export function TacticalSkillBar({
       <div className="flex items-center justify-between border-b border-pixel-border/50 pb-1.5">
         <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
           <Sparkles className="w-4 h-4 text-gold-loot animate-pulse" />
-          <span>TACTICAL GEAR SKILLS (4 SLOTS)</span>
+          <span>TACTICAL GEAR SKILLS ({skills.length} SLOTS)</span>
         </div>
         <div className="text-[10px] text-zinc-400 font-bold">
-          WEAPON & ARMOR SLOTS HIGH DMG
+          MAX 4 EQUIPPED SLOTS
         </div>
       </div>
 

@@ -186,9 +186,17 @@ export function DashboardLayout() {
   const baseStats = profile?.stats || { str: 85, agi: 72, vit: 54, luk: 60 };
   const baseMaxHp = profile?.max_hp || 1000;
 
-  const equippedItems = userInventory.filter((rec) => rec.is_equipped);
+  const weaponEquipped = userInventory.find((rec) => rec.is_equipped && rec.item?.type === "weapon");
+  const armorEquipped = userInventory.find((rec) => rec.is_equipped && rec.item?.type === "armor");
+  const accsEquipped = userInventory.filter((rec) => rec.is_equipped && rec.item?.type === "accessory").slice(0, 2);
 
-  const bonusStats = equippedItems.reduce(
+  const activeFourSlotEquipped = [
+    weaponEquipped,
+    armorEquipped,
+    ...accsEquipped,
+  ].filter(Boolean) as InventoryRecord[];
+
+  const bonusStats = activeFourSlotEquipped.reduce(
     (acc, rec) => {
       acc.str += rec.item?.bonus_str || 0;
       acc.agi += rec.item?.bonus_agi || 0;
@@ -221,7 +229,7 @@ export function DashboardLayout() {
     gold: userGold,
     weight_kg: profile?.weight_kg || 75,
     stats: totalStats,
-    equipped_gear: equippedItems.map((rec) => ({
+    equipped_gear: activeFourSlotEquipped.map((rec) => ({
       slot: rec.item.type,
       name: rec.item.item_name,
       icon: rec.item.icon,
@@ -235,7 +243,7 @@ export function DashboardLayout() {
       userData.stats.agi * 2.5 +
       userData.stats.vit * 2.5 +
       userData.stats.luk * 2.0 +
-      equippedItems.length * 150 +
+      activeFourSlotEquipped.length * 150 +
       dailyRvs
   );
 
@@ -255,7 +263,7 @@ export function DashboardLayout() {
 
   const classPerk = getClassPerkInfo(userData.character_class);
 
-  const gearSkills = equippedItems
+  const gearSkills = activeFourSlotEquipped
     .map((rec) => ({
       name: rec.item?.granted_skill_name || rec.item?.item_name,
       icon: rec.item?.granted_skill_icon || rec.item?.image_url,
