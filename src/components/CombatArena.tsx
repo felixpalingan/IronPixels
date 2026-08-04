@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords, Zap, Gift, X } from "lucide-react";
+import { Flame, Swords, Zap, Gift, X, Skull } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
@@ -57,10 +57,10 @@ export function CombatArena({
 
   const [boss, setBoss] = useState<BossData>({
     boss_id: "b055d7ac-1234-4567-89ab-cdef01234567",
-    boss_name: "Orc Warlord Grok",
+    boss_name: "Stage 1: Goblin Berserker King",
     stage: 1,
-    current_hp: 30000,
-    max_hp: 30000,
+    current_hp: 15000,
+    max_hp: 15000,
     status: "Active",
     boss_type: "orc",
   });
@@ -117,7 +117,7 @@ export function CombatArena({
 
   const awardVoidChestLoot = async (defeatedBossName: string, stage: number) => {
     const topTierItems = EQUIPMENT_DICTIONARY.filter(
-      (item) => item.rarity === "legendary" || item.rarity === "epic"
+      (item) => item.rarity === "legendary" || item.rarity === "epic" || item.rarity === "mythic"
     );
     const droppedItem =
       topTierItems[Math.floor(Math.random() * topTierItems.length)] || EQUIPMENT_DICTIONARY[0];
@@ -229,6 +229,13 @@ export function CombatArena({
     }
   };
 
+  const handleInstantKill = () => {
+    if (boss.current_hp <= 0) return;
+    const instantKillDmg = Math.max(999999, boss.current_hp);
+    executeAttack(instantKillDmg, "INSTANT KILL TEST", "attack03");
+    addLog(`⚡ INSTANT KILL ACTIVATED! Dealt ${formatNumber(instantKillDmg)} TEST DAMAGE!`, "#FF0055");
+  };
+
   useEffect(() => {
     if (sessionDamage > 0 && !hasExecutedRef.current) {
       hasExecutedRef.current = true;
@@ -300,7 +307,7 @@ export function CombatArena({
   const hpPercentage = Math.max(0, Math.min(100, (boss.current_hp / boss.max_hp) * 100));
 
   return (
-    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono">
+    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
       <AnimatePresence>
         {bossVictoryLoot && (
           <motion.div
@@ -312,7 +319,7 @@ export function CombatArena({
             <div className="w-full max-w-sm border-2 border-purple-500 bg-surface p-6 text-center space-y-4 shadow-[0_0_50px_rgba(168,85,247,0.6)] font-mono relative">
               <button
                 onClick={() => setBossVictoryLoot(null)}
-                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white"
+                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -355,9 +362,9 @@ export function CombatArena({
 
               <button
                 onClick={() => setBossVictoryLoot(null)}
-                className="w-full h-12 bg-purple-600 hover:bg-purple-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.6)]"
+                className="w-full h-12 bg-purple-600 hover:bg-purple-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.6)] cursor-pointer"
               >
-                SAVE ITEM
+                SAVE ITEM TO INVENTORY
               </button>
             </div>
           </motion.div>
@@ -371,9 +378,14 @@ export function CombatArena({
           <span className="text-[#00ff41] text-sm">{formatNumber(baseCombatPower)} DMG</span>
         </div>
 
-        <div className="text-[10px] text-zinc-400 font-bold">
-          (RVS: <span className="text-white">{formatNumber(dailyRvs)}</span> + STR: <span className="text-amber-400">{playerStr}</span>)
-        </div>
+        <button
+          onClick={handleInstantKill}
+          className="px-2.5 py-1 border border-red-500/80 bg-red-950/60 hover:bg-red-600 text-red-300 hover:text-white text-[10px] font-headline font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer shadow-red-glow"
+          title="Testing Instant Kill"
+        >
+          <Skull className="w-3.5 h-3.5 text-red-400" />
+          <span>INSTANT KILL TEST</span>
+        </button>
       </div>
 
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">
