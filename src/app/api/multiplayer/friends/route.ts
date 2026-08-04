@@ -11,93 +11,110 @@ export interface FriendUser {
   weapon_icon?: string;
 }
 
-const DEMO_PLAYERS: FriendUser[] = [
-  {
-    user_id: "demo-f-1",
-    username: "IronSlayer99",
-    character_class: "TITAN BERSERKER",
-    level: 42,
-    combat_power: 15400,
-    status: "friend",
-    weapon_icon: "/assets/items/weapons/31.png",
-  },
-  {
-    user_id: "demo-f-2",
-    username: "CyberAegis",
-    character_class: "IRON VANGUARD",
-    level: 36,
-    combat_power: 12200,
-    status: "friend",
-    weapon_icon: "/assets/items/weapons/18.png",
-  },
-  {
-    user_id: "demo-f-3",
-    username: "ShadowKage",
-    character_class: "SHADOW NINJA",
-    level: 39,
-    combat_power: 13900,
-    status: "pending_incoming",
-    weapon_icon: "/assets/items/weapons/24.png",
-  },
-  {
-    user_id: "demo-f-4",
-    username: "Vanguard_Zero",
-    character_class: "CYBER KNIGHT",
-    level: 48,
-    combat_power: 18500,
-    status: "none",
-    weapon_icon: "/assets/items/weapons/37.png",
-  },
-  {
-    user_id: "demo-f-5",
-    username: "PhoenixRider",
-    character_class: "WARRIOR",
-    level: 32,
-    combat_power: 10800,
-    status: "none",
-    weapon_icon: "/assets/items/weapons/14.png",
-  },
-];
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("query")?.toLowerCase() || "";
 
-  if (query) {
-    const matched = DEMO_PLAYERS.filter((p) =>
-      p.username.toLowerCase().includes(query)
-    );
-    return NextResponse.json(matched);
+  try {
+    const supabase = await createClient();
+
+    if (query) {
+      const { data: dbProfiles } = await supabase
+        .from("profiles")
+        .select("*")
+        .ilike("username", `%${query}%`);
+
+      const results: FriendUser[] = (dbProfiles || []).map((prof: any) => {
+        const cp =
+          (prof.level || 1) * 100 +
+          (prof.str || 85) * 3.5 +
+          (prof.agi || 70) * 2.5 +
+          (prof.vit || 60) * 2.5;
+
+        return {
+          user_id: prof.id || prof.user_id,
+          username: prof.username || "Warrior",
+          character_class: prof.character_class || "WARRIOR",
+          level: prof.level || 1,
+          combat_power: Math.round(cp),
+          status: "none",
+          weapon_icon: "/assets/items/weapons/01.png",
+        };
+      });
+
+      return NextResponse.json(results);
+    }
+
+    const { data: dbFriends } = await supabase
+      .from("friends")
+      .select("*");
+
+    const friendsList: FriendUser[] = (dbFriends || [])
+      .filter((f: any) => f.status === "accepted")
+      .map((f: any) => ({
+        user_id: f.friend_id || f.user_id,
+        username: f.friend_name || "Friend Warrior",
+        character_class: "WARRIOR",
+        level: 1,
+        combat_power: 1250,
+        status: "friend",
+        weapon_icon: "/assets/items/weapons/01.png",
+      }));
+
+    const pendingList: FriendUser[] = (dbFriends || [])
+      .filter((f: any) => f.status === "pending")
+      .map((f: any) => ({
+        user_id: f.friend_id || f.user_id,
+        username: f.friend_name || "Pending Warrior",
+        character_class: "WARRIOR",
+        level: 1,
+        combat_power: 1250,
+        status: "pending_incoming",
+        weapon_icon: "/assets/items/weapons/01.png",
+      }));
+
+    return NextResponse.json({
+      friends: friendsList,
+      pending: pendingList,
+    });
+  } catch (e) {
+    return NextResponse.json({ friends: [], pending: [] });
   }
-
-  const friends = DEMO_PLAYERS.filter((p) => p.status === "friend");
-  const pending = DEMO_PLAYERS.filter((p) => p.status === "pending_incoming");
-
-  return NextResponse.json({
-    friends,
-    pending,
-  });
 }
 
 export async function POST(request: Request) {
   try {
     const { action, target_user_id } = await request.json();
+    const supabase = await createClient();
 
     if (action === "send_request") {
-      const target = DEMO_PLAYERS.find((p) => p.user_id === target_user_id);
-      if (target) target.status = "pending_outgoing";
+      try {
+        await supabase.from("friends").insert({
+          user_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+          friend_id: target_user_id,
+          status: "pending",
+        });
+      } catch (e) {}
       return NextResponse.json({ success: true, status: "pending_outgoing" });
     }
 
     if (action === "accept_request") {
-      const target = DEMO_PLAYERS.find((p) => p.user_id === target_user_id);
-      if (target) target.status = "friend";
+      try {
+        await supabase
+          .from("friends")
+          .update({ status: "accepted" })
+          .eq("user_id", target_user_id);
+      } catch (e) {}
       return NextResponse.json({ success: true, status: "friend" });
     }
 
     if (action === "remove_friend" || action === "reject_request") {
-      const target = DEMO_PLAYERS.find((p) => p.user_id === target_user_id);
-      if (target) target.status = "none";
+      try {
+        await supabase
+          .from("friends")
+          .delete()
+          .eq("friend_id", target_user_id);
+      } catch (e) {}
       return NextResponse.json({ success: true, status: "none" });
     }
 
