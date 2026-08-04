@@ -757,10 +757,13 @@ export function DashboardLayout() {
                     <div className="space-y-1.5">
                       <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <Users className="w-3 h-3 text-[#00ff41]" />
-                        <span>TOP 3 SOLO WARRIORS (USER)</span>
+                        <span>TOP 3 SOLO WARRIORS (CLICK TO INSPECT)</span>
                       </div>
 
-                      <div className="p-2 border border-amber-500/50 bg-black flex items-center justify-between text-xs">
+                      <div
+                        onClick={() => setActiveTab("multiplayer")}
+                        className="p-2 border border-amber-500/50 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
+                      >
                         <div className="flex items-center gap-2">
                           <Crown className="w-4 h-4 text-amber-400" />
                           <div>
@@ -773,7 +776,10 @@ export function DashboardLayout() {
                         </div>
                       </div>
 
-                      <div className="p-2 border border-zinc-500/50 bg-black flex items-center justify-between text-xs">
+                      <div
+                        onClick={() => setActiveTab("multiplayer")}
+                        className="p-2 border border-zinc-500/50 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
+                      >
                         <div className="flex items-center gap-2">
                           <Trophy className="w-4 h-4 text-zinc-300" />
                           <div>
@@ -786,7 +792,10 @@ export function DashboardLayout() {
                         </div>
                       </div>
 
-                      <div className="p-2 border border-amber-700/50 bg-black flex items-center justify-between text-xs">
+                      <div
+                        onClick={() => setActiveTab("multiplayer")}
+                        className="p-2 border border-amber-700/50 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
+                      >
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-600" />
                           <div>
@@ -803,10 +812,13 @@ export function DashboardLayout() {
                     <div className="space-y-1.5 pt-1 border-t border-pixel-border/40">
                       <div className="text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <Shield className="w-3 h-3 text-purple-400" />
-                        <span>TOP 3 GUILD PARTIES (PARTY)</span>
+                        <span>TOP 3 GUILD PARTIES (CLICK TO INSPECT)</span>
                       </div>
 
-                      <div className="p-2 border border-purple-500/60 bg-purple-950/20 flex items-center justify-between text-xs">
+                      <div
+                        onClick={() => setActiveTab("multiplayer")}
+                        className="p-2 border border-purple-500/60 bg-purple-950/20 flex items-center justify-between text-xs hover:border-purple-400 cursor-pointer transition-all"
+                      >
                         <div className="flex items-center gap-2">
                           <Crown className="w-4 h-4 text-amber-400" />
                           <div>
@@ -819,7 +831,10 @@ export function DashboardLayout() {
                         </div>
                       </div>
 
-                      <div className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs">
+                      <div
+                        onClick={() => setActiveTab("multiplayer")}
+                        className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs hover:border-purple-400 cursor-pointer transition-all"
+                      >
                         <div className="flex items-center gap-2">
                           <Trophy className="w-4 h-4 text-zinc-300" />
                           <div>
@@ -832,7 +847,10 @@ export function DashboardLayout() {
                         </div>
                       </div>
 
-                      <div className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs">
+                      <div
+                        onClick={() => setActiveTab("multiplayer")}
+                        className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs hover:border-purple-400 cursor-pointer transition-all"
+                      >
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-amber-600" />
                           <div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Users, Swords, Search, UserPlus, Check, X, Flame, Zap, Shield, Crown, Sparkles, UserCheck, ShieldAlert, Plus } from "lucide-react";
+import { Trophy, Users, Swords, Search, UserPlus, Check, X, Flame, Zap, Shield, Crown, Sparkles, UserCheck, ShieldAlert, Plus, Settings, Edit3 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { LeaderboardEntry, PartyLeaderboardEntry } from "@/app/api/multiplayer/leaderboard/route";
@@ -38,6 +38,12 @@ export function MultiplayerHub({
   const [partyNotice, setPartyNotice] = useState<string | null>(null);
   const [inputPartyName, setInputPartyName] = useState<string>("Iron Legion Squad");
   const [isCreatingPartyModal, setIsCreatingPartyModal] = useState<boolean>(false);
+
+  const [inspectUser, setInspectUser] = useState<LeaderboardEntry | null>(null);
+  const [inspectParty, setInspectParty] = useState<PartyLeaderboardEntry | null>(null);
+  const [friendStatusMap, setFriendStatusMap] = useState<Record<string, string>>({});
+  const [isEditingPartyName, setIsEditingPartyName] = useState<boolean>(false);
+  const [editPartyNameInput, setEditPartyNameInput] = useState<string>("");
 
   const fetchLeaderboard = async (group: "user" | "party", metric: "cp" | "rvs" | "streak") => {
     const catQuery = `${group}_${metric}`;
@@ -104,6 +110,9 @@ export function MultiplayerHub({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, target_user_id: targetId }),
       });
+      if (action === "send_request") {
+        setFriendStatusMap((prev) => ({ ...prev, [targetId]: "pending_outgoing" }));
+      }
       fetchFriends();
       if (searchQuery) {
         handleSearchPlayers(searchQuery);
@@ -137,17 +146,28 @@ export function MultiplayerHub({
     setTimeout(() => setPartyNotice(null), 3000);
   };
 
-  const handleInviteToParty = async (friend: FriendUser) => {
+  const handleInviteToParty = async (friendName: string, friendId: string, friendClass: string, friendCp: number) => {
     if (!party) {
       await handlePartyAction("create_party", { party_name: inputPartyName });
     }
     await handlePartyAction("invite_member", {
-      invite_user_id: friend.user_id,
-      invite_username: friend.username,
-      invite_class: friend.character_class,
-      invite_cp: friend.combat_power,
+      invite_user_id: friendId,
+      invite_username: friendName,
+      invite_class: friendClass,
+      invite_cp: friendCp,
     });
-    setPartyNotice(`Invited ${friend.username} to your 4-Player Party!`);
+    setPartyNotice(`Invited ${friendName} to your 4-Player Party!`);
+    setTimeout(() => setPartyNotice(null), 3000);
+  };
+
+  const handleSaveEditedPartyName = () => {
+    if (!editPartyNameInput.trim() || !inspectParty) return;
+    setInspectParty({ ...inspectParty, party_name: editPartyNameInput.trim() });
+    if (party) {
+      setParty({ ...party, party_name: editPartyNameInput.trim() });
+    }
+    setIsEditingPartyName(false);
+    setPartyNotice(`Guild Party name updated to "${editPartyNameInput.trim()}"!`);
     setTimeout(() => setPartyNotice(null), 3000);
   };
 
@@ -159,7 +179,218 @@ export function MultiplayerHub({
   };
 
   return (
-    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
+    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none relative">
+      <AnimatePresence>
+        {inspectUser && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <div className="w-full max-w-sm border-2 border-pixel-green bg-surface p-5 space-y-4 shadow-neon relative">
+              <button
+                onClick={() => setInspectUser(null)}
+                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-pixel-border pb-3">
+                <div className="w-12 h-12 bg-black border border-pixel-green p-1 flex items-center justify-center shadow-neon">
+                  {inspectUser.equipped_weapon ? (
+                    <img src={inspectUser.equipped_weapon} alt="Weapon" className="w-full h-full object-contain pixelated" />
+                  ) : (
+                    <Trophy className="w-6 h-6 text-pixel-green" />
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-[10px] text-pixel-green font-extrabold uppercase tracking-widest">
+                    WARRIOR PROFILE
+                  </div>
+                  <h3 className="font-headline font-black text-xl text-white">
+                    {inspectUser.username}
+                  </h3>
+                  <div className="text-[10px] text-zinc-400 font-bold uppercase">
+                    {inspectUser.character_class} &bull; Lv. {inspectUser.level}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-1 bg-black border border-pixel-border p-2 text-center">
+                <div>
+                  <div className="text-[9px] text-zinc-500 font-bold">COMBAT POWER</div>
+                  <div className="font-headline font-black text-sm text-[#00ff41]">
+                    {formatNumber(inspectUser.combat_power)} CP
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[9px] text-zinc-500 font-bold">DAILY RVS</div>
+                  <div className="font-headline font-black text-sm text-amber-400">
+                    {formatNumber(inspectUser.daily_rvs)} RVS
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[9px] text-zinc-500 font-bold">STREAK</div>
+                  <div className="font-headline font-black text-sm text-rose-400">
+                    {inspectUser.workout_streak} DAYS
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {friendStatusMap[inspectUser.user_id] === "pending_outgoing" ? (
+                  <div className="w-full py-2.5 bg-amber-950/40 border border-amber-500 text-amber-400 font-extrabold text-xs text-center uppercase">
+                    FRIEND REQUEST SENT
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => handleFriendAction(inspectUser.user_id, "send_request")}
+                    className="w-full py-2.5 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-neon"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>ADD FRIEND</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    handleInviteToParty(
+                      inspectUser.username,
+                      inspectUser.user_id,
+                      inspectUser.character_class,
+                      inspectUser.combat_power
+                    );
+                    setInspectUser(null);
+                  }}
+                  className="w-full py-2.5 border border-purple-500 bg-purple-950/40 hover:bg-purple-600 text-purple-300 hover:text-white font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                >
+                  <Swords className="w-4 h-4" />
+                  <span>INVITE TO PARTY</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {inspectParty && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <div className="w-full max-w-sm border-2 border-purple-500 bg-surface p-5 space-y-4 shadow-[0_0_30px_rgba(168,85,247,0.5)] relative">
+              <button
+                onClick={() => setInspectParty(null)}
+                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="border-b border-purple-900 pb-3">
+                <div className="text-[10px] text-purple-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>GUILD PARTY PROFILE</span>
+                </div>
+
+                {isEditingPartyName ? (
+                  <div className="flex gap-2 mt-1">
+                    <input
+                      type="text"
+                      value={editPartyNameInput}
+                      onChange={(e) => setEditPartyNameInput(e.target.value)}
+                      className="flex-1 bg-black border border-purple-500 px-2 py-1 text-xs text-white"
+                    />
+                    <button
+                      onClick={handleSaveEditedPartyName}
+                      className="px-2 py-1 bg-purple-600 text-white text-xs font-bold"
+                    >
+                      SAVE
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-headline font-black text-xl text-white uppercase">
+                      {inspectParty.party_name}
+                    </h3>
+                    {inspectParty.leader_name === "Felix" && (
+                      <button
+                        onClick={() => {
+                          setEditPartyNameInput(inspectParty.party_name);
+                          setIsEditingPartyName(true);
+                        }}
+                        className="text-xs text-purple-400 hover:text-white flex items-center gap-1"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>EDIT</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="text-[10px] text-zinc-400 font-bold uppercase mt-0.5">
+                  GUILD OWNER: <span className="text-amber-400">{inspectParty.leader_name}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 bg-black border border-purple-900 p-2.5 text-center">
+                <div>
+                  <div className="text-[9px] text-zinc-500 font-bold uppercase">COMBINED PARTY CP</div>
+                  <div className="font-headline font-black text-sm text-[#00ff41]">
+                    {formatNumber(inspectParty.total_party_cp)} CP
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[9px] text-zinc-500 font-bold uppercase">PARTY MEMBERS</div>
+                  <div className="font-headline font-black text-sm text-purple-300">
+                    {inspectParty.member_count} / 4 WARRIORS
+                  </div>
+                </div>
+              </div>
+
+              {inspectParty.leader_name === "Felix" ? (
+                <div className="border border-purple-500/60 bg-purple-950/30 p-3 space-y-2">
+                  <div className="text-[10px] text-purple-300 font-extrabold uppercase flex items-center gap-1">
+                    <Settings className="w-3.5 h-3.5" />
+                    <span>OWNER PARTY SETTINGS</span>
+                  </div>
+                  <div className="text-[9px] text-zinc-400">
+                    You are the Guild Leader of this Party. You can rename the party, manage member slots, or kick players.
+                  </div>
+                  <button
+                    onClick={() => {
+                      handlePartyAction("leave_party");
+                      setInspectParty(null);
+                    }}
+                    className="w-full py-2 bg-red-950/60 border border-red-600 text-red-400 font-bold text-xs uppercase hover:bg-red-600 hover:text-white transition-all cursor-pointer"
+                  >
+                    DISBAND GUILD PARTY
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setPartyNotice(`Join request sent to Party Leader ${inspectParty.leader_name}!`);
+                    setInspectParty(null);
+                    setTimeout(() => setPartyNotice(null), 3000);
+                  }}
+                  className="w-full py-3 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black font-headline font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-neon"
+                >
+                  REQUEST TO JOIN PARTY
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between shadow-neon">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 border border-pixel-green bg-pixel-green/10 text-pixel-green flex items-center justify-center">
@@ -307,7 +538,8 @@ export function MultiplayerHub({
                   return (
                     <div
                       key={entry.party_id}
-                      className="border border-purple-500/60 bg-purple-950/20 p-3 flex items-center justify-between shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                      onClick={() => setInspectParty(entry)}
+                      className="border border-purple-500/60 bg-purple-950/20 p-3 flex items-center justify-between shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:border-purple-400 cursor-pointer transition-all"
                     >
                       <div className="flex items-center gap-3">
                         <div
@@ -368,7 +600,8 @@ export function MultiplayerHub({
                   return (
                     <div
                       key={entry.user_id}
-                      className={`border border-pixel-border bg-surface p-3 flex items-center justify-between transition-all ${
+                      onClick={() => setInspectUser(entry)}
+                      className={`border border-pixel-border bg-surface p-3 flex items-center justify-between transition-all hover:border-[#00ff41] cursor-pointer ${
                         rank <= 3 ? "shadow-neon border-pixel-green/60" : ""
                       }`}
                     >
@@ -567,7 +800,7 @@ export function MultiplayerHub({
                     </div>
 
                     <button
-                      onClick={() => handleInviteToParty(friend)}
+                      onClick={() => handleInviteToParty(friend.username, friend.user_id, friend.character_class, friend.combat_power)}
                       className="px-2.5 py-1 border border-[#00ff41] bg-[#00ff41]/10 hover:bg-[#00ff41] text-[#00ff41] hover:text-black text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer shadow-neon"
                     >
                       <Swords className="w-3.5 h-3.5" />
