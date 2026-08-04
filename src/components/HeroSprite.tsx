@@ -13,6 +13,7 @@ interface HeroSpriteProps {
   scale?: number;
   weaponIcon?: string;
   showNameTag?: string;
+  nameTagPosition?: "top" | "bottom";
 }
 
 export function HeroSprite({
@@ -22,6 +23,7 @@ export function HeroSprite({
   scale = 2.0,
   weaponIcon,
   showNameTag,
+  nameTagPosition = "bottom",
 }: HeroSpriteProps) {
   const [frameIndex, setFrameIndex] = useState<number>(0);
 
@@ -53,8 +55,20 @@ export function HeroSprite({
   const animType = currentState.startsWith("attack") ? "run" : "idle";
   const framePath = `/assets/dungeon/heroes/${heroKey}_${animType}_anim_f${frameIndex}.png`;
 
+  const renderNameTag = () => (
+    <div className="text-[6px] font-black font-mono text-purple-200 bg-black/90 px-1 py-0.2 border border-purple-500/80 rounded-xs uppercase tracking-tighter whitespace-nowrap shadow-[0_0_8px_rgba(168,85,247,0.6)] z-30">
+      {showNameTag}
+    </div>
+  );
+
   return (
-    <div className="flex flex-col items-center justify-center select-none">
+    <div className="flex flex-col items-center justify-center select-none relative">
+      {showNameTag && nameTagPosition === "top" && (
+        <div className="absolute -top-3.5 flex justify-center w-full">
+          {renderNameTag()}
+        </div>
+      )}
+
       <div
         className="transform-gpu relative transition-transform origin-bottom flex flex-col items-center"
         style={{ transform: `scale(${scale})`, imageRendering: "pixelated" }}
@@ -75,12 +89,13 @@ export function HeroSprite({
             />
           )}
         </div>
-        {showNameTag && (
-          <div className="text-[6px] font-black font-mono text-purple-200 bg-black/90 px-1 py-0.2 border border-purple-500/80 rounded-xs mt-0.5 uppercase tracking-tighter whitespace-nowrap shadow-[0_0_8px_rgba(168,85,247,0.6)]">
-            {showNameTag}
-          </div>
-        )}
       </div>
+
+      {showNameTag && nameTagPosition === "bottom" && (
+        <div className="absolute -bottom-3.5 flex justify-center w-full">
+          {renderNameTag()}
+        </div>
+      )}
     </div>
   );
 }

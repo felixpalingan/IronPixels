@@ -542,19 +542,25 @@ export function CombatArena({
 
         <div className="relative overflow-hidden flex justify-center">
           <DungeonStageMap floor={currentEnemy.floor}>
-            <div className="pointer-events-auto flex items-end -space-x-1.5 overflow-visible z-20">
+            <div className="pointer-events-auto flex items-center justify-center gap-3 px-2 overflow-visible z-20">
               {activeMode === "party" && partyMembers.length > 0 ? (
-                partyMembers.map((member, idx) => (
-                  <HeroSprite
-                    key={member.user_id || idx}
-                    currentState={heroState}
-                    characterClass={member.character_class}
-                    gender={idx % 2 === 0 ? "m" : "f"}
-                    scale={1.4}
-                    weaponIcon={member.weapon_icon || "/assets/items/weapons/01.png"}
-                    showNameTag={member.username.split(" ")[0]}
-                  />
-                ))
+                partyMembers.slice(0, 5).map((member, idx) => {
+                  const yOffset = idx === 0 ? "translate-y-2" : idx === 1 || idx === 2 ? "translate-y-0" : "-translate-y-2";
+                  const tagPos = idx % 2 === 0 ? "top" : "bottom";
+                  return (
+                    <div key={member.user_id || idx} className={`transition-transform duration-300 ${yOffset}`}>
+                      <HeroSprite
+                        currentState={heroState}
+                        characterClass={member.character_class}
+                        gender={idx % 2 === 0 ? "m" : "f"}
+                        scale={1.4}
+                        weaponIcon={member.weapon_icon || "/assets/items/weapons/01.png"}
+                        showNameTag={member.username.split(" ")[0]}
+                        nameTagPosition={tagPos}
+                      />
+                    </div>
+                  );
+                })
               ) : (
                 <HeroSprite
                   currentState={heroState}
