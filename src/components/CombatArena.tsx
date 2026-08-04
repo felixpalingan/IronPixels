@@ -62,7 +62,7 @@ export function CombatArena({
 
   const [boss, setBoss] = useState<BossData>({
     boss_id: "b055d7ac-1234-4567-89ab-cdef01234567",
-    boss_name: "Stage 1: Goblin Berserker King",
+    boss_name: "Goblin Berserker King",
     stage: 1,
     current_hp: 15000,
     max_hp: 15000,
@@ -81,6 +81,12 @@ export function CombatArena({
 
   const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
   const todayKey = `ironpixels_combat_log_${new Date().toISOString().split("T")[0]}`;
+
+  const getCleanBossTitle = (name: string, stageNum: number) => {
+    const raw = name || "DUNGEON BOSS";
+    const cleaned = raw.replace(/^stage\s*\d+\s*:\s*/i, "");
+    return `STAGE ${stageNum}: ${cleaned.toUpperCase()}`;
+  };
 
   useEffect(() => {
     try {
@@ -166,7 +172,7 @@ export function CombatArena({
       id: Math.random().toString(),
       text,
       x: 350 + (Math.random() * 40 - 20),
-      y: 120 + (Math.random() * 20 - 10),
+      y: 100 + (Math.random() * 20 - 10),
       vx: (Math.random() - 0.5) * 1.8,
       vy: -2.8 - Math.random() * 1.5,
       opacity: 1.0,
@@ -418,7 +424,7 @@ export function CombatArena({
           <div className="flex items-center gap-2">
             <Flame className="w-5 h-5 text-health-red animate-pulse" />
             <span className="font-headline font-extrabold text-base text-white uppercase tracking-wider">
-              STAGE {boss.stage || 1}: {boss.boss_name}
+              {getCleanBossTitle(boss.boss_name, boss.stage || 1)}
             </span>
           </div>
 
@@ -446,7 +452,7 @@ export function CombatArena({
           </div>
         </div>
 
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-hidden flex justify-center">
           <DungeonStageMap stage={boss.stage || 1} bossType={boss.boss_type || "demon"}>
             <div className="pointer-events-auto">
               <HeroSprite
@@ -469,8 +475,8 @@ export function CombatArena({
 
           <canvas
             ref={canvasRef}
-            width={520}
-            height={240}
+            width={512}
+            height={192}
             className="absolute inset-0 w-full h-full pointer-events-none z-30"
           />
         </div>

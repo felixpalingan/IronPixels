@@ -37,8 +37,7 @@ export function DungeonStageMap({
           hasSkull: true,
           floorTile: "/assets/dungeon/tiles/floor_1.png",
           altFloorTile: "/assets/dungeon/tiles/floor_2.png",
-          wallTile: "/assets/dungeon/tiles/wall_mid.png",
-          accentColor: "rgba(0, 255, 65, 0.15)",
+          wallMidTile: "/assets/dungeon/tiles/wall_mid.png",
         };
       case 2:
         return {
@@ -50,8 +49,7 @@ export function DungeonStageMap({
           hasSkull: true,
           floorTile: "/assets/dungeon/tiles/floor_3.png",
           altFloorTile: "/assets/dungeon/tiles/floor_4.png",
-          wallTile: "/assets/dungeon/tiles/wall_goo.png",
-          accentColor: "rgba(255, 0, 85, 0.2)",
+          wallMidTile: "/assets/dungeon/tiles/wall_goo.png",
         };
       case 3:
         return {
@@ -64,8 +62,7 @@ export function DungeonStageMap({
           hasSkull: false,
           floorTile: "/assets/dungeon/tiles/floor_5.png",
           altFloorTile: "/assets/dungeon/tiles/floor_6.png",
-          wallTile: "/assets/dungeon/tiles/wall_mid.png",
-          accentColor: "rgba(56, 189, 248, 0.2)",
+          wallMidTile: "/assets/dungeon/tiles/wall_mid.png",
         };
       case 4:
       default:
@@ -79,109 +76,206 @@ export function DungeonStageMap({
           hasSkull: true,
           floorTile: "/assets/dungeon/tiles/floor_7.png",
           altFloorTile: "/assets/dungeon/tiles/floor_8.png",
-          wallTile: "/assets/dungeon/tiles/wall_hole_1.png",
-          accentColor: "rgba(251, 191, 36, 0.2)",
+          wallMidTile: "/assets/dungeon/tiles/wall_hole_1.png",
         };
     }
   };
 
   const theme = getThemeProps();
 
+  const COLS = 16;
+  const ROWS = 6;
+  const TILE_SIZE = 32;
+
+  const getTileForCell = (r: number, c: number) => {
+    if (r === 0) {
+      if (c === 0) return "/assets/dungeon/tiles/wall_top_left.png";
+      if (c === COLS - 1) return "/assets/dungeon/tiles/wall_top_right.png";
+      return "/assets/dungeon/tiles/wall_top_mid.png";
+    }
+
+    if (r === 1 || r === 2) {
+      if (c === 0) return "/assets/dungeon/tiles/wall_left.png";
+      if (c === COLS - 1) return "/assets/dungeon/tiles/wall_right.png";
+      if (r === 1 && c === 7 && theme.hasFountain) {
+        return "/assets/dungeon/tiles/wall_mid.png";
+      }
+      if (r === 1 && (c === 4 || c === 11)) {
+        return theme.wallMidTile;
+      }
+      return "/assets/dungeon/tiles/wall_mid.png";
+    }
+
+    const isAlt = (r + c) % 3 === 0;
+    return isAlt ? theme.altFloorTile : theme.floorTile;
+  };
+
   return (
-    <div className="relative w-full border border-pixel-border overflow-hidden select-none bg-[#0a0a0e] flex flex-col justify-between min-h-[240px]">
-      <div className="absolute inset-0 z-0 opacity-40 bg-radial from-transparent to-black pointer-events-none" />
-
+    <div
+      className="relative mx-auto border-2 border-pixel-border overflow-hidden select-none bg-black"
+      style={{
+        width: `${COLS * TILE_SIZE}px`,
+        height: `${ROWS * TILE_SIZE}px`,
+        imageRendering: "pixelated",
+      }}
+    >
       <div
-        className="absolute inset-0 z-0 opacity-20 pointer-events-none"
-        style={{ backgroundColor: theme.accentColor }}
-      />
-
-      <div className="relative z-10 w-full h-28 flex flex-col justify-end bg-[#121218] border-b-2 border-[#2a2a36] shadow-inner overflow-hidden">
-        <div className="w-full h-full flex items-end justify-between px-2">
-          {Array.from({ length: 16 }).map((_, idx) => (
+        className="grid relative z-0"
+        style={{
+          gridTemplateColumns: `repeat(${COLS}, ${TILE_SIZE}px)`,
+          gridTemplateRows: `repeat(${ROWS}, ${TILE_SIZE}px)`,
+          width: `${COLS * TILE_SIZE}px`,
+          height: `${ROWS * TILE_SIZE}px`,
+        }}
+      >
+        {Array.from({ length: ROWS }).map((_, r) =>
+          Array.from({ length: COLS }).map((_, c) => (
             <img
-              key={`wall-tile-${idx}`}
-              src={idx % 4 === 2 ? theme.wallTile : "/assets/dungeon/tiles/wall_mid.png"}
-              alt="Wall Tile"
-              className="w-8 h-16 object-cover pixelated opacity-90"
+              key={`tile-${r}-${c}`}
+              src={getTileForCell(r, c)}
+              alt="Tile"
+              className="w-8 h-8 block pixelated border-0 p-0 m-0"
+              style={{
+                width: `${TILE_SIZE}px`,
+                height: `${TILE_SIZE}px`,
+                imageRendering: "pixelated",
+              }}
             />
-          ))}
-        </div>
+          ))
+        )}
+      </div>
 
-        <div className="absolute inset-0 z-10 flex items-center justify-around px-6 pointer-events-none">
-          <img
-            src={theme.banner}
-            alt="Dungeon Banner Left"
-            className="w-6 h-12 object-contain pixelated drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
-          />
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        <img
+          src={theme.banner}
+          alt="Banner Left"
+          className="absolute pixelated"
+          style={{
+            left: `${3 * TILE_SIZE}px`,
+            top: `${1 * TILE_SIZE}px`,
+            width: `${TILE_SIZE}px`,
+            height: `${TILE_SIZE}px`,
+            imageRendering: "pixelated",
+          }}
+        />
 
-          {theme.hasFountain ? (
-            <div className="flex flex-col items-center">
-              <img
-                src={`/assets/dungeon/decor/wall_fountain_mid_${
-                  theme.fountainColor === "red" ? "red" : "blue"
-                }_anim_f${fountainFrame}.png`}
-                alt="Fountain"
-                className="w-8 h-12 object-contain pixelated drop-shadow-[0_0_12px_rgba(255,0,0,0.6)]"
-              />
-            </div>
-          ) : theme.hasColumn ? (
+        <img
+          src={theme.banner}
+          alt="Banner Right"
+          className="absolute pixelated"
+          style={{
+            left: `${12 * TILE_SIZE}px`,
+            top: `${1 * TILE_SIZE}px`,
+            width: `${TILE_SIZE}px`,
+            height: `${TILE_SIZE}px`,
+            imageRendering: "pixelated",
+          }}
+        />
+
+        {theme.hasFountain ? (
+          <>
+            <img
+              src="/assets/dungeon/decor/wall_fountain_top_1.png"
+              alt="Fountain Top"
+              className="absolute pixelated"
+              style={{
+                left: `${7 * TILE_SIZE}px`,
+                top: `${0 * TILE_SIZE}px`,
+                width: `${TILE_SIZE}px`,
+                height: `${TILE_SIZE}px`,
+                imageRendering: "pixelated",
+              }}
+            />
+            <img
+              src={`/assets/dungeon/decor/wall_fountain_mid_${
+                theme.fountainColor === "red" ? "red" : "blue"
+              }_anim_f${fountainFrame}.png`}
+              alt="Fountain Mid"
+              className="absolute pixelated"
+              style={{
+                left: `${7 * TILE_SIZE}px`,
+                top: `${1 * TILE_SIZE}px`,
+                width: `${TILE_SIZE}px`,
+                height: `${TILE_SIZE}px`,
+                imageRendering: "pixelated",
+              }}
+            />
+            <img
+              src={`/assets/dungeon/decor/wall_fountain_basin_${
+                theme.fountainColor === "red" ? "red" : "blue"
+              }_anim_f${fountainFrame}.png`}
+              alt="Fountain Basin"
+              className="absolute pixelated"
+              style={{
+                left: `${7 * TILE_SIZE}px`,
+                top: `${2 * TILE_SIZE}px`,
+                width: `${TILE_SIZE}px`,
+                height: `${TILE_SIZE}px`,
+                imageRendering: "pixelated",
+              }}
+            />
+          </>
+        ) : theme.hasColumn ? (
+          <>
             <img
               src={theme.columnImg}
-              alt="Column"
-              className="w-6 h-14 object-contain pixelated drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)]"
+              alt="Column Left"
+              className="absolute pixelated"
+              style={{
+                left: `${2 * TILE_SIZE}px`,
+                top: `${1 * TILE_SIZE}px`,
+                width: `${TILE_SIZE}px`,
+                height: `${TILE_SIZE * 2}px`,
+                imageRendering: "pixelated",
+              }}
             />
-          ) : null}
+            <img
+              src={theme.columnImg}
+              alt="Column Right"
+              className="absolute pixelated"
+              style={{
+                left: `${13 * TILE_SIZE}px`,
+                top: `${1 * TILE_SIZE}px`,
+                width: `${TILE_SIZE}px`,
+                height: `${TILE_SIZE * 2}px`,
+                imageRendering: "pixelated",
+              }}
+            />
+          </>
+        ) : null}
 
+        {theme.crateCount > 0 && (
           <img
-            src={theme.banner}
-            alt="Dungeon Banner Right"
-            className="w-6 h-12 object-contain pixelated drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+            src="/assets/dungeon/decor/crate.png"
+            alt="Crate"
+            className="absolute pixelated"
+            style={{
+              left: `${1 * TILE_SIZE}px`,
+              top: `${5 * TILE_SIZE}px`,
+              width: `${TILE_SIZE}px`,
+              height: `${TILE_SIZE}px`,
+              imageRendering: "pixelated",
+            }}
           />
-        </div>
+        )}
+
+        {theme.hasSkull && (
+          <img
+            src="/assets/dungeon/decor/skull.png"
+            alt="Skull"
+            className="absolute pixelated"
+            style={{
+              left: `${14 * TILE_SIZE}px`,
+              top: `${5 * TILE_SIZE}px`,
+              width: `${TILE_SIZE}px`,
+              height: `${TILE_SIZE}px`,
+              imageRendering: "pixelated",
+            }}
+          />
+        )}
       </div>
 
-      <div className="relative z-10 w-full h-32 bg-[#181822] border-t border-[#333342] shadow-[inset_0_4px_12px_rgba(0,0,0,0.8)] flex flex-col justify-end">
-        <div className="w-full h-full grid grid-cols-16 grid-rows-2">
-          {Array.from({ length: 32 }).map((_, idx) => (
-            <img
-              key={`floor-tile-${idx}`}
-              src={idx % 3 === 0 ? theme.altFloorTile : theme.floorTile}
-              alt="Floor Tile"
-              className="w-full h-full object-cover pixelated border-[0.5px] border-black/30"
-            />
-          ))}
-        </div>
-
-        <div className="absolute inset-0 z-10 flex items-end justify-between px-6 pb-2 pointer-events-none">
-          <div className="flex items-center gap-1">
-            {theme.crateCount > 0 && (
-              <img
-                src="/assets/dungeon/decor/crate.png"
-                alt="Crate"
-                className="w-5 h-5 object-contain pixelated drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
-              />
-            )}
-            {theme.hasSkull && (
-              <img
-                src="/assets/dungeon/decor/skull.png"
-                alt="Skull"
-                className="w-4 h-4 object-contain pixelated drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
-              />
-            )}
-          </div>
-
-          <div className="flex items-center gap-1">
-            <img
-              src="/assets/dungeon/decor/lever_right.png"
-              alt="Lever"
-              className="w-4 h-5 object-contain pixelated opacity-80"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute inset-0 z-20 flex items-end justify-between px-10 pb-4 pointer-events-none">
+      <div className="absolute inset-0 z-20 flex items-end justify-between px-6 pb-2 pointer-events-none">
         {children}
       </div>
     </div>

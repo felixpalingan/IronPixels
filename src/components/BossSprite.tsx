@@ -19,7 +19,7 @@ export function BossSprite({
   maxHp,
   bossType = "demon",
   flipHorizontal = true,
-  scale = 2.4,
+  scale = 2.2,
 }: BossSpriteProps) {
   const [frameIndex, setFrameIndex] = useState<number>(0);
 
@@ -62,37 +62,19 @@ export function BossSprite({
     return `/assets/dungeon/monsters/${bossKey}_${animName}_f${frameIndex}.png`;
   };
 
-  const getBossFilter = () => {
-    switch (bossType) {
-      case "orc":
-        return "drop-shadow(0 0 10px rgba(0,255,65,0.6))";
-      case "blood":
-        return "drop-shadow(0 0 10px rgba(255,0,85,0.7))";
-      case "dragon":
-        return "hue-rotate(220deg) saturate(2.5) drop-shadow(0 0 12px rgba(147,51,234,0.7))";
-      case "mecha":
-        return "hue-rotate(180deg) saturate(1.8) brightness(1.3) drop-shadow(0 0 12px rgba(56,189,248,0.8))";
-      case "lich":
-        return "hue-rotate(270deg) saturate(2.0) contrast(1.3) drop-shadow(0 0 12px rgba(192,38,211,0.8))";
-      case "demon":
-      default:
-        return "drop-shadow(0 0 12px rgba(239,68,68,0.8))";
-    }
-  };
-
   return (
     <div className="flex flex-col items-center justify-center select-none">
       <div
         className="transform-gpu transition-all origin-bottom"
-        style={{ transform: `scale(${scale})` }}
+        style={{ transform: `scale(${scale})`, imageRendering: "pixelated" }}
       >
         <img
           src={getBossFramePath()}
           alt="Dungeon Boss"
-          className={`w-9 h-11 object-contain pixelated ${
+          className={`w-9 h-11 object-contain pixelated block drop-shadow-[0_4px_6px_rgba(0,0,0,0.9)] ${
             currentState === "hit" ? "animate-boss-hit opacity-90" : "animate-boss-idle"
           } ${flipHorizontal ? "scale-x-[-1]" : ""}`}
-          style={{ filter: getBossFilter() }}
+          style={{ imageRendering: "pixelated" }}
         />
       </div>
     </div>
