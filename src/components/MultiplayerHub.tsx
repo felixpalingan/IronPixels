@@ -44,6 +44,8 @@ export function MultiplayerHub({
   const [friendStatusMap, setFriendStatusMap] = useState<Record<string, string>>({});
   const [isEditingPartyName, setIsEditingPartyName] = useState<boolean>(false);
   const [editPartyNameInput, setEditPartyNameInput] = useState<string>("");
+  const [isEditingMainPartyName, setIsEditingMainPartyName] = useState<boolean>(false);
+  const [mainPartyNameInput, setMainPartyNameInput] = useState<string>("");
 
   const fetchLeaderboard = async (group: "user" | "party", metric: "floor" | "rvs" | "streak") => {
     const catQuery = `${group}_${metric}`;
@@ -168,6 +170,14 @@ export function MultiplayerHub({
     }
     setIsEditingPartyName(false);
     setPartyNotice(`Guild Party name updated to "${editPartyNameInput.trim()}"!`);
+    setTimeout(() => setPartyNotice(null), 3000);
+  };
+
+  const handleSaveMainPartyName = async () => {
+    if (!mainPartyNameInput.trim() || !party) return;
+    await handlePartyAction("rename_party", { party_name: mainPartyNameInput.trim() });
+    setIsEditingMainPartyName(false);
+    setPartyNotice(`Guild Party name updated to "${mainPartyNameInput.trim()}"!`);
     setTimeout(() => setPartyNotice(null), 3000);
   };
 
@@ -862,17 +872,74 @@ export function MultiplayerHub({
                       <Shield className="w-3.5 h-3.5" />
                       <span>ACTIVE GUILD PARTY (MAX 10 WARRIORS)</span>
                     </div>
-                    <h3 className="font-headline font-black text-xl text-white uppercase mt-0.5">
-                      {party.party_name}
-                    </h3>
+
+                    {isEditingMainPartyName ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <input
+                          type="text"
+                          value={mainPartyNameInput}
+                          onChange={(e) => setMainPartyNameInput(e.target.value)}
+                          className="bg-black border border-purple-500 focus:border-purple-300 px-2 py-1 text-xs text-white outline-none"
+                          placeholder="Enter new party name..."
+                        />
+                        <button
+                          onClick={handleSaveMainPartyName}
+                          className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase cursor-pointer"
+                        >
+                          SAVE
+                        </button>
+                        <button
+                          onClick={() => setIsEditingMainPartyName(false)}
+                          className="px-2 py-1 bg-zinc-800 text-zinc-300 font-bold text-xs uppercase cursor-pointer"
+                        >
+                          CANCEL
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <h3 className="font-headline font-black text-xl text-white uppercase">
+                          {party.party_name}
+                        </h3>
+                        {party.members.some(
+                          (m) =>
+                            m.user_id === "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" &&
+                            (m.role === "leader" || m.role === "co_leader")
+                        ) && (
+                          <button
+                            onClick={() => {
+                              setMainPartyNameInput(party.party_name);
+                              setIsEditingMainPartyName(true);
+                            }}
+                            className="px-2 py-0.5 bg-purple-950/60 border border-purple-500 hover:bg-purple-600 text-purple-300 hover:text-white text-[10px] font-bold uppercase flex items-center gap-1 transition-all cursor-pointer shadow-[0_0_10px_rgba(168,85,247,0.4)]"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>RENAME</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <button
-                    onClick={() => handlePartyAction("leave_party")}
-                    className="px-2.5 py-1 bg-red-950 border border-red-600 text-red-400 hover:bg-red-600 hover:text-white text-[10px] font-bold uppercase transition-all cursor-pointer"
-                  >
-                    LEAVE PARTY
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {party.members.some(
+                      (m) => m.user_id === "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" && m.role === "leader"
+                    ) && (
+                      <button
+                        onClick={() => handlePartyAction("leave_party")}
+                        className="px-2.5 py-1 bg-red-950 border border-red-600 text-red-400 hover:bg-red-600 hover:text-white text-[10px] font-bold uppercase transition-all cursor-pointer"
+                        title="Disband Party as Leader"
+                      >
+                        DISBAND PARTY
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => handlePartyAction("leave_party")}
+                      className="px-2.5 py-1 bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-[10px] font-bold uppercase transition-all cursor-pointer"
+                    >
+                      LEAVE PARTY
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 bg-black border border-purple-900 p-3 text-center">
