@@ -957,6 +957,9 @@ export function DashboardLayout() {
                     playerStr={userData.stats.str}
                     characterClass={userData.character_class}
                     gender={userData.gender}
+                    equippedWeaponIcon={
+                      userInventory.find((rec) => rec.is_equipped && rec.item.type === "weapon")?.item.image_url || "/assets/items/weapons/01.png"
+                    }
                     onAddItemToInventory={handleAddItemToInventory}
                     onConsumeSessionDamage={() => setLastSessionDamage(0)}
                   />

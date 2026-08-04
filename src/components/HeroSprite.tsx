@@ -11,6 +11,8 @@ interface HeroSpriteProps {
   characterClass?: CharacterClass | string;
   gender?: CharacterGender;
   scale?: number;
+  weaponIcon?: string;
+  showNameTag?: string;
 }
 
 export function HeroSprite({
@@ -18,6 +20,8 @@ export function HeroSprite({
   characterClass = "knight",
   gender = "m",
   scale = 2.0,
+  weaponIcon,
+  showNameTag,
 }: HeroSpriteProps) {
   const [frameIndex, setFrameIndex] = useState<number>(0);
 
@@ -52,15 +56,30 @@ export function HeroSprite({
   return (
     <div className="flex flex-col items-center justify-center select-none">
       <div
-        className="transform-gpu relative transition-transform origin-bottom"
+        className="transform-gpu relative transition-transform origin-bottom flex flex-col items-center"
         style={{ transform: `scale(${scale})`, imageRendering: "pixelated" }}
       >
-        <img
-          src={framePath}
-          alt={`${heroKey} Hero`}
-          className="w-5 h-7 object-contain pixelated block drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
-          style={{ imageRendering: "pixelated" }}
-        />
+        <div className="relative flex items-center justify-center">
+          <img
+            src={framePath}
+            alt={`${heroKey} Hero`}
+            className="w-5 h-7 object-contain pixelated block drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+            style={{ imageRendering: "pixelated" }}
+          />
+          {weaponIcon && (
+            <img
+              src={weaponIcon}
+              alt="Equipped Weapon"
+              className="w-3.5 h-3.5 absolute -right-2 top-1.5 origin-bottom-left transform -rotate-12 pixelated drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+              style={{ imageRendering: "pixelated" }}
+            />
+          )}
+        </div>
+        {showNameTag && (
+          <div className="text-[6px] font-black font-mono text-purple-200 bg-black/90 px-1 py-0.2 border border-purple-500/80 rounded-xs mt-0.5 uppercase tracking-tighter whitespace-nowrap shadow-[0_0_8px_rgba(168,85,247,0.6)]">
+            {showNameTag}
+          </div>
+        )}
       </div>
     </div>
   );

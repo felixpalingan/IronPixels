@@ -49,6 +49,7 @@ interface CombatArenaProps {
   playerStr?: number;
   characterClass?: string;
   gender?: "m" | "f";
+  equippedWeaponIcon?: string;
   onAddItemToInventory?: (newItem: InventoryRecord) => void;
   onConsumeSessionDamage?: () => void;
 }
@@ -61,6 +62,7 @@ export function CombatArena({
   playerStr = 85,
   characterClass = "WARRIOR",
   gender = "m",
+  equippedWeaponIcon = "/assets/items/weapons/01.png",
   onAddItemToInventory,
   onConsumeSessionDamage,
 }: CombatArenaProps) {
@@ -69,6 +71,30 @@ export function CombatArena({
   const hasExecutedRef = useRef<boolean>(false);
 
   const [activeMode, setActiveMode] = useState<"solo" | "party">("solo");
+  const [partyMembers, setPartyMembers] = useState<Array<{
+    user_id: string;
+    username: string;
+    character_class: string;
+    level: number;
+    combat_power: number;
+    role: string;
+    weapon_icon?: string;
+  }>>([]);
+
+  useEffect(() => {
+    const fetchPartyMembers = async () => {
+      try {
+        const res = await fetch("/api/multiplayer/party");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.members) {
+            setPartyMembers(data.members);
+          }
+        }
+      } catch (e) {}
+    };
+    fetchPartyMembers();
+  }, [activeMode]);
 
   const defaultSpriteConfig = {
     spriteKey: "goblin",
@@ -516,10 +542,30 @@ export function CombatArena({
 
         <div className="relative overflow-hidden flex justify-center">
           <DungeonStageMap floor={currentEnemy.floor}>
-            <div className="pointer-events-auto">
-              <HeroSprite currentState={heroState} characterClass={characterClass} gender={gender} />
+            <div className="pointer-events-auto flex items-end -space-x-1.5 overflow-visible z-20">
+              {activeMode === "party" && partyMembers.length > 0 ? (
+                partyMembers.map((member, idx) => (
+                  <HeroSprite
+                    key={member.user_id || idx}
+                    currentState={heroState}
+                    characterClass={member.character_class}
+                    gender={idx % 2 === 0 ? "m" : "f"}
+                    scale={1.4}
+                    weaponIcon={member.weapon_icon || "/assets/items/weapons/01.png"}
+                    showNameTag={member.username.split(" ")[0]}
+                  />
+                ))
+              ) : (
+                <HeroSprite
+                  currentState={heroState}
+                  characterClass={characterClass}
+                  gender={gender}
+                  scale={2.0}
+                  weaponIcon={equippedWeaponIcon}
+                />
+              )}
             </div>
-            <div className="pointer-events-auto">
+            <div className="pointer-events-auto z-10">
               <EnemySprite currentState={enemyState} spriteConfig={currentEnemy.sprite_config} />
             </div>
           </DungeonStageMap>
