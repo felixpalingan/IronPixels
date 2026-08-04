@@ -912,11 +912,15 @@ export function MultiplayerHub({
                           <div>
                             <div className="font-bold text-white flex items-center gap-1.5">
                               <span>{member.username}</span>
-                              {idx === 0 && (
+                              {member.role === "leader" || idx === 0 ? (
                                 <span className="text-[8px] bg-amber-400 text-black px-1 font-extrabold">
                                   LEADER
                                 </span>
-                              )}
+                              ) : member.role === "co_leader" ? (
+                                <span className="text-[8px] bg-purple-500 text-white px-1 font-extrabold">
+                                  CO-LEADER
+                                </span>
+                              ) : null}
                             </div>
                             <div className="text-[9px] text-zinc-400 font-bold">
                               {member.character_class} &bull; {formatNumber(member.combat_power)} CP

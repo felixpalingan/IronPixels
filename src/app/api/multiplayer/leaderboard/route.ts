@@ -26,7 +26,7 @@ export interface PartyLeaderboardEntry {
   leader_weapon?: string;
 }
 
-const MOCK_LEADERBOARD: LeaderboardEntry[] = [
+let cachedUserLeaderboard: LeaderboardEntry[] = [
   {
     user_id: "user-top-1",
     username: "Vanguard_Zero",
@@ -82,31 +82,9 @@ const MOCK_LEADERBOARD: LeaderboardEntry[] = [
     workout_streak: 9,
     equipped_weapon: "/assets/items/weapons/14.png",
   },
-  {
-    user_id: "user-top-6",
-    username: "GlacialStorm",
-    character_class: "SHADOW NINJA",
-    level: 28,
-    max_floor: 9,
-    combat_power: 9400,
-    daily_rvs: 720,
-    workout_streak: 7,
-    equipped_weapon: "/assets/items/weapons/22.png",
-  },
-  {
-    user_id: "user-top-7",
-    username: "RagnarokStriker",
-    character_class: "TITAN BERSERKER",
-    level: 25,
-    max_floor: 6,
-    combat_power: 8300,
-    daily_rvs: 650,
-    workout_streak: 5,
-    equipped_weapon: "/assets/items/weapons/08.png",
-  },
 ];
 
-const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
+let cachedPartyLeaderboard: PartyLeaderboardEntry[] = [
   {
     party_id: "party-top-1",
     party_name: "Apex Cyber Vanguard",
@@ -157,46 +135,72 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category") || "user_floor";
 
-  if (category.startsWith("party")) {
-    let partyList = [...MOCK_PARTY_LEADERBOARD];
-    if (category === "party_rvs") {
-      partyList.sort((a, b) => b.total_party_rvs - a.total_party_rvs);
-    } else if (category === "party_streak") {
-      partyList.sort((a, b) => b.party_streak - a.party_streak);
-    } else {
-      partyList.sort((a, b) => b.total_party_floor - a.total_party_floor);
-    }
-    return NextResponse.json(partyList);
-  }
-
-  let list = [...MOCK_LEADERBOARD];
-
   try {
     const supabase = await createClient();
-    const { data: dbProfiles } = await supabase.from("profiles").select("*");
+
+    if (category.startsWith("party")) {
+      const { data: dbParties } = await supabase
+        .from("Party")
+        .select("*");
+
+      if (dbParties && dbParties.length > 0) {
+        const fetchedPartyList: PartyLeaderboardEntry[] = dbParties.map((p: any) => ({
+          party_id: p.party_id,
+          party_name: p.party_name || "Guild Squad",
+          leader_name: p.leader_id === "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" ? "Felix" : "Leader",
+          member_count: 2,
+          total_party_floor: p.total_party_floor || 15,
+          total_party_cp: p.total_party_cp || 16650,
+          total_party_rvs: p.total_party_rvs || 1350,
+          party_streak: p.party_streak || 10,
+          leader_weapon: "/assets/items/weapons/01.png",
+        }));
+
+        cachedPartyLeaderboard = fetchedPartyList;
+      }
+
+      let partyList = [...cachedPartyLeaderboard];
+      if (category === "party_rvs") {
+        partyList.sort((a, b) => b.total_party_rvs - a.total_party_rvs);
+      } else if (category === "party_streak") {
+        partyList.sort((a, b) => b.party_streak - a.party_streak);
+      } else {
+        partyList.sort((a, b) => b.total_party_floor - a.total_party_floor);
+      }
+
+      return NextResponse.json(partyList);
+    }
+
+    const { data: dbProfiles } = await supabase
+      .from("profiles")
+      .select("*");
 
     if (dbProfiles && dbProfiles.length > 0) {
-      dbProfiles.forEach((prof) => {
+      const fetchedUserList: LeaderboardEntry[] = dbProfiles.map((prof: any) => {
         const cp =
           (prof.level || 1) * 100 +
           (prof.str || 85) * 3.5 +
           (prof.agi || 70) * 2.5 +
           (prof.vit || 60) * 2.5;
 
-        list.push({
-          user_id: prof.user_id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+        return {
+          user_id: prof.id || prof.user_id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
           username: prof.username || "Felix",
           character_class: prof.character_class || "WARRIOR",
           level: prof.level || 1,
           max_floor: prof.max_floor || 5,
           combat_power: Math.round(cp),
-          daily_rvs: 500,
+          daily_rvs: prof.daily_rvs || 500,
           workout_streak: prof.workout_streak || 3,
           equipped_weapon: "/assets/items/weapons/01.png",
-        });
+        };
       });
+
+      cachedUserLeaderboard = fetchedUserList;
     }
   } catch (e) {}
+
+  let list = [...cachedUserLeaderboard];
 
   if (category === "user_rvs" || category === "rvs") {
     list.sort((a, b) => b.daily_rvs - a.daily_rvs);

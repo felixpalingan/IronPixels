@@ -18,10 +18,10 @@
 ## 🎯 Phase 3: Persistensi Database Supabase & Realtime Multiplayer
 
 ### 3.1. Persistensi Data Party & Leaderboard
-- [ ] **Supabase Party Table Integration**: Memindahkan state Guild Party dari server in-memory (`let currentPartyState`) ke tabel PostgreSQL `party` Supabase agar pembuatan party, edit nama, & roster 10 anggota tersimpan secara permanen.
-- [ ] **100% Dynamic Leaderboard**: Menghubungkan 6 tab leaderboard murni dari query tabel `profiles` dan `party` Supabase (menghilangkan data pemain dummy saat jumlah pengguna aktif meningkat).
-- [ ] **Persistensi Table Pertemanan (`friends`)**: Menyimpan relasi pertemanan, permintaan terkirim, dan konfirmasi pertemanan ke tabel PostgreSQL `friends`.
-- [ ] **Persistensi Highest Floor**: Meng-update kolom `max_floor` pada profil Supabase setiap kali Hero menamatkan floor baru di Solo Dungeon maupun Party Raid.
+- [x] **Supabase Party Table Integration**: Memindahkan state Guild Party dari server in-memory (`let currentPartyState`) ke tabel PostgreSQL `Party` & `Party_Members` Supabase agar pembuatan party, edit nama, role (leader, co_leader, member), & roster 10 anggota tersimpan secara permanen.
+- [x] **100% Dynamic Leaderboard**: Menghubungkan 6 tab leaderboard murni dari query tabel `profiles` dan `Party` Supabase (menggunakan cached real data saat offline/disconnected).
+- [x] **Persistensi Table Pertemanan (`friends`)**: Menyimpan relasi pertemanan, permintaan terkirim, dan konfirmasi pertemanan ke Supabase DB.
+- [x] **Persistensi Highest Floor**: Meng-update kolom `max_floor` pada profil Supabase & `total_party_floor` pada party setiap kali Hero menamatkan floor baru di Solo Dungeon maupun Party Raid.
 
 ### 3.2. Supabase Realtime WebSockets (Party Raid Live Co-Op)
 - [ ] **Realtime Damage Broadcast**: Mengintegrasikan `Supabase Realtime Subscription` (WebSocket) di arena **Party Raid** sehingga saat Anggota A menembakkan skill, angka *damage* & efek partikel langsung muncul *live real-time* di layar Anggota B.
