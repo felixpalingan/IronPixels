@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Coins, Sparkles, X, Swords, PackageOpen, Triangle, HeartPulse, Check } from "lucide-react";
+import { Coins, X, HeartPulse, Check, Triangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
@@ -22,6 +22,8 @@ interface ChestOption {
   glowColor: string;
   bgGradient: string;
   accentBadge: string;
+  closedFrame: string;
+  openPrefix: string;
 }
 
 const CHEST_OPTIONS: ChestOption[] = [
@@ -34,6 +36,8 @@ const CHEST_OPTIONS: ChestOption[] = [
     glowColor: "shadow-[0_0_20px_rgba(113,113,122,0.2)]",
     bgGradient: "bg-[#141416]",
     accentBadge: "bg-zinc-800 text-zinc-300 border-zinc-700",
+    closedFrame: "/assets/dungeon/chests/chest_empty_open_anim_f0.png",
+    openPrefix: "chest_empty_open_anim",
   },
   {
     id: "silver",
@@ -44,6 +48,8 @@ const CHEST_OPTIONS: ChestOption[] = [
     glowColor: "shadow-[0_0_25px_rgba(0,255,65,0.3)]",
     bgGradient: "bg-[#141416]",
     accentBadge: "bg-[#00ff41]/20 text-[#00ff41] border-[#00ff41]/50",
+    closedFrame: "/assets/dungeon/chests/chest_full_open_anim_f0.png",
+    openPrefix: "chest_full_open_anim",
   },
   {
     id: "void",
@@ -54,6 +60,8 @@ const CHEST_OPTIONS: ChestOption[] = [
     glowColor: "shadow-[0_0_30px_rgba(251,191,36,0.4)]",
     bgGradient: "bg-[#141416]",
     accentBadge: "bg-amber-400/20 text-amber-300 border-amber-400/50",
+    closedFrame: "/assets/dungeon/chests/chest_mimic_open_anim_f0.png",
+    openPrefix: "chest_mimic_open_anim",
   },
 ];
 
@@ -209,10 +217,10 @@ export function BlacksmithShop({
           </div>
           <div>
             <div className="font-headline font-black text-sm text-white uppercase tracking-wider">
-              BLACKSMITH CHEST SHOP
+              DUNGEON CHEST FORGE
             </div>
             <div className="text-[10px] text-zinc-400 font-bold">
-              FORGE & GACHA LOOT CHESTS
+              0x72 DUNGEON GACHA LOOT CHESTS
             </div>
           </div>
         </div>
@@ -278,14 +286,10 @@ export function BlacksmithShop({
                 </span>
 
                 <div className="w-16 h-16 mx-auto my-3 border border-pixel-border bg-black/80 flex items-center justify-center shadow-neon">
-                  <PackageOpen
-                    className={`w-8 h-8 ${
-                      opt.id === "void"
-                        ? "text-amber-400"
-                        : opt.id === "silver"
-                        ? "text-sky-300"
-                        : "text-zinc-400"
-                    }`}
+                  <img
+                    src={opt.closedFrame}
+                    alt={opt.name}
+                    className="w-12 h-12 object-contain pixelated scale-125 hover:scale-135 transition-transform"
                   />
                 </div>
 
@@ -395,7 +399,7 @@ export function BlacksmithShop({
                     <img
                       src={drawnResult.item.image_url}
                       alt={drawnResult.item.item_name}
-                      className="w-16 h-16 object-contain pixelated mb-2"
+                      className="w-16 h-16 object-contain pixelated mb-2 scale-125"
                     />
                     <span
                       className={`text-[8px] font-extrabold uppercase px-2 py-0.5 border ${getRarityBadgeStyle(

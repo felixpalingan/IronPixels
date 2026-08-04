@@ -40,7 +40,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Heavy Slash",
     granted_skill_icon: "/assets/skills/swordsman/Icon1.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/01.png",
+    image_url: "/assets/dungeon/weapons/weapon_rusty_sword.png",
     description: "A heavy, battered blade forged from simple iron.",
   },
   {
@@ -88,7 +88,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Staff Strike",
     granted_skill_icon: "/assets/skills/swordsman/Icon4.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/02.png",
+    image_url: "/assets/dungeon/weapons/weapon_green_magic_staff.png",
     description: "Simple wooden staff used by novice martial artists.",
   },
   {
@@ -104,7 +104,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Quick Arrow",
     granted_skill_icon: "/assets/skills/swordsman/Icon5.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/03.png",
+    image_url: "/assets/dungeon/weapons/weapon_bow.png",
     description: "Flexible wooden bow crafted for forest rangers.",
   },
   {
@@ -184,7 +184,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Shadow Slash EX",
     granted_skill_icon: "/assets/skills/swordsman/Icon10.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/06.png",
+    image_url: "/assets/dungeon/weapons/weapon_katana.png",
     description: "Razor-sharp blade infused with dark steel.",
   },
   {
@@ -232,7 +232,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Flame Dual Slash",
     granted_skill_icon: "/assets/skills/swordsman/Icon13.png",
     icon: "flame",
-    image_url: "/assets/items/weapons/08.png",
+    image_url: "/assets/dungeon/weapons/weapon_knife.png",
     description: "Pair of obsidian daggers burning with intense heat.",
   },
   {
@@ -248,7 +248,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Earth Shatter Smash",
     granted_skill_icon: "/assets/skills/swordsman/Icon14.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/14.png",
+    image_url: "/assets/dungeon/weapons/weapon_big_hammer.png",
     description: "Massive warhammer capable of shattering armor.",
   },
   {
@@ -312,7 +312,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Plasma Cannon Slash",
     granted_skill_icon: "/assets/skills/swordsman/Icon18.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/18.png",
+    image_url: "/assets/dungeon/weapons/weapon_saw_sword.png",
     description: "Futuristic blade glowing with supercharged plasma energy.",
   },
   {
@@ -360,7 +360,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Glacial Ice Stab",
     granted_skill_icon: "/assets/skills/swordsman/Icon21.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/22.png",
+    image_url: "/assets/dungeon/weapons/weapon_spear.png",
     description: "Crystalline spear frozen in eternal sub-zero ice.",
   },
   {
@@ -408,7 +408,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Void Annihilation Nova",
     granted_skill_icon: "/assets/skills/undead/Icon24.png",
     icon: "flame",
-    image_url: "/assets/items/weapons/24.png",
+    image_url: "/assets/dungeon/weapons/weapon_red_gem_sword.png",
     description: "Mythical blade forged in the abyss, capable of tearing reality.",
   },
   {
@@ -456,7 +456,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Divine Holy Judgment",
     granted_skill_icon: "/assets/skills/swordsman/Icon27.png",
     icon: "sword",
-    image_url: "/assets/items/weapons/31.png",
+    image_url: "/assets/dungeon/weapons/weapon_golden_sword.png",
     description: "Radiant holy blade capable of purifying any dark boss.",
   },
   {
@@ -504,7 +504,7 @@ export const EQUIPMENT_DICTIONARY: EquipmentItem[] = [
     granted_skill_name: "Quantum Obliteration",
     granted_skill_icon: "/assets/skills/swordsman/Icon30.png",
     icon: "zap",
-    image_url: "/assets/items/weapons/37.png",
+    image_url: "/assets/dungeon/weapons/weapon_anime_sword.png",
     description: "Godly weapon unleashing miniature black holes upon foes.",
   },
   {

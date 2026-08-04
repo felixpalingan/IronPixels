@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export type BossState = "idle" | "hit" | "dead";
 
@@ -16,61 +16,78 @@ export function BossSprite({
   currentState,
   currentHp,
   maxHp,
-  bossType = "orc",
+  bossType = "demon",
   flipHorizontal = true,
 }: BossSpriteProps) {
-  const getSpritePath = () => {
-    let folder = "orc";
-    let prefix = "Orc";
+  const [frameIndex, setFrameIndex] = useState<number>(0);
 
-    if (bossType === "blood") {
-      folder = "blood";
-      prefix = "Blood Monster_A";
-    } else if (bossType === "demon" || bossType === "dragon" || bossType === "mecha" || bossType === "lich") {
-      folder = "demon";
-      prefix = "Demon_A";
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFrameIndex((prev) => (prev + 1) % 4);
+    }, 200);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const getBossFramePath = () => {
+    let bossKey = "big_demon";
+    let animName = "idle_anim";
+
+    if (bossType === "orc") {
+      bossKey = "ogre";
+      animName = "idle_anim";
+    } else if (bossType === "blood") {
+      bossKey = "big_zombie";
+      animName = "idle_anim";
+    } else if (bossType === "demon") {
+      bossKey = "big_demon";
+      animName = "idle_anim";
+    } else if (bossType === "lich") {
+      bossKey = "necromancer";
+      animName = "anim";
+    } else if (bossType === "dragon") {
+      bossKey = "chort";
+      animName = "idle_anim";
+    } else if (bossType === "mecha") {
+      bossKey = "orc_shaman";
+      animName = "idle_anim";
     }
 
-    if (currentState === "hit") return `/assets/bosses/${folder}/${prefix}_Hurt.png`;
-    if (currentState === "dead") return `/assets/bosses/${folder}/${prefix}_Death.png`;
-    return `/assets/bosses/${folder}/${prefix}_Idle.png`;
-  };
+    if (currentState === "hit") {
+      animName = bossKey === "necromancer" ? "anim" : "run_anim";
+    }
 
-  const getAnimationClass = () => {
-    if (currentState === "hit") return "animate-boss-hit";
-    if (currentState === "dead") return "animate-boss-dead";
-    return "animate-boss-idle";
+    return `/assets/dungeon/monsters/${bossKey}_${animName}_f${frameIndex}.png`;
   };
 
   const getBossFilter = () => {
     switch (bossType) {
       case "orc":
-        return "drop-shadow(0 0 10px rgba(0,255,65,0.4))";
+        return "drop-shadow(0 0 14px rgba(0,255,65,0.6))";
       case "blood":
-        return "drop-shadow(0 0 10px rgba(255,0,85,0.6))";
+        return "drop-shadow(0 0 14px rgba(255,0,85,0.7))";
       case "dragon":
-        return "hue-rotate(220deg) saturate(2.5) drop-shadow(0 0 12px rgba(147,51,234,0.6))";
+        return "hue-rotate(220deg) saturate(2.5) drop-shadow(0 0 16px rgba(147,51,234,0.7))";
       case "mecha":
-        return "hue-rotate(180deg) saturate(1.8) brightness(1.2) drop-shadow(0 0 12px rgba(56,189,248,0.7))";
+        return "hue-rotate(180deg) saturate(1.8) brightness(1.3) drop-shadow(0 0 16px rgba(56,189,248,0.8))";
       case "lich":
-        return "hue-rotate(270deg) saturate(2.0) contrast(1.3) drop-shadow(0 0 12px rgba(192,38,211,0.7))";
+        return "hue-rotate(270deg) saturate(2.0) contrast(1.3) drop-shadow(0 0 16px rgba(192,38,211,0.8))";
       case "demon":
       default:
-        return "drop-shadow(0 0 12px rgba(239,68,68,0.6))";
+        return "drop-shadow(0 0 16px rgba(239,68,68,0.8))";
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="scale-[2.4] transform-gpu">
-        <div
-          className={`w-[100px] h-[100px] bg-no-repeat pixelated ${getAnimationClass()} ${
-            flipHorizontal ? "flip-horizontal" : ""
-          }`}
-          style={{
-            backgroundImage: `url('${getSpritePath()}')`,
-            filter: getBossFilter(),
-          }}
+    <div className="flex flex-col items-center justify-center select-none">
+      <div className="scale-[3.8] transform-gpu transition-all">
+        <img
+          src={getBossFramePath()}
+          alt="Dungeon Boss"
+          className={`w-12 h-14 object-contain pixelated ${
+            currentState === "hit" ? "animate-boss-hit opacity-90" : "animate-boss-idle"
+          } ${flipHorizontal ? "scale-x-[-1]" : ""}`}
+          style={{ filter: getBossFilter() }}
         />
       </div>
     </div>

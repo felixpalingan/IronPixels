@@ -38,6 +38,8 @@ interface CombatArenaProps {
   dailyRvs?: number;
   equippedSkills?: Array<{ name: string; icon?: string }>;
   playerStr?: number;
+  characterClass?: string;
+  gender?: "m" | "f";
   onAddItemToInventory?: (newItem: InventoryRecord) => void;
   onConsumeSessionDamage?: () => void;
 }
@@ -48,6 +50,8 @@ export function CombatArena({
   dailyRvs = 0,
   equippedSkills = [],
   playerStr = 85,
+  characterClass = "WARRIOR",
+  gender = "m",
   onAddItemToInventory,
   onConsumeSessionDamage,
 }: CombatArenaProps) {
@@ -119,8 +123,6 @@ export function CombatArena({
         }
         if (data.current_hp === 0 || data.status === "Defeated") {
           setBossState("dead");
-        } else {
-          setBossState("idle");
         }
       }
     } catch (err) {}
@@ -130,73 +132,64 @@ export function CombatArena({
     fetchBossData();
   }, []);
 
-  const awardVoidChestLoot = async (defeatedBossName: string, stage: number) => {
-    const topTierItems = EQUIPMENT_DICTIONARY.filter(
-      (item) => item.rarity === "legendary" || item.rarity === "epic" || item.rarity === "mythic"
+  const awardVoidChestLoot = (bossName: string, stage: number) => {
+    const epicLegendaryPool = EQUIPMENT_DICTIONARY.filter(
+      (i) => i.rarity === "rare" || i.rarity === "epic" || i.rarity === "legendary" || i.rarity === "mythic"
     );
-    const droppedItem =
-      topTierItems[Math.floor(Math.random() * topTierItems.length)] || EQUIPMENT_DICTIONARY[0];
+    const rewardItem =
+      epicLegendaryPool[Math.floor(Math.random() * epicLegendaryPool.length)] || EQUIPMENT_DICTIONARY[0];
 
     const newRecord: InventoryRecord = {
-      inventory_id: `inv-boss-drop-${Date.now()}`,
+      inventory_id: `boss-loot-${Date.now()}`,
       user_id: userId,
-      item_id: droppedItem.item_id,
+      item_id: rewardItem.item_id,
       is_equipped: false,
-      item: droppedItem,
+      item: rewardItem,
     };
 
     if (onAddItemToInventory) {
       onAddItemToInventory(newRecord);
     }
 
-    try {
-      await fetch("/api/shop/gacha", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chest_type: "void" }),
-      });
-    } catch (err) {}
-
     setBossVictoryLoot({
-      bossName: defeatedBossName,
+      bossName,
       stage,
-      droppedItem,
+      droppedItem: rewardItem,
     });
   };
 
-  const spawnDamageParticle = (amount: number, isCritical = false, customText?: string) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const textStr = customText || `-${formatNumber(amount)} HP`;
-    const particle: DamageParticle = {
+  const spawnDamageParticle = (damage: number, isCritical = false, actionText?: string) => {
+    const text = actionText || `-${formatNumber(damage)}`;
+    const color = isCritical ? "#FF0055" : "#00FF41";
+    const newParticle: DamageParticle = {
       id: Math.random().toString(),
-      text: textStr,
-      x: canvas.width * 0.75 + (Math.random() * 30 - 15),
-      y: canvas.height * 0.35 + (Math.random() * 20 - 10),
-      vx: (Math.random() - 0.5) * 0.6,
-      vy: -0.7 - Math.random() * 0.4,
+      text,
+      x: 350 + (Math.random() * 40 - 20),
+      y: 120 + (Math.random() * 20 - 10),
+      vx: (Math.random() - 0.5) * 1.8,
+      vy: -2.8 - Math.random() * 1.5,
       opacity: 1.0,
-      scale: isCritical ? 1.4 : 1.0,
-      color: isCritical ? "#FFD60A" : "#ff3b30",
+      scale: isCritical ? 1.6 : 1.2,
+      color,
       isCritical,
     };
-
-    particlesRef.current.push(particle);
+    particlesRef.current.push(newParticle);
   };
 
   const executeAttack = async (
     damage: number,
-    actionName: string,
+    actionName = "Normal Slash",
     attackType: "attack01" | "attack02" | "attack03" = "attack01"
   ) => {
-    if (damage <= 0 || bossState === "dead") return;
+    if (boss.current_hp <= 0 && boss.status === "Defeated") {
+      addLog("Boss is already defeated! Preparing next Stage Boss...", "#f59e0b");
+      return;
+    }
 
     setHeroState(attackType);
-    const duration = attackType === "attack03" ? 700 : 500;
     setTimeout(() => {
       setHeroState("idle");
-    }, duration);
+    }, 500);
 
     setBossState("hit");
     spawnDamageParticle(damage, true, `${actionName.toUpperCase()} -${formatNumber(damage)}`);
@@ -278,44 +271,39 @@ export function CombatArena({
       const totalAttackDmg = sessionDamage + playerStr;
       executeAttack(totalAttackDmg, "Gym RVS Strike", "attack01");
       addLog(`Gym Workout Attack dealt ${formatNumber(totalAttackDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr})!`, "#00ff41");
-
       if (onConsumeSessionDamage) {
         onConsumeSessionDamage();
       }
     }
-  }, [sessionDamage]);
+  }, [sessionDamage, playerStr]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
     let animationFrameId: number;
 
     const render = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      particlesRef.current.forEach((p, idx) => {
+      particlesRef.current.forEach((p, index) => {
         p.x += p.vx;
         p.y += p.vy;
-        p.opacity -= 0.005;
+        p.opacity -= 0.016;
 
         if (p.opacity <= 0) {
-          particlesRef.current.splice(idx, 1);
+          particlesRef.current.splice(index, 1);
           return;
         }
 
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.opacity);
-        ctx.font = `${p.isCritical ? "bold 20px" : "bold 16px"} 'JetBrains Mono', monospace`;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 12;
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 4;
-        ctx.strokeText(p.text, p.x, p.y);
+        ctx.font = `${p.isCritical ? "bold 16px" : "13px"} monospace`;
         ctx.fillStyle = p.color;
-        ctx.textAlign = "center";
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
         ctx.fillText(p.text, p.x, p.y);
         ctx.restore();
       });
@@ -457,9 +445,13 @@ export function CombatArena({
           </div>
         </div>
 
-        <div className="relative border border-pixel-border dungeon-bg-stage overflow-hidden flex items-end justify-between px-6 pb-11 pt-12 min-h-[240px]">
+        <div className="relative border border-pixel-border bg-black/90 overflow-hidden flex items-end justify-between px-6 pb-10 pt-12 min-h-[240px]">
           <div className="z-20 relative bottom-1">
-            <HeroSprite currentState={heroState} />
+            <HeroSprite
+              currentState={heroState}
+              characterClass={characterClass}
+              gender={gender}
+            />
           </div>
 
           <div className="z-20 relative bottom-1">
@@ -467,12 +459,10 @@ export function CombatArena({
               currentState={bossState}
               currentHp={boss.current_hp}
               maxHp={boss.max_hp}
-              bossType={boss.boss_type || "orc"}
+              bossType={boss.boss_type || "demon"}
               flipHorizontal={true}
             />
           </div>
-
-          <div className="dungeon-floor-tile" />
 
           <canvas
             ref={canvasRef}

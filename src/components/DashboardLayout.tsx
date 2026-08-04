@@ -22,6 +22,7 @@ interface UserProfileData {
   user_id: string;
   username: string;
   character_class: string;
+  gender?: "m" | "f";
   level: number;
   current_hp: number;
   max_hp: number;
@@ -223,6 +224,7 @@ export function DashboardLayout() {
     user_id: profile?.user_id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
     username: profile?.username || "Felix",
     character_class: profile?.character_class || "WARRIOR",
+    gender: profile?.gender || "m",
     level: profile?.level || 1,
     current_hp: Math.min(totalMaxHp, profile?.current_hp || 1000),
     max_hp: totalMaxHp,
@@ -251,13 +253,13 @@ export function DashboardLayout() {
 
   const getClassPerkInfo = (clsName: string) => {
     const nameUpper = clsName.toUpperCase();
-    if (nameUpper.includes("WARRIOR") || nameUpper.includes("CYBER")) {
+    if (nameUpper.includes("WARRIOR") || nameUpper.includes("CYBER") || nameUpper.includes("KNIGHT")) {
       return { label: "CYBER KNIGHT PERK", perk: "+15% RVS STR Damage Bonus", color: "text-amber-400 border-amber-400/40 bg-amber-950/20" };
     }
-    if (nameUpper.includes("ROGUE") || nameUpper.includes("NINJA")) {
+    if (nameUpper.includes("ROGUE") || nameUpper.includes("NINJA") || nameUpper.includes("ELF")) {
       return { label: "SHADOW NINJA PERK", perk: "+20% Critical Hit Chance (AGI)", color: "text-fuchsia-400 border-fuchsia-400/40 bg-fuchsia-950/20" };
     }
-    if (nameUpper.includes("PALADIN") || nameUpper.includes("VANGUARD")) {
+    if (nameUpper.includes("PALADIN") || nameUpper.includes("VANGUARD") || nameUpper.includes("LIZARD")) {
       return { label: "IRON VANGUARD PERK", perk: "+250 MAX HP & Defensive Shield", color: "text-[#00ff41] border-[#00ff41]/40 bg-[#00ff41]/10" };
     }
     return { label: "TITAN BERSERKER PERK", perk: "+20% Extra Gold & Exp Loot", color: "text-sky-400 border-sky-400/40 bg-sky-950/20" };
@@ -619,7 +621,12 @@ export function DashboardLayout() {
               >
                 <div className="border border-pixel-border bg-surface p-4 relative overflow-hidden font-mono shadow-neon">
                   <div className="flex gap-4">
-                    <PixelAvatar className="w-24 h-24 flex-shrink-0" isCritical={isCriticalHp} />
+                    <PixelAvatar
+                      className="w-24 h-24 flex-shrink-0"
+                      isCritical={isCriticalHp}
+                      characterClass={userData.character_class}
+                      gender={userData.gender}
+                    />
 
                     <div className="flex-1 flex flex-col justify-between min-w-0">
                       <div className="flex items-start justify-between">
@@ -948,6 +955,8 @@ export function DashboardLayout() {
                     dailyRvs={dailyRvs}
                     equippedSkills={gearSkills}
                     playerStr={userData.stats.str}
+                    characterClass={userData.character_class}
+                    gender={userData.gender}
                     onAddItemToInventory={handleAddItemToInventory}
                     onConsumeSessionDamage={() => setLastSessionDamage(0)}
                   />
