@@ -6,7 +6,7 @@ export async function GET() {
     const supabase = await createClient();
 
     const { data: sessions, error } = await supabase
-      .from("workout_sessions")
+      .from("Workout_Sessions")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(30);

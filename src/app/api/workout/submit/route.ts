@@ -14,19 +14,18 @@ export async function POST(request: Request) {
     }
 
     const sessionRecord = {
-      session_id: `ws-${Date.now()}`,
       user_id,
       date: date || new Date().toISOString().split("T")[0],
       duration_minutes: duration_minutes || 45,
       total_rvs: total_rvs || 0,
       total_volume_kg: total_volume_kg || 0,
       exercises_log: exercises_log || [],
-      created_at: new Date().toISOString(),
+      status: "completed",
     };
 
     try {
       const supabase = await createClient();
-      await supabase.from("workout_sessions").insert(sessionRecord);
+      await supabase.from("Workout_Sessions").insert(sessionRecord);
     } catch (e) {
     }
 

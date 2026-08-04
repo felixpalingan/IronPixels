@@ -25,6 +25,17 @@ CREATE TABLE IF NOT EXISTS public."profiles" (
 ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS max_floor INT DEFAULT 1;
 ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS daily_rvs NUMERIC(10,2) DEFAULT 0;
 ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS workout_streak INT DEFAULT 1;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS available_ap INT DEFAULT 5;
+ALTER TABLE public."profiles" ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT 'm';
+
+CREATE TABLE IF NOT EXISTS public."user_inventory" (
+    inventory_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    item_id TEXT NOT NULL,
+    is_equipped BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 
 CREATE TABLE IF NOT EXISTS public."Equipped_Gear" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

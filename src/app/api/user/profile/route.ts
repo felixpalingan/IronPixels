@@ -44,7 +44,12 @@ export async function GET() {
       gold: profile.username === "Felix" || !profile.gold ? 999999999 : profile.gold,
       weight_kg: Number(profile.weight_kg) || 75,
       available_ap: profile.available_ap ?? 5,
-      stats: profile.stats || { str: 85, agi: 72, vit: 54, luk: 60 },
+      stats: {
+        str: profile.str ?? 85,
+        agi: profile.agi ?? 72,
+        vit: profile.vit ?? 54,
+        luk: profile.luk ?? 60,
+      },
     });
   } catch (err: any) {
     return NextResponse.json({
