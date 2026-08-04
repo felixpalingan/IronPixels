@@ -194,7 +194,17 @@ export function CombatArena({
 
   const fetchModeEnemy = async (mode: "solo" | "party") => {
     try {
-      const res = await fetch(`/api/combat/boss?mode=${mode}`);
+      let savedFloor = 1;
+      try {
+        const key = mode === "party" ? "ironpixels_active_party_enemy" : "ironpixels_active_solo_enemy";
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.floor) savedFloor = parsed.floor;
+        }
+      } catch (e) {}
+
+      const res = await fetch(`/api/combat/boss?mode=${mode}&floor=${savedFloor}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.stage && data.sprite_config) {

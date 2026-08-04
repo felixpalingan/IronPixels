@@ -157,8 +157,12 @@ export function attackEnemy(rvsDamage: number, mode: "solo" | "party" = "solo"):
   };
 }
 
-export function getBossState(mode: "solo" | "party" = "solo") {
-  const e = getFloorState(mode);
+export function getBossState(mode: "solo" | "party" = "solo", targetFloor?: number) {
+  let e = getFloorState(mode);
+  if (targetFloor && targetFloor > e.floor) {
+    e = buildFloorEnemy(targetFloor, mode);
+    setFloorState(e, mode);
+  }
   return {
     boss_id: e.enemy_id,
     boss_name: e.display_name,
