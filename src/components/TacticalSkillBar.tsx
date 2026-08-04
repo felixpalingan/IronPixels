@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Zap, Shield, Flame } from "lucide-react";
+import { Sparkles, Zap } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 
 export interface SkillData {
@@ -41,9 +41,9 @@ export function TacticalSkillBar({
 
   const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
 
-  const getSavedSlotCdSecs = (slotType: string) => {
+  const getSavedSlotCdSecs = (slotKey: string) => {
     try {
-      const cdUntil = localStorage.getItem(`ironpixels_slot_cd_${slotType}`);
+      const cdUntil = localStorage.getItem(`ironpixels_slot_cd_${slotKey}`);
       if (!cdUntil) return 0;
       const remainingMs = Number(cdUntil) - Date.now();
       return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
@@ -59,42 +59,49 @@ export function TacticalSkillBar({
       sourceSkills = [
         { name: "Heavy Iron Slash", icon: "/assets/skills/swordsman/Icon1.png", slotType: "weapon" },
         { name: "Novice Shield Thrust", icon: "/assets/skills/swordsman/Icon2.png", slotType: "armor" },
-        { name: "Flame Arrow Volley", icon: "/assets/skills/undead/Icon3.png", slotType: "accessory" },
+        { name: "Copper Lucky Charm", icon: "/assets/skills/undead/Icon3.png", slotType: "accessory" },
+        { name: "Iron Power Surge", icon: "/assets/skills/swordsman/Icon8.png", slotType: "accessory" },
       ];
     }
 
+    let accCount = 0;
     const generated: SkillData[] = sourceSkills.map((sk, idx) => {
-      const slot = sk.slotType || (idx === 0 ? "weapon" : idx === 1 ? "armor" : "accessory");
+      const type = sk.slotType || (idx === 0 ? "weapon" : idx === 1 ? "armor" : "accessory");
+      let slotKey: string = type;
+      if (type === "accessory") {
+        accCount += 1;
+        slotKey = `accessory_${accCount}`;
+      }
+
       const nameLower = sk.name.toLowerCase();
-      let multiplier = 2.5;
+      let multiplier = 2.0;
       let attackType: "attack01" | "attack02" | "attack03" = "attack01";
       let cdMins = 3;
-      let iconUrl = sk.icon || `/assets/skills/swordsman/Icon${idx + 1}.png`;
 
-      if (nameLower.includes("void") || nameLower.includes("nova") || nameLower.includes("dragon")) {
-        multiplier = 4.5;
+      if (type === "weapon") {
+        multiplier = 5.0;
         attackType = "attack03";
-        cdMins = 5;
-      } else if (nameLower.includes("plasma") || nameLower.includes("overload")) {
+        cdMins = 4;
+        if (nameLower.includes("void") || nameLower.includes("singularity") || nameLower.includes("excalibur")) {
+          multiplier = 6.5;
+        }
+      } else if (type === "armor") {
         multiplier = 3.5;
         attackType = "attack02";
-        cdMins = 4;
-      } else if (nameLower.includes("shadow") || nameLower.includes("strike")) {
-        multiplier = 2.8;
-        attackType = "attack01";
         cdMins = 3;
-      } else if (nameLower.includes("shield") || nameLower.includes("defender")) {
-        multiplier = 2.2;
+      } else {
+        multiplier = 2.0;
         attackType = "attack01";
         cdMins = 2;
       }
 
-      const cdSecs = getSavedSlotCdSecs(slot);
+      const iconUrl = sk.icon || `/assets/skills/swordsman/Icon${idx + 1}.png`;
+      const cdSecs = getSavedSlotCdSecs(slotKey);
 
       return {
-        skill_id: `s-slot-${slot}-${sk.name}`,
+        skill_id: `s-slot-${slotKey}-${sk.name}`,
         skill_name: sk.name,
-        slotType: slot,
+        slotType: type,
         damage_multiplier: multiplier,
         cooldown_minutes: cdMins,
         remaining_seconds: cdSecs,
@@ -109,23 +116,35 @@ export function TacticalSkillBar({
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setSkills((prevSkills) =>
-        prevSkills.map((sk) => {
-          const cdSecs = getSavedSlotCdSecs(sk.slotType);
+      setSkills((prevSkills) => {
+        let accCount = 0;
+        return prevSkills.map((sk) => {
+          let slotKey: string = sk.slotType;
+          if (sk.slotType === "accessory") {
+            accCount += 1;
+            slotKey = `accessory_${accCount}`;
+          }
+          const cdSecs = getSavedSlotCdSecs(slotKey);
           return {
             ...sk,
             remaining_seconds: cdSecs,
             is_ready: cdSecs === 0,
           };
-        })
-      );
+        });
+      });
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
-  const handleCast = async (skill: SkillData) => {
+  const handleCast = async (skill: SkillData, index: number) => {
     if (!skill.is_ready || executingSkillId) return;
+
+    let slotKey = skill.slotType as string;
+    if (skill.slotType === "accessory") {
+      const accIndex = skills.slice(0, index + 1).filter((s) => s.slotType === "accessory").length;
+      slotKey = `accessory_${accIndex}`;
+    }
 
     setExecutingSkillId(skill.skill_id);
 
@@ -133,12 +152,12 @@ export function TacticalSkillBar({
     const cdMs = skill.cooldown_minutes * 60 * 1000;
 
     try {
-      localStorage.setItem(`ironpixels_slot_cd_${skill.slotType}`, (Date.now() + cdMs).toString());
+      localStorage.setItem(`ironpixels_slot_cd_${slotKey}`, (Date.now() + cdMs).toString());
     } catch (e) {}
 
     setSkills((prev) =>
-      prev.map((s) => {
-        if (s.slotType === skill.slotType) {
+      prev.map((s, idx) => {
+        if (idx === index) {
           return {
             ...s,
             remaining_seconds: skill.cooldown_minutes * 60,
@@ -192,62 +211,80 @@ export function TacticalSkillBar({
       <div className="flex items-center justify-between border-b border-pixel-border/50 pb-1.5">
         <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
           <Sparkles className="w-4 h-4 text-gold-loot animate-pulse" />
-          <span>TACTICAL GEAR SKILLS</span>
+          <span>TACTICAL GEAR SKILLS (4 SLOTS)</span>
         </div>
         <div className="text-[10px] text-zinc-400 font-bold">
-          SLOT COOLDOWNS ACTIVE
+          WEAPON & ARMOR SLOTS HIGH DMG
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {skills.map((sk) => {
-          const isExec = executingSkillId === sk.skill_id;
-
+      <div className="grid grid-cols-4 gap-1.5">
+        {skills.map((sk, idx) => {
           return (
             <button
-              key={sk.skill_id}
-              onClick={() => handleCast(sk)}
+              key={`${sk.skill_id}-${idx}`}
+              onClick={() => handleCast(sk, idx)}
               disabled={!sk.is_ready || Boolean(executingSkillId)}
-              className={`p-2.5 border flex flex-col items-center justify-between text-center relative transition-all cursor-pointer ${
+              className={`p-1.5 border flex flex-col items-center justify-between text-center relative transition-all cursor-pointer ${
                 sk.is_ready
-                  ? "border-[#00ff41] bg-black/80 hover:bg-[#00ff41]/20 text-white shadow-neon"
+                  ? sk.slotType === "weapon"
+                    ? "border-[#00ff41] bg-black/90 hover:bg-[#00ff41]/20 text-white shadow-neon"
+                    : sk.slotType === "armor"
+                    ? "border-sky-400 bg-black/90 hover:bg-sky-400/20 text-white shadow-blue-glow"
+                    : "border-amber-400 bg-black/90 hover:bg-amber-400/20 text-white shadow-gold-glow"
                   : "border-zinc-800 bg-black/40 text-zinc-600 opacity-60 cursor-not-allowed"
               }`}
             >
               {!sk.is_ready && (
-                <div className="absolute inset-0 bg-black/85 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center p-1">
-                  <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
-                    {sk.slotType} COOLDOWN
+                <div className="absolute inset-0 bg-black/90 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center p-0.5">
+                  <div className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">
+                    COOLDOWN
                   </div>
-                  <div className="font-headline font-black text-sm text-red-500 tracking-wider">
+                  <div className="font-headline font-black text-xs text-red-500 tracking-wider">
                     {formatCdTime(sk.remaining_seconds)}
                   </div>
                 </div>
               )}
 
-              <div className="w-10 h-10 bg-black border border-pixel-border p-1 flex items-center justify-center relative mb-1.5 shadow-neon">
+              <div className="w-9 h-9 bg-black border border-pixel-border p-1 flex items-center justify-center relative mb-1 shadow-neon">
                 {sk.icon_url ? (
                   <img
                     src={sk.icon_url}
                     alt={sk.skill_name}
-                    className="w-8 h-8 object-contain pixelated"
+                    className="w-7 h-7 object-contain pixelated"
                   />
                 ) : (
-                  <Zap className="w-5 h-5 text-[#00ff41]" />
+                  <Zap className="w-4 h-4 text-[#00ff41]" />
                 )}
 
-                <span className="absolute -top-1.5 -right-1.5 bg-[#00ff41] text-black font-extrabold text-[8px] px-1 uppercase">
-                  {sk.slotType[0]}
+                <span
+                  className={`absolute -top-1.5 -right-1.5 font-extrabold text-[7px] px-1 uppercase ${
+                    sk.slotType === "weapon"
+                      ? "bg-[#00ff41] text-black"
+                      : sk.slotType === "armor"
+                      ? "bg-sky-400 text-black"
+                      : "bg-amber-400 text-black"
+                  }`}
+                >
+                  {sk.slotType === "weapon" ? "WPN" : sk.slotType === "armor" ? "ARM" : `ACC`}
                 </span>
               </div>
 
               <div className="space-y-0.5 w-full">
-                <div className="font-headline font-extrabold text-[10px] text-white uppercase tracking-tight line-clamp-1">
+                <div className="font-headline font-extrabold text-[9px] text-white uppercase tracking-tight line-clamp-1">
                   {sk.skill_name}
                 </div>
 
-                <div className="text-[9px] font-bold text-[#00ff41]">
-                  {sk.damage_multiplier}x DMG (+{formatNumber(Math.round(baseCombatPower * sk.damage_multiplier))})
+                <div
+                  className={`text-[8px] font-extrabold ${
+                    sk.slotType === "weapon"
+                      ? "text-[#00ff41]"
+                      : sk.slotType === "armor"
+                      ? "text-sky-400"
+                      : "text-amber-400"
+                  }`}
+                >
+                  {sk.damage_multiplier}x DMG
                 </div>
               </div>
             </button>

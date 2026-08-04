@@ -77,6 +77,13 @@ export function DashboardLayout() {
       is_equipped: true,
       item: EQUIPMENT_DICTIONARY[2],
     },
+    {
+      inventory_id: "inv-init-4",
+      user_id: "user-1",
+      item_id: EQUIPMENT_DICTIONARY[7].item_id,
+      is_equipped: true,
+      item: EQUIPMENT_DICTIONARY[7],
+    },
   ];
 
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
@@ -250,7 +257,7 @@ export function DashboardLayout() {
   const gearSkills = equippedItems
     .map((rec) => ({
       name: rec.item?.granted_skill_name || rec.item?.item_name,
-      icon: rec.item?.icon,
+      icon: rec.item?.granted_skill_icon || rec.item?.image_url,
       slotType: rec.item?.type as "weapon" | "armor" | "accessory",
     }))
     .filter((s) => Boolean(s.name));
@@ -380,15 +387,32 @@ export function DashboardLayout() {
     const nextEquippedState = !currentEquippedState;
 
     setUserInventory((prev) => {
-      const updated = prev.map((rec) => {
-        if (rec.inventory_id === inventoryId) {
-          return { ...rec, is_equipped: nextEquippedState };
+      let updated: InventoryRecord[];
+
+      if (nextEquippedState) {
+        if (itemType === "accessory") {
+          const equippedAccs = prev.filter((rec) => rec.is_equipped && rec.item.type === "accessory");
+          if (equippedAccs.length >= 2) {
+            const oldestAccId = equippedAccs[0].inventory_id;
+            updated = prev.map((rec) => {
+              if (rec.inventory_id === inventoryId) return { ...rec, is_equipped: true };
+              if (rec.inventory_id === oldestAccId) return { ...rec, is_equipped: false };
+              return rec;
+            });
+          } else {
+            updated = prev.map((rec) => (rec.inventory_id === inventoryId ? { ...rec, is_equipped: true } : rec));
+          }
+        } else {
+          updated = prev.map((rec) => {
+            if (rec.inventory_id === inventoryId) return { ...rec, is_equipped: true };
+            if (rec.is_equipped && rec.item.type === itemType) return { ...rec, is_equipped: false };
+            return rec;
+          });
         }
-        if (nextEquippedState && rec.item.type === itemType) {
-          return { ...rec, is_equipped: false };
-        }
-        return rec;
-      });
+      } else {
+        updated = prev.map((rec) => (rec.inventory_id === inventoryId ? { ...rec, is_equipped: false } : rec));
+      }
+
       localStorage.setItem("ironpixels_inventory", JSON.stringify(updated));
       return updated;
     });
