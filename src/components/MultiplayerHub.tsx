@@ -91,7 +91,18 @@ export function MultiplayerHub({
       const res = await fetch("/api/multiplayer/party");
       if (res.ok) {
         const data = await res.json();
-        setParty(data);
+        if (data) {
+          setParty(data);
+          localStorage.setItem("ironpixels_active_party", JSON.stringify(data));
+          return;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const saved = localStorage.getItem("ironpixels_active_party");
+      if (saved) {
+        setParty(JSON.parse(saved));
       }
     } catch (e) {}
   };
@@ -147,9 +158,12 @@ export function MultiplayerHub({
         const data = await res.json();
         if (action === "leave_party") {
           setParty(null);
+          localStorage.removeItem("ironpixels_active_party");
         } else {
           setParty(data);
+          localStorage.setItem("ironpixels_active_party", JSON.stringify(data));
         }
+        fetchLeaderboard(lbGroup, lbMetric);
       }
     } catch (e) {}
   };

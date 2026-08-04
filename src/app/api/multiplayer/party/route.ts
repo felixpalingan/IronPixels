@@ -23,7 +23,7 @@ export interface PartyState {
 }
 
 let activePartyCache: PartyState | null = {
-  party_id: "party-default-1",
+  party_id: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
   party_name: "Iron Legion Squad",
   leader_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
   members: [
@@ -37,7 +37,7 @@ let activePartyCache: PartyState | null = {
       weapon_icon: "/assets/items/weapons/01.png",
     },
     {
-      user_id: "demo-f-1",
+      user_id: "c2b3a4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d",
       username: "IronSlayer99",
       character_class: "TITAN BERSERKER",
       level: 42,
@@ -58,6 +58,7 @@ export async function GET() {
     const { data: dbParty } = await supabase
       .from("Party")
       .select("*")
+      .order("created_at", { ascending: false })
       .limit(1);
 
     if (dbParty && dbParty.length > 0) {
@@ -113,14 +114,16 @@ export async function POST(request: Request) {
     const supabase = await createClient();
 
     if (action === "create_party") {
-      const newPartyId = `party-${Date.now()}`;
+      const newPartyId = crypto.randomUUID();
+      const leaderId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
       const newParty: PartyState = {
         party_id: newPartyId,
         party_name: party_name || "Vanguard Raid Squad",
-        leader_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+        leader_id: leaderId,
         members: [
           {
-            user_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+            user_id: leaderId,
             username: "Felix",
             character_class: "WARRIOR",
             level: 1,
@@ -141,14 +144,14 @@ export async function POST(request: Request) {
         await supabase.from("Party").insert({
           party_id: newPartyId,
           party_name: newParty.party_name,
-          leader_id: newParty.leader_id,
+          leader_id: leaderId,
           total_party_floor: 1,
           total_party_cp: 1250,
         });
 
         await supabase.from("Party_Members").insert({
           party_id: newPartyId,
-          user_id: newParty.leader_id,
+          user_id: leaderId,
           role: "leader",
         });
       } catch (e) {}
@@ -176,8 +179,9 @@ export async function POST(request: Request) {
 
       const existing = activePartyCache.members.find((m) => m.user_id === invite_user_id);
       if (!existing) {
+        const newMemberId = invite_user_id || crypto.randomUUID();
         const newMember: PartyMember = {
-          user_id: invite_user_id || `party-m-${Date.now()}`,
+          user_id: newMemberId,
           username: invite_username || "Guild Knight",
           character_class: invite_class || "SHADOW NINJA",
           level: 30,
@@ -190,7 +194,7 @@ export async function POST(request: Request) {
         try {
           await supabase.from("Party_Members").insert({
             party_id: activePartyCache.party_id,
-            user_id: newMember.user_id,
+            user_id: newMemberId,
             role: "member",
           });
         } catch (e) {}
