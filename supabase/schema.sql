@@ -1,9 +1,10 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE IF NOT EXISTS public."Users" (
-    user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS public."profiles" (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE,
     username TEXT NOT NULL UNIQUE,
-    character_class TEXT DEFAULT 'CYBER KNIGHT',
+    character_class TEXT DEFAULT 'WARRIOR',
     level INT DEFAULT 1,
     current_hp INT DEFAULT 1000,
     max_hp INT DEFAULT 1000,
@@ -11,20 +12,19 @@ CREATE TABLE IF NOT EXISTS public."Users" (
     max_exp INT DEFAULT 1000,
     gold INT DEFAULT 500,
     weight_kg NUMERIC(5,2) DEFAULT 70.00,
+    str INT DEFAULT 85,
+    agi INT DEFAULT 70,
+    vit INT DEFAULT 60,
+    luk INT DEFAULT 50,
+    max_floor INT DEFAULT 1,
+    daily_rvs NUMERIC(10,2) DEFAULT 0,
+    workout_streak INT DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS public."User_Stats" (
-    user_id UUID PRIMARY KEY REFERENCES public."Users"(user_id) ON DELETE CASCADE,
-    str INT DEFAULT 75,
-    agi INT DEFAULT 75,
-    vit INT DEFAULT 70,
-    luk INT DEFAULT 70
 );
 
 CREATE TABLE IF NOT EXISTS public."Equipped_Gear" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public."Users"(user_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
     slot TEXT NOT NULL,
     name TEXT NOT NULL,
     icon TEXT,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public."Exercise_Dictionary" (
 
 CREATE TABLE IF NOT EXISTS public."Workout_Sessions" (
     session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public."Users"(user_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
     total_volume_kg NUMERIC(10,2) NOT NULL DEFAULT 0,
     total_rvs NUMERIC(10,2) NOT NULL DEFAULT 0,
     exercise_count INT NOT NULL DEFAULT 0,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public."Session_Sets" (
 
 CREATE TABLE IF NOT EXISTS public."User_Skills" (
     skill_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES public."Users"(user_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
     skill_name TEXT NOT NULL,
     damage_multiplier NUMERIC(4,2) NOT NULL DEFAULT 1.5,
     cooldown_minutes INT NOT NULL DEFAULT 5,
@@ -80,13 +80,33 @@ CREATE TABLE IF NOT EXISTS public."User_Skills" (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS public."Dungeon_Bosses" (
-    boss_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    boss_name TEXT NOT NULL,
-    current_hp BIGINT NOT NULL DEFAULT 250000,
-    max_hp BIGINT NOT NULL DEFAULT 500000,
-    status TEXT NOT NULL DEFAULT 'Active',
+CREATE TABLE IF NOT EXISTS public."Party" (
+    party_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    party_name TEXT NOT NULL,
+    leader_id UUID NOT NULL,
+    total_party_floor INT DEFAULT 1,
+    total_party_cp INT DEFAULT 0,
+    total_party_rvs INT DEFAULT 0,
+    party_streak INT DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public."Party_Members" (
+    member_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    party_id UUID NOT NULL REFERENCES public."Party"(party_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL,
+    role TEXT NOT NULL DEFAULT 'member',
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(party_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public."friends" (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    friend_id UUID NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(user_id, friend_id)
 );
 
 INSERT INTO public."Exercise_Dictionary" (exercise_id, exercise_name, tier, movement_coefficient)
@@ -99,27 +119,19 @@ VALUES
 ('f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c', 'Lat Pulldown', 'Tier C', 0.80)
 ON CONFLICT (exercise_name) DO NOTHING;
 
-INSERT INTO public."Dungeon_Bosses" (boss_id, boss_name, current_hp, max_hp, status)
-VALUES ('b055d7ac-1234-4567-89ab-cdef01234567', 'Demon Lord Ignis', 250000, 500000, 'Active')
-ON CONFLICT DO NOTHING;
+ALTER TABLE public."profiles" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."Party" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."Party_Members" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."friends" ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE public."Users" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public."User_Stats" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public."Workout_Sessions" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public."User_Skills" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "profiles_public" ON public."profiles";
+CREATE POLICY "profiles_public" ON public."profiles" FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "Users self management" ON public."Users";
-CREATE POLICY "Users self management" ON public."Users"
-    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "party_public" ON public."Party";
+CREATE POLICY "party_public" ON public."Party" FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "User_Stats self management" ON public."User_Stats";
-CREATE POLICY "User_Stats self management" ON public."User_Stats"
-    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "party_members_public" ON public."Party_Members";
+CREATE POLICY "party_members_public" ON public."Party_Members" FOR ALL USING (true);
 
-DROP POLICY IF EXISTS "Workout_Sessions self management" ON public."Workout_Sessions";
-CREATE POLICY "Workout_Sessions self management" ON public."Workout_Sessions"
-    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "User_Skills self management" ON public."User_Skills";
-CREATE POLICY "User_Skills self management" ON public."User_Skills"
-    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "friends_public" ON public."friends";
+CREATE POLICY "friends_public" ON public."friends" FOR ALL USING (true);
