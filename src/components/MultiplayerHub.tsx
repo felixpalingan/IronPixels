@@ -54,7 +54,21 @@ export function MultiplayerHub({
       if (res.ok) {
         const data = await res.json();
         if (group === "party") {
-          setPartyLeaderboardList(data);
+          const list: PartyLeaderboardEntry[] = Array.isArray(data) ? data : [];
+          if (party && !list.some((p) => p.party_id === party.party_id || p.party_name === party.party_name)) {
+            list.push({
+              party_id: party.party_id,
+              party_name: party.party_name,
+              leader_name: "Felix",
+              member_count: party.members.length,
+              total_party_floor: party.total_party_floor || 15,
+              total_party_cp: party.total_party_cp || 16650,
+              total_party_rvs: party.total_party_rvs || 1350,
+              party_streak: party.party_streak || 10,
+              leader_weapon: "/assets/items/weapons/01.png",
+            });
+          }
+          setPartyLeaderboardList(list);
         } else {
           setLeaderboardList(data);
         }
