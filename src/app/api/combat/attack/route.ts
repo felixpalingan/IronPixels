@@ -43,20 +43,23 @@ export async function POST(request: Request) {
           })
           .eq("boss_id", boss_id || boss.boss_id);
       }
-    } catch (e) {
-    }
+    } catch (e) {}
+
+    const result = is_defeated ? next_boss : boss;
 
     return NextResponse.json({
       success: true,
-      boss_id: is_defeated ? next_boss.boss_id : boss.boss_id,
-      boss_name: is_defeated ? next_boss.boss_name : boss.boss_name,
-      boss_type: is_defeated ? next_boss.boss_type : boss.boss_type,
-      stage: is_defeated ? next_boss.stage : boss.stage,
+      boss_id: result.boss_id,
+      boss_name: result.boss_name,
+      boss_type: result.boss_type,
+      stage: result.stage,
       rvs_damage_dealt: damage_dealt,
-      current_hp: is_defeated ? next_boss.current_hp : boss.current_hp,
-      max_hp: is_defeated ? next_boss.max_hp : boss.max_hp,
+      current_hp: result.current_hp,
+      max_hp: result.max_hp,
       is_defeated,
-      status: is_defeated ? next_boss.status : boss.status,
+      status: result.status,
+      category: result.category,
+      sprite_config: result.sprite_config,
     });
   } catch (err: any) {
     return NextResponse.json(

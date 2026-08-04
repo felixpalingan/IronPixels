@@ -740,8 +740,8 @@ export function DashboardLayout() {
                     <div className="flex items-center gap-2">
                       <Swords className="w-5 h-5 text-health-red" />
                       <div className="text-left">
-                        <div className="font-headline font-extrabold text-xs uppercase">BOSS ARENA</div>
-                        <div className="text-[9px] text-zinc-400">UNLEASH RVS ATTACK</div>
+                        <div className="font-headline font-extrabold text-xs uppercase">DUNGEON</div>
+                        <div className="text-[9px] text-zinc-400">CLEAR DUNGEON FLOORS</div>
                       </div>
                     </div>
                     <ArrowRight className="w-4 h-4 text-health-red group-hover:translate-x-1 transition-transform" />
@@ -936,7 +936,7 @@ export function DashboardLayout() {
                     }`}
                   >
                     <Swords className="w-3.5 h-3.5" />
-                    <span>BOSS ARENA</span>
+                    <span>DUNGEON</span>
                   </button>
                 </div>
 

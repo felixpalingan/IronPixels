@@ -3,14 +3,12 @@
 import React, { useState, useEffect } from "react";
 
 interface DungeonStageMapProps {
-  stage?: number;
-  bossType?: "orc" | "blood" | "demon" | "dragon" | "mecha" | "lich";
+  floor?: number;
   children?: React.ReactNode;
 }
 
 export function DungeonStageMap({
-  stage = 1,
-  bossType = "orc",
+  floor = 1,
   children,
 }: DungeonStageMapProps) {
   const [fountainFrame, setFountainFrame] = useState<number>(0);
@@ -22,10 +20,11 @@ export function DungeonStageMap({
     return () => clearInterval(timer);
   }, []);
 
-  const stageVariant = ((stage - 1) % 4) + 1;
+  // Cycle through 4 visual themes based on floor
+  const themeVariant = ((floor - 1) % 4) + 1;
 
   const getThemeProps = () => {
-    switch (stageVariant) {
+    switch (themeVariant) {
       case 1:
         return {
           banner: "/assets/dungeon/decor/wall_banner_green.png",
@@ -46,7 +45,7 @@ export function DungeonStageMap({
           hasFountain: true,
           hasColumn: false,
           crateCount: 1,
-          hasSkull: true,
+          hasSkull: false,
           floorTile: "/assets/dungeon/tiles/floor_3.png",
           altFloorTile: "/assets/dungeon/tiles/floor_4.png",
           wallMidTile: "/assets/dungeon/tiles/wall_goo.png",
@@ -56,8 +55,7 @@ export function DungeonStageMap({
           banner: "/assets/dungeon/decor/wall_banner_blue.png",
           fountainColor: "blue",
           hasFountain: true,
-          hasColumn: true,
-          columnImg: "/assets/dungeon/decor/column.png",
+          hasColumn: false,
           crateCount: 0,
           hasSkull: false,
           floorTile: "/assets/dungeon/tiles/floor_5.png",
@@ -72,7 +70,7 @@ export function DungeonStageMap({
           hasFountain: false,
           hasColumn: true,
           columnImg: "/assets/dungeon/decor/column.png",
-          crateCount: 3,
+          crateCount: 1,
           hasSkull: true,
           floorTile: "/assets/dungeon/tiles/floor_7.png",
           altFloorTile: "/assets/dungeon/tiles/floor_8.png",
@@ -88,24 +86,20 @@ export function DungeonStageMap({
   const TILE_SIZE = 32;
 
   const getTileForCell = (r: number, c: number) => {
+    // Row 0: wall top
     if (r === 0) {
       if (c === 0) return "/assets/dungeon/tiles/wall_top_left.png";
       if (c === COLS - 1) return "/assets/dungeon/tiles/wall_top_right.png";
       return "/assets/dungeon/tiles/wall_top_mid.png";
     }
-
+    // Row 1-2: wall mid
     if (r === 1 || r === 2) {
       if (c === 0) return "/assets/dungeon/tiles/wall_left.png";
       if (c === COLS - 1) return "/assets/dungeon/tiles/wall_right.png";
-      if (r === 1 && c === 7 && theme.hasFountain) {
-        return "/assets/dungeon/tiles/wall_mid.png";
-      }
-      if (r === 1 && (c === 4 || c === 11)) {
-        return theme.wallMidTile;
-      }
+      if (r === 1 && (c === 4 || c === 11)) return theme.wallMidTile;
       return "/assets/dungeon/tiles/wall_mid.png";
     }
-
+    // Row 3-5: floor
     const isAlt = (r + c) % 3 === 0;
     return isAlt ? theme.altFloorTile : theme.floorTile;
   };
@@ -119,6 +113,7 @@ export function DungeonStageMap({
         imageRendering: "pixelated",
       }}
     >
+      {/* Base tile grid */}
       <div
         className="grid relative z-0"
         style={{
@@ -133,8 +128,8 @@ export function DungeonStageMap({
             <img
               key={`tile-${r}-${c}`}
               src={getTileForCell(r, c)}
-              alt="Tile"
-              className="w-8 h-8 block pixelated border-0 p-0 m-0"
+              alt=""
+              className="block pixelated border-0 p-0 m-0"
               style={{
                 width: `${TILE_SIZE}px`,
                 height: `${TILE_SIZE}px`,
@@ -145,13 +140,15 @@ export function DungeonStageMap({
         )}
       </div>
 
+      {/* Decorations layer - placed on walls, NOT on floor where characters stand */}
       <div className="absolute inset-0 z-10 pointer-events-none">
+        {/* Left banner - on the left wall area */}
         <img
           src={theme.banner}
-          alt="Banner Left"
+          alt=""
           className="absolute pixelated"
           style={{
-            left: `${3 * TILE_SIZE}px`,
+            left: `${1 * TILE_SIZE}px`,
             top: `${1 * TILE_SIZE}px`,
             width: `${TILE_SIZE}px`,
             height: `${TILE_SIZE}px`,
@@ -159,12 +156,13 @@ export function DungeonStageMap({
           }}
         />
 
+        {/* Right banner - on the right wall area */}
         <img
           src={theme.banner}
-          alt="Banner Right"
+          alt=""
           className="absolute pixelated"
           style={{
-            left: `${12 * TILE_SIZE}px`,
+            left: `${14 * TILE_SIZE}px`,
             top: `${1 * TILE_SIZE}px`,
             width: `${TILE_SIZE}px`,
             height: `${TILE_SIZE}px`,
@@ -172,11 +170,12 @@ export function DungeonStageMap({
           }}
         />
 
+        {/* Center decoration: fountain or columns on the WALL rows only */}
         {theme.hasFountain ? (
           <>
             <img
               src="/assets/dungeon/decor/wall_fountain_top_1.png"
-              alt="Fountain Top"
+              alt=""
               className="absolute pixelated"
               style={{
                 left: `${7 * TILE_SIZE}px`,
@@ -190,7 +189,7 @@ export function DungeonStageMap({
               src={`/assets/dungeon/decor/wall_fountain_mid_${
                 theme.fountainColor === "red" ? "red" : "blue"
               }_anim_f${fountainFrame}.png`}
-              alt="Fountain Mid"
+              alt=""
               className="absolute pixelated"
               style={{
                 left: `${7 * TILE_SIZE}px`,
@@ -204,7 +203,7 @@ export function DungeonStageMap({
               src={`/assets/dungeon/decor/wall_fountain_basin_${
                 theme.fountainColor === "red" ? "red" : "blue"
               }_anim_f${fountainFrame}.png`}
-              alt="Fountain Basin"
+              alt=""
               className="absolute pixelated"
               style={{
                 left: `${7 * TILE_SIZE}px`,
@@ -217,12 +216,13 @@ export function DungeonStageMap({
           </>
         ) : theme.hasColumn ? (
           <>
+            {/* Columns on wall rows only (row 1-2), NOT on the floor */}
             <img
               src={theme.columnImg}
-              alt="Column Left"
+              alt=""
               className="absolute pixelated"
               style={{
-                left: `${2 * TILE_SIZE}px`,
+                left: `${0 * TILE_SIZE}px`,
                 top: `${1 * TILE_SIZE}px`,
                 width: `${TILE_SIZE}px`,
                 height: `${TILE_SIZE * 2}px`,
@@ -231,10 +231,10 @@ export function DungeonStageMap({
             />
             <img
               src={theme.columnImg}
-              alt="Column Right"
+              alt=""
               className="absolute pixelated"
               style={{
-                left: `${13 * TILE_SIZE}px`,
+                left: `${15 * TILE_SIZE}px`,
                 top: `${1 * TILE_SIZE}px`,
                 width: `${TILE_SIZE}px`,
                 height: `${TILE_SIZE * 2}px`,
@@ -244,14 +244,15 @@ export function DungeonStageMap({
           </>
         ) : null}
 
+        {/* Floor decor: crates & skulls only at the far edges, NOT where characters stand */}
         {theme.crateCount > 0 && (
           <img
             src="/assets/dungeon/decor/crate.png"
-            alt="Crate"
+            alt=""
             className="absolute pixelated"
             style={{
-              left: `${1 * TILE_SIZE}px`,
-              top: `${5 * TILE_SIZE}px`,
+              left: `${0 * TILE_SIZE}px`,
+              top: `${3 * TILE_SIZE}px`,
               width: `${TILE_SIZE}px`,
               height: `${TILE_SIZE}px`,
               imageRendering: "pixelated",
@@ -262,10 +263,10 @@ export function DungeonStageMap({
         {theme.hasSkull && (
           <img
             src="/assets/dungeon/decor/skull.png"
-            alt="Skull"
+            alt=""
             className="absolute pixelated"
             style={{
-              left: `${14 * TILE_SIZE}px`,
+              left: `${15 * TILE_SIZE}px`,
               top: `${5 * TILE_SIZE}px`,
               width: `${TILE_SIZE}px`,
               height: `${TILE_SIZE}px`,
@@ -275,7 +276,15 @@ export function DungeonStageMap({
         )}
       </div>
 
-      <div className="absolute inset-0 z-20 flex items-end justify-between px-6 pb-2 pointer-events-none">
+      {/* Characters layer - centered on the floor area */}
+      <div
+        className="absolute z-20 flex items-end justify-between pointer-events-none"
+        style={{
+          left: `${3 * TILE_SIZE}px`,
+          right: `${3 * TILE_SIZE}px`,
+          bottom: `${0.5 * TILE_SIZE}px`,
+        }}
+      >
         {children}
       </div>
     </div>

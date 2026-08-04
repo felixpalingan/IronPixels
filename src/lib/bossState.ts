@@ -1,103 +1,192 @@
-export interface BossInfo {
-  boss_id: string;
-  boss_name: string;
-  stage: number;
+export type EnemyCategory = "mob" | "boss";
+
+export interface EnemyConfig {
+  spriteKey: string;
+  displayName: string;
+  animPrefix: string; // "idle_anim" or "anim"
+  hasRunAnim: boolean;
+  isBig: boolean; // big sprites (big_demon, big_zombie, ogre) need different sizing
+}
+
+// Small mobs pool - these cycle randomly on non-boss floors
+export const MOB_POOL: EnemyConfig[] = [
+  { spriteKey: "goblin", displayName: "Goblin", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "imp", displayName: "Imp", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "skelet", displayName: "Skeleton", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "tiny_zombie", displayName: "Tiny Zombie", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "muddy", displayName: "Muddy", animPrefix: "anim", hasRunAnim: false, isBig: false },
+  { spriteKey: "swampy", displayName: "Swampy", animPrefix: "anim", hasRunAnim: false, isBig: false },
+  { spriteKey: "slug", displayName: "Slug", animPrefix: "anim", hasRunAnim: false, isBig: false },
+  { spriteKey: "masked_orc", displayName: "Masked Orc", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "orc_warrior", displayName: "Orc Warrior", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "wogol", displayName: "Wogol", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "chort", displayName: "Chort", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "ice_zombie", displayName: "Ice Zombie", animPrefix: "anim", hasRunAnim: false, isBig: false },
+  { spriteKey: "necromancer", displayName: "Necromancer", animPrefix: "anim", hasRunAnim: false, isBig: false },
+  { spriteKey: "pumpkin_dude", displayName: "Pumpkin Dude", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+  { spriteKey: "orc_shaman", displayName: "Orc Shaman", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
+];
+
+// Boss pool - these appear every 5 floors and cycle
+export const BOSS_POOL: EnemyConfig[] = [
+  { spriteKey: "big_demon", displayName: "Demon Lord", animPrefix: "idle_anim", hasRunAnim: true, isBig: true },
+  { spriteKey: "big_zombie", displayName: "Undead Giant", animPrefix: "idle_anim", hasRunAnim: true, isBig: true },
+  { spriteKey: "ogre", displayName: "Ogre King", animPrefix: "idle_anim", hasRunAnim: true, isBig: true },
+];
+
+export interface FloorEnemy {
+  enemy_id: string;
+  floor: number;
+  display_name: string;
   current_hp: number;
   max_hp: number;
   status: "Active" | "Defeated";
-  boss_type: "orc" | "blood" | "demon" | "dragon" | "mecha" | "lich";
-  description?: string;
-  reward_gold?: number;
-  reward_exp?: number;
-}
-
-export const STAGE_BOSSES: Array<{
-  name: string;
-  hp: number;
-  type: BossInfo["boss_type"];
-  description: string;
+  category: EnemyCategory;
+  sprite_config: EnemyConfig;
   reward_gold: number;
   reward_exp: number;
-}> = [
-  { name: "Stage 1: Goblin Berserker King", hp: 15000, type: "orc", description: "Wild chieftain of the green-skin horde.", reward_gold: 500, reward_exp: 250 },
-  { name: "Stage 2: Orc Warlord Grok", hp: 35000, type: "orc", description: "Ruthless commander wielding an iron greataxe.", reward_gold: 1200, reward_exp: 600 },
-  { name: "Stage 3: Minotaur Ironhide", hp: 65000, type: "blood", description: "Towering bull-beast charging through stone walls.", reward_gold: 2500, reward_exp: 1200 },
-  { name: "Stage 4: Blood Beast Crimson", hp: 100000, type: "blood", description: "Fiendish predator fueled by raw crimson essence.", reward_gold: 4500, reward_exp: 2200 },
-  { name: "Stage 5: Frost Giant Ymir", hp: 150000, type: "demon", description: "Ancient colossus shrouded in glacial frost.", reward_gold: 7500, reward_exp: 3500 },
-  { name: "Stage 6: Demon Lord Ignis", hp: 220000, type: "demon", description: "Master of dark hellfire burning everything in sight.", reward_gold: 12000, reward_exp: 5500 },
-  { name: "Stage 7: Shadow Assassin Vesper", hp: 300000, type: "lich", description: "Lethal blade wielder lurking in abyssal mist.", reward_gold: 18000, reward_exp: 8000 },
-  { name: "Stage 8: Abyssal Void Dragon", hp: 400000, type: "dragon", description: "Ancient dragon radiating void energy and breath.", reward_gold: 25000, reward_exp: 12000 },
-  { name: "Stage 9: Undead Lich King Malakor", hp: 550000, type: "lich", description: "Ruler of the damned commanding spectral armies.", reward_gold: 35000, reward_exp: 16000 },
-  { name: "Stage 10: Cyber Mecha Omega", hp: 750000, type: "mecha", description: "Supreme war automaton equipped with photon lasers.", reward_gold: 50000, reward_exp: 22000 },
-  { name: "Stage 11: Celestial Archangel Michael", hp: 1000000, type: "demon", description: "Holy warrior executing divine judgment.", reward_gold: 75000, reward_exp: 30000 },
-  { name: "Stage 12: Titan Earthbreaker Atlas", hp: 1300000, type: "orc", description: "Gigantic earth titan smashing mountains into dust.", reward_gold: 100000, reward_exp: 40000 },
-  { name: "Stage 13: Deep Sea Leviathan", hp: 1700000, type: "dragon", description: "Mythical abyssal sea dragon of tsunami force.", reward_gold: 135000, reward_exp: 55000 },
-  { name: "Stage 14: Infernal Balrog Surtur", hp: 2200000, type: "demon", description: "Fiery demon of Ragnarok wielding a lava whip.", reward_gold: 180000, reward_exp: 75000 },
-  { name: "Stage 15: Phantom Empress Nyx", hp: 2800000, type: "lich", description: "Sovereign of dark night manipulating twilight magic.", reward_gold: 240000, reward_exp: 100000 },
-  { name: "Stage 16: Dread Necromancer Mortis", hp: 3500000, type: "lich", description: "Warlock raising relentless hordes of bone warriors.", reward_gold: 320000, reward_exp: 130000 },
-  { name: "Stage 17: Cybernetic Overlord Zero", hp: 4500000, type: "mecha", description: "Sentient AI superintelligence harnessing orbital cannons.", reward_gold: 420000, reward_exp: 170000 },
-  { name: "Stage 18: Behemoth Colossus Golgoth", hp: 6000000, type: "orc", description: "Primordial behemoth whose footsteps cause earthquakes.", reward_gold: 550000, reward_exp: 220000 },
-  { name: "Stage 19: Cosmic Destroyer Nemesis", hp: 8000000, type: "dragon", description: "Cosmic entity consuming stellar systems.", reward_gold: 750000, reward_exp: 300000 },
-  { name: "Stage 20: IronPixels World Boss Ragnarok", hp: 12000000, type: "demon", description: "Ultimate apocalyptic ruler of the pixel realm.", reward_gold: 1000000, reward_exp: 500000 },
-];
-
-let currentBossInstance: BossInfo = {
-  boss_id: "boss-stage-1-init",
-  boss_name: STAGE_BOSSES[0].name,
-  stage: 1,
-  current_hp: STAGE_BOSSES[0].hp,
-  max_hp: STAGE_BOSSES[0].hp,
-  status: "Active",
-  boss_type: STAGE_BOSSES[0].type,
-  description: STAGE_BOSSES[0].description,
-  reward_gold: STAGE_BOSSES[0].reward_gold,
-  reward_exp: STAGE_BOSSES[0].reward_exp,
-};
-
-export function getBossState(): BossInfo {
-  return currentBossInstance;
 }
 
-export function updateBossHp(rvsDamage: number): {
-  boss: BossInfo;
+// Seeded random from floor number so same floor always gives same mob
+function seededRandom(seed: number): number {
+  let x = Math.sin(seed * 9301 + 49297) * 233280;
+  return x - Math.floor(x);
+}
+
+function getEnemyForFloor(floor: number): { config: EnemyConfig; category: EnemyCategory } {
+  const isBossFloor = floor % 5 === 0;
+  if (isBossFloor) {
+    const bossIdx = Math.floor(seededRandom(floor) * BOSS_POOL.length);
+    return { config: BOSS_POOL[bossIdx], category: "boss" };
+  } else {
+    const mobIdx = Math.floor(seededRandom(floor) * MOB_POOL.length);
+    return { config: MOB_POOL[mobIdx], category: "mob" };
+  }
+}
+
+function getHpForFloor(floor: number, category: EnemyCategory): number {
+  if (category === "boss") {
+    return Math.round(5000 * Math.pow(1.35, floor / 5));
+  }
+  return Math.round(1000 * Math.pow(1.2, floor));
+}
+
+function getRewardsForFloor(floor: number, category: EnemyCategory): { gold: number; exp: number } {
+  if (category === "boss") {
+    return {
+      gold: Math.round(500 * Math.pow(1.3, floor / 5)),
+      exp: Math.round(250 * Math.pow(1.3, floor / 5)),
+    };
+  }
+  return {
+    gold: Math.round(100 * Math.pow(1.15, floor)),
+    exp: Math.round(50 * Math.pow(1.15, floor)),
+  };
+}
+
+function buildFloorEnemy(floor: number): FloorEnemy {
+  const { config, category } = getEnemyForFloor(floor);
+  const hp = getHpForFloor(floor, category);
+  const rewards = getRewardsForFloor(floor, category);
+  const suffix = category === "boss" ? "BOSS" : "MOB";
+
+  return {
+    enemy_id: `floor-${floor}-${suffix}-${Date.now()}`,
+    floor,
+    display_name: config.displayName,
+    current_hp: hp,
+    max_hp: hp,
+    status: "Active",
+    category,
+    sprite_config: config,
+    reward_gold: rewards.gold,
+    reward_exp: rewards.exp,
+  };
+}
+
+let currentFloor = 1;
+let currentEnemy: FloorEnemy = buildFloorEnemy(1);
+
+export function getFloorState(): FloorEnemy {
+  return currentEnemy;
+}
+
+export function getCurrentFloor(): number {
+  return currentFloor;
+}
+
+export function attackEnemy(rvsDamage: number): {
+  enemy: FloorEnemy;
   is_defeated: boolean;
   damage_dealt: number;
-  next_boss: BossInfo;
+  next_enemy: FloorEnemy | null;
 } {
   const damage = Math.round(rvsDamage);
-  const newHp = Math.max(0, currentBossInstance.current_hp - damage);
+  const newHp = Math.max(0, currentEnemy.current_hp - damage);
   const isDefeated = newHp === 0;
 
-  currentBossInstance.current_hp = newHp;
+  currentEnemy.current_hp = newHp;
 
-  let nextBossInstance = { ...currentBossInstance };
+  let nextEnemy: FloorEnemy | null = null;
 
   if (isDefeated) {
-    currentBossInstance.status = "Defeated";
-
-    const nextStage = currentBossInstance.stage + 1;
-    const bossConfig = STAGE_BOSSES[(nextStage - 1) % STAGE_BOSSES.length];
-
-    nextBossInstance = {
-      boss_id: `boss-stage-${nextStage}-${Date.now()}`,
-      boss_name: bossConfig.name,
-      stage: nextStage,
-      current_hp: bossConfig.hp,
-      max_hp: bossConfig.hp,
-      status: "Active",
-      boss_type: bossConfig.type,
-      description: bossConfig.description,
-      reward_gold: bossConfig.reward_gold,
-      reward_exp: bossConfig.reward_exp,
-    };
-
-    currentBossInstance = nextBossInstance;
+    currentEnemy.status = "Defeated";
+    currentFloor += 1;
+    nextEnemy = buildFloorEnemy(currentFloor);
+    currentEnemy = nextEnemy;
   }
 
   return {
-    boss: currentBossInstance,
+    enemy: currentEnemy,
     is_defeated: isDefeated,
     damage_dealt: damage,
-    next_boss: nextBossInstance,
+    next_enemy: nextEnemy,
+  };
+}
+
+// For backward compatibility with old API
+export function getBossState() {
+  const e = getFloorState();
+  return {
+    boss_id: e.enemy_id,
+    boss_name: e.display_name,
+    stage: e.floor,
+    current_hp: e.current_hp,
+    max_hp: e.max_hp,
+    status: e.status,
+    boss_type: e.sprite_config.spriteKey as any,
+    category: e.category,
+    sprite_config: e.sprite_config,
+  };
+}
+
+export function updateBossHp(rvsDamage: number) {
+  const result = attackEnemy(rvsDamage);
+  const next = result.next_enemy || result.enemy;
+  return {
+    boss: {
+      boss_id: result.enemy.enemy_id,
+      boss_name: result.enemy.display_name,
+      stage: result.enemy.floor,
+      current_hp: result.enemy.current_hp,
+      max_hp: result.enemy.max_hp,
+      status: result.enemy.status,
+      boss_type: result.enemy.sprite_config.spriteKey as any,
+      category: result.enemy.category,
+      sprite_config: result.enemy.sprite_config,
+    },
+    is_defeated: result.is_defeated,
+    damage_dealt: result.damage_dealt,
+    next_boss: {
+      boss_id: next.enemy_id,
+      boss_name: next.display_name,
+      stage: next.floor,
+      current_hp: next.current_hp,
+      max_hp: next.max_hp,
+      status: next.status,
+      boss_type: next.sprite_config.spriteKey as any,
+      category: next.category,
+      sprite_config: next.sprite_config,
+    },
   };
 }
