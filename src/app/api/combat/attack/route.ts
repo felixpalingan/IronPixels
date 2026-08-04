@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { updateBossHp } from "@/lib/bossState";
 
 export async function POST(request: Request) {
   try {
-    const { user_id, boss_id, rvs_damage } = await request.json();
+    const { user_id, boss_id, rvs_damage, mode = "solo" } = await request.json();
 
     if (!rvs_damage || rvs_damage <= 0) {
       return NextResponse.json(
@@ -13,37 +12,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const { boss, is_defeated, damage_dealt, next_boss } = updateBossHp(rvs_damage);
+    if (mode === "both") {
+      const soloResult = updateBossHp(rvs_damage, "solo");
+      const partyResult = updateBossHp(rvs_damage, "party");
 
-    try {
-      const supabase = await createClient();
+      return NextResponse.json({
+        success: true,
+        solo: soloResult,
+        party: partyResult,
+      });
+    }
 
-      if (is_defeated) {
-        await supabase
-          .from("dungeon_bosses")
-          .update({ current_hp: 0, status: "Defeated" })
-          .lte("stage", boss.stage);
-
-        await supabase
-          .from("dungeon_bosses")
-          .upsert({
-            boss_id: next_boss.boss_id,
-            boss_name: next_boss.boss_name,
-            stage: next_boss.stage,
-            current_hp: next_boss.max_hp,
-            max_hp: next_boss.max_hp,
-            status: "Active",
-          });
-      } else {
-        await supabase
-          .from("dungeon_bosses")
-          .update({
-            current_hp: boss.current_hp,
-            status: boss.status,
-          })
-          .eq("boss_id", boss_id || boss.boss_id);
-      }
-    } catch (e) {}
+    const targetMode: "solo" | "party" = mode === "party" ? "party" : "solo";
+    const { boss, is_defeated, damage_dealt, next_boss } = updateBossHp(rvs_damage, targetMode);
 
     const result = is_defeated ? next_boss : boss;
 
@@ -60,6 +41,7 @@ export async function POST(request: Request) {
       status: result.status,
       category: result.category,
       sprite_config: result.sprite_config,
+      mode: targetMode,
     });
   } catch (err: any) {
     return NextResponse.json(

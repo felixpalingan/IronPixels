@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords, Zap, Gift, X, Skull, Crown } from "lucide-react";
+import { Flame, Swords, Zap, Gift, X, Skull, Crown, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
@@ -31,6 +31,7 @@ interface EnemyData {
   max_hp: number;
   status: string;
   category: "mob" | "boss";
+  mode: "solo" | "party";
   sprite_config: {
     spriteKey: string;
     displayName: string;
@@ -67,6 +68,8 @@ export function CombatArena({
   const particlesRef = useRef<DamageParticle[]>([]);
   const hasExecutedRef = useRef<boolean>(false);
 
+  const [activeMode, setActiveMode] = useState<"solo" | "party">("solo");
+
   const defaultSpriteConfig = {
     spriteKey: "goblin",
     displayName: "Goblin",
@@ -75,79 +78,126 @@ export function CombatArena({
     isBig: false,
   };
 
-  const [enemy, setEnemy] = useState<EnemyData>({
-    enemy_id: "floor-1-MOB-init",
+  const [soloEnemy, setSoloEnemy] = useState<EnemyData>({
+    enemy_id: "solo-floor-1-init",
     display_name: "Goblin",
     floor: 1,
     current_hp: 1000,
     max_hp: 1000,
     status: "Active",
     category: "mob",
+    mode: "solo",
+    sprite_config: defaultSpriteConfig,
+  });
+
+  const [partyEnemy, setPartyEnemy] = useState<EnemyData>({
+    enemy_id: "party-floor-1-init",
+    display_name: "Goblin Raider Squad",
+    floor: 1,
+    current_hp: 4000,
+    max_hp: 4000,
+    status: "Active",
+    category: "mob",
+    mode: "party",
     sprite_config: defaultSpriteConfig,
   });
 
   const [enemyState, setEnemyState] = useState<EnemySpriteState>("idle");
   const [heroState, setHeroState] = useState<HeroState>("idle");
-  const [combatLog, setCombatLog] = useState<Array<{ id: string; msg: string; color: string }>>([]);
+  const [soloLogs, setSoloLogs] = useState<Array<{ id: string; msg: string; color: string }>>([]);
+  const [partyLogs, setPartyLogs] = useState<Array<{ id: string; msg: string; color: string }>>([]);
+
   const [victoryLoot, setVictoryLoot] = useState<{
     enemyName: string;
     floor: number;
     droppedItem: EquipmentItem;
   } | null>(null);
 
+  const currentEnemy = activeMode === "party" ? partyEnemy : soloEnemy;
+  const currentLogs = activeMode === "party" ? partyLogs : soloLogs;
+
   const baseCombatPower = Math.round((dailyRvs > 0 ? dailyRvs : 50) + playerStr);
-  const todayKey = `ironpixels_combat_log_${new Date().toISOString().split("T")[0]}`;
-  const isBossFloor = enemy.floor % 5 === 0;
+  const todayStr = new Date().toISOString().split("T")[0];
+  const soloLogKey = `ironpixels_combat_log_solo_${todayStr}`;
+  const partyLogKey = `ironpixels_combat_log_party_${todayStr}`;
+  const isBossFloor = currentEnemy.floor % 5 === 0;
 
   useEffect(() => {
     try {
-      const savedLogs = localStorage.getItem(todayKey);
-      if (savedLogs) setCombatLog(JSON.parse(savedLogs));
+      const savedSoloLogs = localStorage.getItem(soloLogKey);
+      if (savedSoloLogs) setSoloLogs(JSON.parse(savedSoloLogs));
+
+      const savedPartyLogs = localStorage.getItem(partyLogKey);
+      if (savedPartyLogs) setPartyLogs(JSON.parse(savedPartyLogs));
     } catch (e) {}
 
     try {
-      const saved = localStorage.getItem("ironpixels_active_enemy");
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedSolo = localStorage.getItem("ironpixels_active_solo_enemy");
+      if (savedSolo) {
+        const parsed = JSON.parse(savedSolo);
         if (parsed && parsed.floor && parsed.sprite_config) {
-          setEnemy(parsed);
+          setSoloEnemy(parsed);
+        }
+      }
+
+      const savedParty = localStorage.getItem("ironpixels_active_party_enemy");
+      if (savedParty) {
+        const parsed = JSON.parse(savedParty);
+        if (parsed && parsed.floor && parsed.sprite_config) {
+          setPartyEnemy(parsed);
         }
       }
     } catch (e) {}
-  }, [todayKey]);
+  }, [soloLogKey, partyLogKey]);
 
-  const addLog = (msg: string, color = "#e5e2e1") => {
-    setCombatLog((prev) => {
-      const updated = [{ id: Math.random().toString(), msg, color }, ...prev.slice(0, 9)];
-      try { localStorage.setItem(todayKey, JSON.stringify(updated)); } catch (e) {}
-      return updated;
-    });
+  const addLog = (msg: string, color = "#e5e2e1", mode: "solo" | "party" = activeMode) => {
+    if (mode === "party") {
+      setPartyLogs((prev) => {
+        const updated = [{ id: Math.random().toString(), msg, color }, ...prev.slice(0, 9)];
+        try { localStorage.setItem(partyLogKey, JSON.stringify(updated)); } catch (e) {}
+        return updated;
+      });
+    } else {
+      setSoloLogs((prev) => {
+        const updated = [{ id: Math.random().toString(), msg, color }, ...prev.slice(0, 9)];
+        try { localStorage.setItem(soloLogKey, JSON.stringify(updated)); } catch (e) {}
+        return updated;
+      });
+    }
+  };
+
+  const fetchModeEnemy = async (mode: "solo" | "party") => {
+    try {
+      const res = await fetch(`/api/combat/boss?mode=${mode}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.stage && data.sprite_config) {
+          const mapped: EnemyData = {
+            enemy_id: data.boss_id,
+            display_name: data.sprite_config?.displayName || data.boss_name,
+            floor: data.stage,
+            current_hp: Number(data.current_hp),
+            max_hp: Number(data.max_hp),
+            status: data.status || "Active",
+            category: data.category || "mob",
+            mode,
+            sprite_config: data.sprite_config || defaultSpriteConfig,
+          };
+          if (mode === "party") {
+            setPartyEnemy(mapped);
+            localStorage.setItem("ironpixels_active_party_enemy", JSON.stringify(mapped));
+          } else {
+            setSoloEnemy(mapped);
+            localStorage.setItem("ironpixels_active_solo_enemy", JSON.stringify(mapped));
+          }
+        }
+      }
+    } catch (err) {}
   };
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/combat/boss");
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.stage && data.sprite_config) {
-            const mapped: EnemyData = {
-              enemy_id: data.boss_id,
-              display_name: data.sprite_config?.displayName || data.boss_name,
-              floor: data.stage,
-              current_hp: Number(data.current_hp),
-              max_hp: Number(data.max_hp),
-              status: data.status || "Active",
-              category: data.category || "mob",
-              sprite_config: data.sprite_config || defaultSpriteConfig,
-            };
-            setEnemy(mapped);
-            localStorage.setItem("ironpixels_active_enemy", JSON.stringify(mapped));
-            if (data.current_hp === 0 || data.status === "Defeated") setEnemyState("dead");
-          }
-        }
-      } catch (err) {}
-    })();
+    fetchModeEnemy("solo");
+    fetchModeEnemy("party");
   }, []);
 
   const awardLoot = (enemyName: string, floor: number) => {
@@ -185,39 +235,49 @@ export function CombatArena({
   const executeAttack = async (
     damage: number,
     actionName = "Normal Slash",
-    attackType: "attack01" | "attack02" | "attack03" = "attack01"
+    attackType: "attack01" | "attack02" | "attack03" = "attack01",
+    targetMode: "solo" | "party" = activeMode
   ) => {
-    if (enemy.current_hp <= 0 && enemy.status === "Defeated") {
-      addLog("Enemy already defeated! Advancing to next floor...", "#f59e0b");
+    const targetEnemy = targetMode === "party" ? partyEnemy : soloEnemy;
+
+    if (targetEnemy.current_hp <= 0 && targetEnemy.status === "Defeated") {
+      addLog(`Enemy already defeated in ${targetMode.toUpperCase()}! Advancing...`, "#f59e0b", targetMode);
       return;
     }
 
     setHeroState(attackType);
     setTimeout(() => setHeroState("idle"), 500);
 
-    setEnemyState("hit");
-    spawnDamageParticle(damage, true, `${actionName.toUpperCase()} -${formatNumber(damage)}`);
+    if (targetMode === activeMode) {
+      setEnemyState("hit");
+      spawnDamageParticle(damage, true, `${actionName.toUpperCase()} -${formatNumber(damage)}`);
+    }
 
     try {
       const res = await fetch("/api/combat/attack", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, boss_id: enemy.enemy_id, rvs_damage: damage }),
+        body: JSON.stringify({
+          user_id: userId,
+          boss_id: targetEnemy.enemy_id,
+          rvs_damage: damage,
+          mode: targetMode,
+        }),
       });
 
       if (res.ok) {
         const data = await res.json();
 
         if (data.is_defeated) {
-          setEnemyState("dead");
-          const wasFloor = enemy.floor;
+          if (targetMode === activeMode) setEnemyState("dead");
+
+          const wasFloor = targetEnemy.floor;
           const wasBoss = wasFloor % 5 === 0;
-          addLog(`${wasBoss ? "🏆 BOSS" : "⚔️"} ${enemy.display_name} DEFEATED on Floor ${wasFloor}!`, "#00ff41");
+          addLog(`${wasBoss ? "🏆 BOSS" : "⚔️"} ${targetEnemy.display_name} DEFEATED on Floor ${wasFloor}!`, "#00ff41", targetMode);
 
-          // Boss floors give loot
-          if (wasBoss) awardLoot(enemy.display_name, wasFloor);
+          if (wasBoss && targetMode === activeMode) awardLoot(targetEnemy.display_name, wasFloor);
 
-          const nextEnemy: EnemyData = {
+          const nextEnemyData: EnemyData = {
             enemy_id: data.boss_id,
             display_name: data.sprite_config?.displayName || data.boss_name,
             floor: data.stage,
@@ -225,49 +285,68 @@ export function CombatArena({
             max_hp: data.max_hp,
             status: "Active",
             category: data.category || "mob",
+            mode: targetMode,
             sprite_config: data.sprite_config || defaultSpriteConfig,
           };
 
-          localStorage.setItem("ironpixels_active_enemy", JSON.stringify(nextEnemy));
+          if (targetMode === "party") {
+            setPartyEnemy(nextEnemyData);
+            localStorage.setItem("ironpixels_active_party_enemy", JSON.stringify(nextEnemyData));
+          } else {
+            setSoloEnemy(nextEnemyData);
+            localStorage.setItem("ironpixels_active_solo_enemy", JSON.stringify(nextEnemyData));
+          }
 
           setTimeout(() => {
-            setEnemy(nextEnemy);
-            setEnemyState("idle");
+            if (targetMode === activeMode) setEnemyState("idle");
           }, wasBoss ? 2000 : 1200);
         } else {
           const updated: EnemyData = {
-            ...enemy,
+            ...targetEnemy,
             current_hp: data.current_hp,
             status: data.status,
           };
-          setEnemy(updated);
-          localStorage.setItem("ironpixels_active_enemy", JSON.stringify(updated));
-          setTimeout(() => setEnemyState((s) => s === "dead" ? "dead" : "idle"), 600);
+
+          if (targetMode === "party") {
+            setPartyEnemy(updated);
+            localStorage.setItem("ironpixels_active_party_enemy", JSON.stringify(updated));
+          } else {
+            setSoloEnemy(updated);
+            localStorage.setItem("ironpixels_active_solo_enemy", JSON.stringify(updated));
+          }
+
+          if (targetMode === activeMode) {
+            setTimeout(() => setEnemyState((s) => s === "dead" ? "dead" : "idle"), 600);
+          }
         }
       }
     } catch (err) {
-      setTimeout(() => setEnemyState("idle"), 600);
+      if (targetMode === activeMode) setTimeout(() => setEnemyState("idle"), 600);
     }
   };
 
   const handleInstantKill = () => {
-    if (enemy.current_hp <= 0) return;
-    const dmg = Math.max(999999, enemy.current_hp);
-    executeAttack(dmg, "INSTANT KILL", "attack03");
-    addLog(`⚡ INSTANT KILL! Dealt ${formatNumber(dmg)} damage!`, "#FF0055");
+    if (currentEnemy.current_hp <= 0) return;
+    const dmg = Math.max(999999, currentEnemy.current_hp);
+    executeAttack(dmg, "INSTANT KILL", "attack03", activeMode);
+    addLog(`⚡ INSTANT KILL! Dealt ${formatNumber(dmg)} damage!`, "#FF0055", activeMode);
   };
 
   useEffect(() => {
     if (sessionDamage > 0 && !hasExecutedRef.current) {
       hasExecutedRef.current = true;
       const totalDmg = sessionDamage + playerStr;
-      executeAttack(totalDmg, "Gym RVS Strike", "attack01");
-      addLog(`Gym Attack dealt ${formatNumber(totalDmg)} damage (RVS: ${sessionDamage} + STR: ${playerStr})!`, "#00ff41");
+
+      executeAttack(totalDmg, "Gym RVS Strike", "attack01", "solo");
+      executeAttack(totalDmg, "Gym RVS Strike", "attack01", "party");
+
+      addLog(`Gym Workout Attack dealt ${formatNumber(totalDmg)} damage to BOTH Solo and Party lobbies!`, "#00ff41", "solo");
+      addLog(`Gym Workout Attack dealt ${formatNumber(totalDmg)} damage to BOTH Solo and Party lobbies!`, "#00ff41", "party");
+
       if (onConsumeSessionDamage) onConsumeSessionDamage();
     }
   }, [sessionDamage, playerStr]);
 
-  // Canvas particle renderer
   useEffect(() => {
     let animId: number;
     const render = () => {
@@ -302,15 +381,14 @@ export function CombatArena({
     _newBossHp: number,
     attackType: "attack01" | "attack02" | "attack03"
   ) => {
-    executeAttack(damageDealt, skillName, attackType);
-    addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${enemy.display_name}.`, "#FFD60A");
+    executeAttack(damageDealt, skillName, attackType, activeMode);
+    addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${currentEnemy.display_name}.`, "#FFD60A", activeMode);
   };
 
-  const hpPct = Math.max(0, Math.min(100, (enemy.current_hp / enemy.max_hp) * 100));
+  const hpPct = Math.max(0, Math.min(100, (currentEnemy.current_hp / currentEnemy.max_hp) * 100));
 
   return (
     <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
-      {/* Victory Loot Modal (Boss floors only) */}
       <AnimatePresence>
         {victoryLoot && (
           <motion.div
@@ -348,7 +426,32 @@ export function CombatArena({
         )}
       </AnimatePresence>
 
-      {/* Combat Power & Test Bar */}
+      <div className="grid grid-cols-2 gap-1 bg-surface border border-pixel-border p-1">
+        <button
+          onClick={() => setActiveMode("solo")}
+          className={`py-2 px-3 flex items-center justify-center gap-2 font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
+            activeMode === "solo"
+              ? "bg-[#00ff41] text-black shadow-neon"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          <Swords className="w-4 h-4" />
+          <span>SOLO DUNGEON</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMode("party")}
+          className={`py-2 px-3 flex items-center justify-center gap-2 font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
+            activeMode === "party"
+              ? "bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]"
+              : "text-zinc-400 hover:text-white"
+          }`}
+        >
+          <Shield className="w-4 h-4" />
+          <span>PARTY RAID (4X HP)</span>
+        </button>
+      </div>
+
       <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between text-xs font-bold border-l-4 border-l-[#00ff41] shadow-neon">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-[#00ff41]" />
@@ -364,9 +467,7 @@ export function CombatArena({
         </button>
       </div>
 
-      {/* Arena Panel */}
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">
-        {/* Floor Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isBossFloor ? (
@@ -375,48 +476,51 @@ export function CombatArena({
               <Flame className="w-5 h-5 text-health-red animate-pulse" />
             )}
             <span className="font-headline font-extrabold text-base text-white uppercase tracking-wider">
-              FLOOR {enemy.floor}: {enemy.display_name}
+              FLOOR {currentEnemy.floor}: {currentEnemy.display_name}
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {activeMode === "party" && (
+              <span className="px-1.5 py-0.5 border border-purple-500 text-purple-300 bg-purple-950/60 text-[9px] uppercase font-bold">
+                GUILD RAID
+              </span>
+            )}
             {isBossFloor && (
               <span className="px-1.5 py-0.5 border border-amber-400 text-amber-400 bg-amber-400/10 text-[9px] uppercase font-bold">
                 BOSS
               </span>
             )}
             <span className={`px-2 py-0.5 border text-[10px] uppercase font-bold ${
-              enemy.status === "Defeated"
+              currentEnemy.status === "Defeated"
                 ? "border-pixel-green text-pixel-green bg-pixel-green/10"
                 : "border-health-red text-health-red bg-health-red/10 shadow-red-glow"
             }`}>
-              {enemy.status}
+              {currentEnemy.status}
             </span>
           </div>
         </div>
 
-        {/* HP Bar */}
         <div className="w-full bg-surface border border-pixel-border p-2 shadow-red-glow">
           <div className="flex justify-between text-xs font-mono text-health-red font-bold mb-1">
-            <span>{isBossFloor ? "BOSS HP" : "MOB HP"}</span>
-            <span>{formatNumber(enemy.current_hp)} / {formatNumber(enemy.max_hp)}</span>
+            <span>{activeMode === "party" ? "PARTY RAID MONSTER HP (4X HP)" : isBossFloor ? "BOSS HP" : "MOB HP"}</span>
+            <span>{formatNumber(currentEnemy.current_hp)} / {formatNumber(currentEnemy.max_hp)}</span>
           </div>
           <div className="w-full bg-black h-3 border border-pixel-border overflow-hidden">
             <div
-              className={`h-full transition-all duration-300 ${isBossFloor ? "bg-amber-500 shadow-gold-glow" : "bg-health-red shadow-red-glow"}`}
+              className={`h-full transition-all duration-300 ${activeMode === "party" ? "bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.8)]" : isBossFloor ? "bg-amber-500 shadow-gold-glow" : "bg-health-red shadow-red-glow"}`}
               style={{ width: `${hpPct}%` }}
             />
           </div>
         </div>
 
-        {/* Dungeon Map & Characters */}
         <div className="relative overflow-hidden flex justify-center">
-          <DungeonStageMap floor={enemy.floor}>
+          <DungeonStageMap floor={currentEnemy.floor}>
             <div className="pointer-events-auto">
               <HeroSprite currentState={heroState} characterClass={characterClass} gender={gender} />
             </div>
             <div className="pointer-events-auto">
-              <EnemySprite currentState={enemyState} spriteConfig={enemy.sprite_config} />
+              <EnemySprite currentState={enemyState} spriteConfig={currentEnemy.sprite_config} />
             </div>
           </DungeonStageMap>
 
@@ -429,26 +533,25 @@ export function CombatArena({
         </div>
       </div>
 
-      {/* Tactical Skill Bar */}
       <TacticalSkillBar
         userId={userId}
         dailyRvs={dailyRvs}
         playerStr={playerStr}
+        mode={activeMode}
         equippedSkills={equippedSkills}
         onSkillCast={handleSkillCast}
       />
 
-      {/* Combat Log */}
       <div className="border border-pixel-border bg-surface p-3 space-y-1.5 font-mono">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-1 text-[10px] text-gray-400 uppercase tracking-widest">
-          <span>DUNGEON LOG — FLOOR {enemy.floor}</span>
-          <span className="text-pixel-green font-bold">{combatLog.length} ENTRIES</span>
+          <span>{activeMode.toUpperCase()} DUNGEON LOG — FLOOR {currentEnemy.floor}</span>
+          <span className="text-pixel-green font-bold">{currentLogs.length} ENTRIES</span>
         </div>
         <div className="space-y-1 max-h-28 overflow-y-auto pt-1">
-          {combatLog.length === 0 ? (
-            <div className="text-[11px] text-gray-500 italic">No actions logged yet. Cast skills or finish a gym session to attack!</div>
+          {currentLogs.length === 0 ? (
+            <div className="text-[11px] text-gray-500 italic">No actions logged in {activeMode} mode yet. Cast skills or finish a gym session!</div>
           ) : (
-            combatLog.map((log) => (
+            currentLogs.map((log) => (
               <div key={log.id} className="text-[11px] flex items-center gap-1.5 border-b border-dashed border-pixel-border/30 pb-0.5">
                 <Swords className="w-3 h-3 text-pixel-green flex-shrink-0" />
                 <span style={{ color: log.color }}>{log.msg}</span>

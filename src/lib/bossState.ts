@@ -3,12 +3,11 @@ export type EnemyCategory = "mob" | "boss";
 export interface EnemyConfig {
   spriteKey: string;
   displayName: string;
-  animPrefix: string; // "idle_anim" or "anim"
+  animPrefix: string;
   hasRunAnim: boolean;
-  isBig: boolean; // big sprites (big_demon, big_zombie, ogre) need different sizing
+  isBig: boolean;
 }
 
-// Small mobs pool - these cycle randomly on non-boss floors
 export const MOB_POOL: EnemyConfig[] = [
   { spriteKey: "goblin", displayName: "Goblin", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
   { spriteKey: "imp", displayName: "Imp", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
@@ -27,7 +26,6 @@ export const MOB_POOL: EnemyConfig[] = [
   { spriteKey: "orc_shaman", displayName: "Orc Shaman", animPrefix: "idle_anim", hasRunAnim: true, isBig: false },
 ];
 
-// Boss pool - these appear every 5 floors and cycle
 export const BOSS_POOL: EnemyConfig[] = [
   { spriteKey: "big_demon", displayName: "Demon Lord", animPrefix: "idle_anim", hasRunAnim: true, isBig: true },
   { spriteKey: "big_zombie", displayName: "Undead Giant", animPrefix: "idle_anim", hasRunAnim: true, isBig: true },
@@ -45,15 +43,15 @@ export interface FloorEnemy {
   sprite_config: EnemyConfig;
   reward_gold: number;
   reward_exp: number;
+  mode: "solo" | "party";
 }
 
-// Seeded random from floor number so same floor always gives same mob
 function seededRandom(seed: number): number {
   let x = Math.sin(seed * 9301 + 49297) * 233280;
   return x - Math.floor(x);
 }
 
-function getEnemyForFloor(floor: number): { config: EnemyConfig; category: EnemyCategory } {
+export function getEnemyForFloor(floor: number): { config: EnemyConfig; category: EnemyCategory } {
   const isBossFloor = floor % 5 === 0;
   if (isBossFloor) {
     const bossIdx = Math.floor(seededRandom(floor) * BOSS_POOL.length);
@@ -64,34 +62,39 @@ function getEnemyForFloor(floor: number): { config: EnemyConfig; category: Enemy
   }
 }
 
-function getHpForFloor(floor: number, category: EnemyCategory): number {
-  if (category === "boss") {
-    return Math.round(5000 * Math.pow(1.35, floor / 5));
+export function getHpForFloor(floor: number, category: EnemyCategory, mode: "solo" | "party" = "solo"): number {
+  let baseHp = category === "boss"
+    ? Math.round(5000 * Math.pow(1.35, floor / 5))
+    : Math.round(1000 * Math.pow(1.2, floor));
+
+  if (mode === "party") {
+    baseHp = baseHp * 4;
   }
-  return Math.round(1000 * Math.pow(1.2, floor));
+  return baseHp;
 }
 
-function getRewardsForFloor(floor: number, category: EnemyCategory): { gold: number; exp: number } {
+export function getRewardsForFloor(floor: number, category: EnemyCategory, mode: "solo" | "party" = "solo"): { gold: number; exp: number } {
+  const mult = mode === "party" ? 2.5 : 1.0;
   if (category === "boss") {
     return {
-      gold: Math.round(500 * Math.pow(1.3, floor / 5)),
-      exp: Math.round(250 * Math.pow(1.3, floor / 5)),
+      gold: Math.round(500 * Math.pow(1.3, floor / 5) * mult),
+      exp: Math.round(250 * Math.pow(1.3, floor / 5) * mult),
     };
   }
   return {
-    gold: Math.round(100 * Math.pow(1.15, floor)),
-    exp: Math.round(50 * Math.pow(1.15, floor)),
+    gold: Math.round(100 * Math.pow(1.15, floor) * mult),
+    exp: Math.round(50 * Math.pow(1.15, floor) * mult),
   };
 }
 
-function buildFloorEnemy(floor: number): FloorEnemy {
+export function buildFloorEnemy(floor: number, mode: "solo" | "party" = "solo"): FloorEnemy {
   const { config, category } = getEnemyForFloor(floor);
-  const hp = getHpForFloor(floor, category);
-  const rewards = getRewardsForFloor(floor, category);
+  const hp = getHpForFloor(floor, category, mode);
+  const rewards = getRewardsForFloor(floor, category, mode);
   const suffix = category === "boss" ? "BOSS" : "MOB";
 
   return {
-    enemy_id: `floor-${floor}-${suffix}-${Date.now()}`,
+    enemy_id: `${mode}-floor-${floor}-${suffix}-${Date.now()}`,
     floor,
     display_name: config.displayName,
     current_hp: hp,
@@ -101,52 +104,61 @@ function buildFloorEnemy(floor: number): FloorEnemy {
     sprite_config: config,
     reward_gold: rewards.gold,
     reward_exp: rewards.exp,
+    mode,
   };
 }
 
-let currentFloor = 1;
-let currentEnemy: FloorEnemy = buildFloorEnemy(1);
+let soloEnemyState: FloorEnemy = buildFloorEnemy(1, "solo");
+let partyEnemyState: FloorEnemy = buildFloorEnemy(1, "party");
 
-export function getFloorState(): FloorEnemy {
-  return currentEnemy;
+export function getFloorState(mode: "solo" | "party" = "solo"): FloorEnemy {
+  return mode === "party" ? partyEnemyState : soloEnemyState;
 }
 
-export function getCurrentFloor(): number {
-  return currentFloor;
+export function setFloorState(enemy: FloorEnemy, mode: "solo" | "party" = "solo") {
+  if (mode === "party") {
+    partyEnemyState = enemy;
+  } else {
+    soloEnemyState = enemy;
+  }
 }
 
-export function attackEnemy(rvsDamage: number): {
+export function attackEnemy(rvsDamage: number, mode: "solo" | "party" = "solo"): {
   enemy: FloorEnemy;
   is_defeated: boolean;
   damage_dealt: number;
   next_enemy: FloorEnemy | null;
 } {
+  const targetState = mode === "party" ? partyEnemyState : soloEnemyState;
   const damage = Math.round(rvsDamage);
-  const newHp = Math.max(0, currentEnemy.current_hp - damage);
+  const newHp = Math.max(0, targetState.current_hp - damage);
   const isDefeated = newHp === 0;
 
-  currentEnemy.current_hp = newHp;
+  targetState.current_hp = newHp;
 
   let nextEnemy: FloorEnemy | null = null;
 
   if (isDefeated) {
-    currentEnemy.status = "Defeated";
-    currentFloor += 1;
-    nextEnemy = buildFloorEnemy(currentFloor);
-    currentEnemy = nextEnemy;
+    targetState.status = "Defeated";
+    const nextFloor = targetState.floor + 1;
+    nextEnemy = buildFloorEnemy(nextFloor, mode);
+    if (mode === "party") {
+      partyEnemyState = nextEnemy;
+    } else {
+      soloEnemyState = nextEnemy;
+    }
   }
 
   return {
-    enemy: currentEnemy,
+    enemy: targetState,
     is_defeated: isDefeated,
     damage_dealt: damage,
     next_enemy: nextEnemy,
   };
 }
 
-// For backward compatibility with old API
-export function getBossState() {
-  const e = getFloorState();
+export function getBossState(mode: "solo" | "party" = "solo") {
+  const e = getFloorState(mode);
   return {
     boss_id: e.enemy_id,
     boss_name: e.display_name,
@@ -157,11 +169,12 @@ export function getBossState() {
     boss_type: e.sprite_config.spriteKey as any,
     category: e.category,
     sprite_config: e.sprite_config,
+    mode: e.mode,
   };
 }
 
-export function updateBossHp(rvsDamage: number) {
-  const result = attackEnemy(rvsDamage);
+export function updateBossHp(rvsDamage: number, mode: "solo" | "party" = "solo") {
+  const result = attackEnemy(rvsDamage, mode);
   const next = result.next_enemy || result.enemy;
   return {
     boss: {
@@ -174,6 +187,7 @@ export function updateBossHp(rvsDamage: number) {
       boss_type: result.enemy.sprite_config.spriteKey as any,
       category: result.enemy.category,
       sprite_config: result.enemy.sprite_config,
+      mode: result.enemy.mode,
     },
     is_defeated: result.is_defeated,
     damage_dealt: result.damage_dealt,
@@ -187,6 +201,7 @@ export function updateBossHp(rvsDamage: number) {
       boss_type: next.sprite_config.spriteKey as any,
       category: next.category,
       sprite_config: next.sprite_config,
+      mode: next.mode,
     },
   };
 }
