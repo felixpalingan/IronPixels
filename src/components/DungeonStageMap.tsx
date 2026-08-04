@@ -276,13 +276,13 @@ export function DungeonStageMap({
         )}
       </div>
 
-      {/* Characters layer - centered on the floor area */}
+      {/* Characters layer - pushed to corners for max center space */}
       <div
         className="absolute z-20 flex items-end justify-between pointer-events-none"
         style={{
-          left: `${3 * TILE_SIZE}px`,
-          right: `${3 * TILE_SIZE}px`,
-          bottom: `${0.5 * TILE_SIZE}px`,
+          left: `${1 * TILE_SIZE}px`,
+          right: `${1 * TILE_SIZE}px`,
+          bottom: `${0.4 * TILE_SIZE}px`,
         }}
       >
         {children}

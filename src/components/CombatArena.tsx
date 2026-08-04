@@ -542,7 +542,7 @@ export function CombatArena({
 
         <div className="relative overflow-hidden flex justify-center">
           <DungeonStageMap floor={currentEnemy.floor}>
-            <div className="pointer-events-auto flex items-center justify-center gap-3 px-2 overflow-visible z-20">
+            <div className="pointer-events-auto flex items-center justify-start gap-1 sm:gap-2 px-1 overflow-visible z-20">
               {activeMode === "party" && partyMembers.length > 0 ? (
                 partyMembers.slice(0, 5).map((member, idx) => {
                   const yOffset = idx === 0 ? "translate-y-2" : idx === 1 || idx === 2 ? "translate-y-0" : "-translate-y-2";
@@ -553,7 +553,7 @@ export function CombatArena({
                         currentState={heroState}
                         characterClass={member.character_class}
                         gender={idx % 2 === 0 ? "m" : "f"}
-                        scale={1.4}
+                        scale={1.25}
                         weaponIcon={member.weapon_icon || "/assets/items/weapons/01.png"}
                         showNameTag={member.username.split(" ")[0]}
                         nameTagPosition={tagPos}
@@ -571,7 +571,7 @@ export function CombatArena({
                 />
               )}
             </div>
-            <div className="pointer-events-auto z-10">
+            <div className="pointer-events-auto z-10 flex items-center justify-end">
               <EnemySprite currentState={enemyState} spriteConfig={currentEnemy.sprite_config} />
             </div>
           </DungeonStageMap>
