@@ -19,6 +19,8 @@ export interface PartyLeaderboardEntry {
   leader_name: string;
   member_count: number;
   total_party_cp: number;
+  total_party_rvs: number;
+  party_streak: number;
   leader_weapon?: string;
 }
 
@@ -102,6 +104,8 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     leader_name: "Vanguard_Zero",
     member_count: 4,
     total_party_cp: 59800,
+    total_party_rvs: 4700,
+    party_streak: 28,
     leader_weapon: "/assets/items/weapons/37.png",
   },
   {
@@ -110,6 +114,8 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     leader_name: "IronSlayer99",
     member_count: 4,
     total_party_cp: 52300,
+    total_party_rvs: 4100,
+    party_streak: 22,
     leader_weapon: "/assets/items/weapons/31.png",
   },
   {
@@ -118,6 +124,8 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     leader_name: "ShadowKage",
     member_count: 3,
     total_party_cp: 35500,
+    total_party_rvs: 2800,
+    party_streak: 16,
     leader_weapon: "/assets/items/weapons/24.png",
   },
   {
@@ -126,16 +134,26 @@ const MOCK_PARTY_LEADERBOARD: PartyLeaderboardEntry[] = [
     leader_name: "Felix",
     member_count: 2,
     total_party_cp: 16650,
+    total_party_rvs: 1350,
+    party_streak: 10,
     leader_weapon: "/assets/items/weapons/01.png",
   },
 ];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const category = searchParams.get("category") || "cp";
+  const category = searchParams.get("category") || "user_cp";
 
-  if (category === "party") {
-    return NextResponse.json(MOCK_PARTY_LEADERBOARD);
+  if (category.startsWith("party")) {
+    let partyList = [...MOCK_PARTY_LEADERBOARD];
+    if (category === "party_rvs") {
+      partyList.sort((a, b) => b.total_party_rvs - a.total_party_rvs);
+    } else if (category === "party_streak") {
+      partyList.sort((a, b) => b.party_streak - a.party_streak);
+    } else {
+      partyList.sort((a, b) => b.total_party_cp - a.total_party_cp);
+    }
+    return NextResponse.json(partyList);
   }
 
   let list = [...MOCK_LEADERBOARD];
@@ -166,9 +184,9 @@ export async function GET(request: Request) {
     }
   } catch (e) {}
 
-  if (category === "rvs") {
+  if (category === "user_rvs" || category === "rvs") {
     list.sort((a, b) => b.daily_rvs - a.daily_rvs);
-  } else if (category === "streak") {
+  } else if (category === "user_streak" || category === "streak") {
     list.sort((a, b) => b.workout_streak - a.workout_streak);
   } else {
     list.sort((a, b) => b.combat_power - a.combat_power);

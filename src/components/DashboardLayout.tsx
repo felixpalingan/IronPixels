@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield, Users, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
@@ -738,45 +738,111 @@ export function DashboardLayout() {
 
                 <EquippedGearGrid gear={userData.equipped_gear} />
 
-                <div className="border border-pixel-border bg-surface p-3 space-y-2 font-mono shadow-neon">
+                <div className="border border-pixel-border bg-surface p-3 space-y-3 font-mono shadow-neon">
                   <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-white uppercase tracking-wider">
                       <Trophy className="w-4 h-4 text-gold-loot animate-pulse" />
-                      <span>WARRIORS & GUILD PARTY LEADERBOARD</span>
+                      <span>TOP 3 WARRIORS & GUILD PARTIES</span>
                     </div>
                     <button
                       onClick={() => setActiveTab("multiplayer")}
                       className="text-[10px] text-[#00ff41] font-bold uppercase hover:underline flex items-center gap-1 cursor-pointer"
                     >
-                      <span>VIEW ALL</span>
+                      <span>VIEW ALL 6 RANKINGS</span>
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <div className="p-2 border border-amber-500/40 bg-black flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <Crown className="w-4 h-4 text-amber-400" />
-                        <div>
-                          <div className="font-bold text-white">Vanguard_Zero</div>
-                          <div className="text-[9px] text-zinc-400">CYBER KNIGHT &bull; Lv.48</div>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <Users className="w-3 h-3 text-[#00ff41]" />
+                        <span>TOP 3 SOLO WARRIORS (USER)</span>
+                      </div>
+
+                      <div className="p-2 border border-amber-500/50 bg-black flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-amber-400" />
+                          <div>
+                            <div className="font-bold text-white">#1 Vanguard_Zero</div>
+                            <div className="text-[9px] text-zinc-400">CYBER KNIGHT &bull; Lv.48</div>
+                          </div>
+                        </div>
+                        <div className="font-headline font-black text-xs text-[#00ff41]">
+                          18,500 CP
                         </div>
                       </div>
-                      <div className="font-headline font-black text-sm text-[#00ff41]">
-                        18,500 CP
+
+                      <div className="p-2 border border-zinc-500/50 bg-black flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-zinc-300" />
+                          <div>
+                            <div className="font-bold text-white">#2 IronSlayer99</div>
+                            <div className="text-[9px] text-zinc-400">TITAN BERSERKER &bull; Lv.42</div>
+                          </div>
+                        </div>
+                        <div className="font-headline font-black text-xs text-[#00ff41]">
+                          15,400 CP
+                        </div>
+                      </div>
+
+                      <div className="p-2 border border-amber-700/50 bg-black flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-600" />
+                          <div>
+                            <div className="font-bold text-white">#3 ShadowKage</div>
+                            <div className="text-[9px] text-zinc-400">SHADOW NINJA &bull; Lv.39</div>
+                          </div>
+                        </div>
+                        <div className="font-headline font-black text-xs text-[#00ff41]">
+                          13,900 CP
+                        </div>
                       </div>
                     </div>
 
-                    <div className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-purple-400" />
-                        <div>
-                          <div className="font-bold text-purple-300">Apex Cyber Vanguard</div>
-                          <div className="text-[9px] text-zinc-400">#1 GUILD PARTY &bull; 4 Members</div>
+                    <div className="space-y-1.5 pt-1 border-t border-pixel-border/40">
+                      <div className="text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <Shield className="w-3 h-3 text-purple-400" />
+                        <span>TOP 3 GUILD PARTIES (PARTY)</span>
+                      </div>
+
+                      <div className="p-2 border border-purple-500/60 bg-purple-950/20 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-amber-400" />
+                          <div>
+                            <div className="font-bold text-purple-300">#1 Apex Cyber Vanguard</div>
+                            <div className="text-[9px] text-zinc-400">4 Members &bull; Leader: Vanguard_Zero</div>
+                          </div>
+                        </div>
+                        <div className="font-headline font-black text-xs text-[#00ff41]">
+                          59,800 CP
                         </div>
                       </div>
-                      <div className="font-headline font-black text-sm text-[#00ff41]">
-                        59,800 CP
+
+                      <div className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-zinc-300" />
+                          <div>
+                            <div className="font-bold text-purple-300">#2 Iron Titan Legion</div>
+                            <div className="text-[9px] text-zinc-400">4 Members &bull; Leader: IronSlayer99</div>
+                          </div>
+                        </div>
+                        <div className="font-headline font-black text-xs text-[#00ff41]">
+                          52,300 CP
+                        </div>
+                      </div>
+
+                      <div className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-amber-600" />
+                          <div>
+                            <div className="font-bold text-purple-300">#3 Shadow Assassins Squad</div>
+                            <div className="text-[9px] text-zinc-400">3 Members &bull; Leader: ShadowKage</div>
+                          </div>
+                        </div>
+                        <div className="font-headline font-black text-xs text-[#00ff41]">
+                          35,500 CP
+                        </div>
                       </div>
                     </div>
                   </div>

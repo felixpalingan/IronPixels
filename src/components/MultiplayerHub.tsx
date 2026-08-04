@@ -22,7 +22,9 @@ export function MultiplayerHub({
   userRvs = 0,
 }: MultiplayerHubProps) {
   const [subTab, setSubTab] = useState<"leaderboard" | "friends" | "party">("leaderboard");
-  const [lbCategory, setLbCategory] = useState<"cp" | "rvs" | "streak" | "party">("cp");
+  const [lbGroup, setLbGroup] = useState<"user" | "party">("user");
+  const [lbMetric, setLbMetric] = useState<"cp" | "rvs" | "streak">("cp");
+
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>([]);
   const [partyLeaderboardList, setPartyLeaderboardList] = useState<PartyLeaderboardEntry[]>([]);
   const [friendsData, setFriendsData] = useState<{ friends: FriendUser[]; pending: FriendUser[] }>({
@@ -37,12 +39,13 @@ export function MultiplayerHub({
   const [inputPartyName, setInputPartyName] = useState<string>("Iron Legion Squad");
   const [isCreatingPartyModal, setIsCreatingPartyModal] = useState<boolean>(false);
 
-  const fetchLeaderboard = async (cat: "cp" | "rvs" | "streak" | "party") => {
+  const fetchLeaderboard = async (group: "user" | "party", metric: "cp" | "rvs" | "streak") => {
+    const catQuery = `${group}_${metric}`;
     try {
-      const res = await fetch(`/api/multiplayer/leaderboard?category=${cat}`);
+      const res = await fetch(`/api/multiplayer/leaderboard?category=${catQuery}`);
       if (res.ok) {
         const data = await res.json();
-        if (cat === "party") {
+        if (group === "party") {
           setPartyLeaderboardList(data);
         } else {
           setLeaderboardList(data);
@@ -72,10 +75,10 @@ export function MultiplayerHub({
   };
 
   useEffect(() => {
-    fetchLeaderboard(lbCategory);
+    fetchLeaderboard(lbGroup, lbMetric);
     fetchFriends();
     fetchParty();
-  }, [lbCategory]);
+  }, [lbGroup, lbMetric]);
 
   const handleSearchPlayers = async (queryStr: string) => {
     setSearchQuery(queryStr);
@@ -167,7 +170,7 @@ export function MultiplayerHub({
               MULTIPLAYER REALM
             </div>
             <div className="text-[10px] text-zinc-400 font-bold">
-              FRIENDS, PARTY RAIDS & LEADERBOARDS
+              FRIENDS, PARTY RAIDS & 6 LEADERBOARDS
             </div>
           </div>
         </div>
@@ -230,11 +233,37 @@ export function MultiplayerHub({
             exit={{ opacity: 0, y: -10 }}
             className="space-y-3"
           >
-            <div className="grid grid-cols-4 gap-1 bg-black border border-pixel-border p-1">
+            <div className="grid grid-cols-2 gap-1 bg-surface border border-pixel-border p-1">
               <button
-                onClick={() => setLbCategory("cp")}
-                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
-                  lbCategory === "cp"
+                onClick={() => setLbGroup("user")}
+                className={`py-2 text-xs font-headline font-black uppercase transition-all flex items-center justify-center gap-1.5 ${
+                  lbGroup === "user"
+                    ? "bg-[#00ff41] text-black shadow-neon"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>SOLO WARRIORS (USER)</span>
+              </button>
+
+              <button
+                onClick={() => setLbGroup("party")}
+                className={`py-2 text-xs font-headline font-black uppercase transition-all flex items-center justify-center gap-1.5 ${
+                  lbGroup === "party"
+                    ? "bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>GUILD PARTIES (PARTY)</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1 bg-black border border-pixel-border p-1">
+              <button
+                onClick={() => setLbMetric("cp")}
+                className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
+                  lbMetric === "cp"
                     ? "bg-[#00ff41] text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
@@ -244,21 +273,21 @@ export function MultiplayerHub({
               </button>
 
               <button
-                onClick={() => setLbCategory("rvs")}
-                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
-                  lbCategory === "rvs"
+                onClick={() => setLbMetric("rvs")}
+                className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
+                  lbMetric === "rvs"
                     ? "bg-amber-400 text-black shadow-gold-glow"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
                 <Flame className="w-3 h-3" />
-                <span>RVS</span>
+                <span>DAILY RVS</span>
               </button>
 
               <button
-                onClick={() => setLbCategory("streak")}
-                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
-                  lbCategory === "streak"
+                onClick={() => setLbMetric("streak")}
+                className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
+                  lbMetric === "streak"
                     ? "bg-rose-500 text-white shadow-red-glow"
                     : "text-zinc-400 hover:text-white"
                 }`}
@@ -266,22 +295,10 @@ export function MultiplayerHub({
                 <Sparkles className="w-3 h-3" />
                 <span>STREAK</span>
               </button>
-
-              <button
-                onClick={() => setLbCategory("party")}
-                className={`py-1.5 text-[9px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
-                  lbCategory === "party"
-                    ? "bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.6)]"
-                    : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                <Shield className="w-3 h-3" />
-                <span>PARTY</span>
-              </button>
             </div>
 
             <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
-              {lbCategory === "party" ? (
+              {lbGroup === "party" ? (
                 partyLeaderboardList.map((entry, idx) => {
                   const rank = idx + 1;
                   const badge = getRankBadge(rank);
@@ -322,10 +339,22 @@ export function MultiplayerHub({
                       </div>
 
                       <div className="text-right">
-                        <div className="font-headline font-black text-sm text-[#00ff41]">
-                          {formatNumber(entry.total_party_cp)} CP
-                        </div>
-                        <div className="text-[8px] text-purple-400 font-bold uppercase">COMBINED CP</div>
+                        {lbMetric === "cp" && (
+                          <div className="font-headline font-black text-sm text-[#00ff41]">
+                            {formatNumber(entry.total_party_cp)} CP
+                          </div>
+                        )}
+                        {lbMetric === "rvs" && (
+                          <div className="font-headline font-black text-sm text-amber-400">
+                            {formatNumber(entry.total_party_rvs)} RVS
+                          </div>
+                        )}
+                        {lbMetric === "streak" && (
+                          <div className="font-headline font-black text-sm text-rose-400 flex items-center gap-1 justify-end">
+                            <Flame className="w-3.5 h-3.5" />
+                            <span>{entry.party_streak} DAYS</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -376,17 +405,17 @@ export function MultiplayerHub({
                       </div>
 
                       <div className="text-right">
-                        {lbCategory === "cp" && (
+                        {lbMetric === "cp" && (
                           <div className="font-headline font-black text-sm text-[#00ff41]">
                             {formatNumber(entry.combat_power)} CP
                           </div>
                         )}
-                        {lbCategory === "rvs" && (
+                        {lbMetric === "rvs" && (
                           <div className="font-headline font-black text-sm text-amber-400">
                             {formatNumber(entry.daily_rvs)} RVS
                           </div>
                         )}
-                        {lbCategory === "streak" && (
+                        {lbMetric === "streak" && (
                           <div className="font-headline font-black text-sm text-rose-400 flex items-center gap-1 justify-end">
                             <Flame className="w-3.5 h-3.5" />
                             <span>{entry.workout_streak} DAYS</span>
