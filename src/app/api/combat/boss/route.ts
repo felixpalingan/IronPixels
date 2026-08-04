@@ -11,7 +11,7 @@ export async function GET() {
       .from("dungeon_bosses")
       .select("*")
       .eq("status", "Active")
-      .order("stage", { ascending: true })
+      .order("stage", { ascending: false })
       .limit(1);
 
     if (!error && bossList && bossList.length > 0) {

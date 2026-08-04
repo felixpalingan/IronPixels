@@ -84,6 +84,16 @@ export function CombatArena({
         setCombatLog(JSON.parse(savedLogs));
       }
     } catch (e) {}
+
+    try {
+      const savedBoss = localStorage.getItem("ironpixels_active_boss");
+      if (savedBoss) {
+        const parsed = JSON.parse(savedBoss);
+        if (parsed && parsed.stage) {
+          setBoss(parsed);
+        }
+      }
+    } catch (e) {}
   }, [todayKey]);
 
   const addLog = (msg: string, color = "#e5e2e1") => {
@@ -101,7 +111,12 @@ export function CombatArena({
       const res = await fetch("/api/combat/boss");
       if (res.ok) {
         const data = await res.json();
-        setBoss(data);
+        if (data && data.stage) {
+          setBoss(data);
+          try {
+            localStorage.setItem("ironpixels_active_boss", JSON.stringify(data));
+          } catch (e) {}
+        }
         if (data.current_hp === 0 || data.status === "Defeated") {
           setBossState("dead");
         } else {
@@ -206,17 +221,38 @@ export function CombatArena({
 
           awardVoidChestLoot(boss.boss_name, boss.stage);
 
+          const newNextBoss: BossData = {
+            boss_id: data.boss_id,
+            boss_name: data.boss_name,
+            stage: data.stage,
+            current_hp: data.current_hp,
+            max_hp: data.max_hp,
+            status: "Active",
+            boss_type: data.boss_type,
+          };
+
+          try {
+            localStorage.setItem("ironpixels_active_boss", JSON.stringify(newNextBoss));
+          } catch (e) {}
+
           setTimeout(() => {
-            fetchBossData();
-          }, 2500);
+            setBoss(newNextBoss);
+            setBossState("idle");
+          }, 2000);
         } else {
-          setBoss((prev) => ({
-            ...prev,
+          const updatedBossState: BossData = {
+            ...boss,
             current_hp: data.current_hp,
             status: data.status,
-            boss_name: data.boss_name || prev.boss_name,
-            boss_type: data.boss_type || prev.boss_type,
-          }));
+            boss_name: data.boss_name || boss.boss_name,
+            boss_type: data.boss_type || boss.boss_type,
+          };
+          setBoss(updatedBossState);
+
+          try {
+            localStorage.setItem("ironpixels_active_boss", JSON.stringify(updatedBossState));
+          } catch (e) {}
+
           setTimeout(() => {
             setBossState((current) => (current === "dead" ? "dead" : "idle"));
           }, 600);

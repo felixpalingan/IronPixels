@@ -22,7 +22,7 @@ export async function POST(request: Request) {
         await supabase
           .from("dungeon_bosses")
           .update({ current_hp: 0, status: "Defeated" })
-          .eq("boss_id", boss_id || boss.boss_id);
+          .lte("stage", boss.stage);
 
         await supabase
           .from("dungeon_bosses")
