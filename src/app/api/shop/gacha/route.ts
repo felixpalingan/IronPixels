@@ -9,18 +9,18 @@ export async function POST(request: Request) {
     const { chest_type } = await request.json();
 
     const CHEST_PRICES: Record<string, number> = {
-      bronze: 0,
-      silver: 0,
-      void: 0,
+      bronze: 500,
+      silver: 2500,
+      void: 10000,
     };
 
-    const price = CHEST_PRICES[chest_type] ?? 0;
+    const price = CHEST_PRICES[chest_type] ?? 500;
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
 
     const userId = authData?.user?.id || DEFAULT_USER_ID;
-    let userGold = 12500;
+    let userGold = 999999999;
 
     try {
       const { data: profile } = await supabase
@@ -32,24 +32,25 @@ export async function POST(request: Request) {
       if (profile && profile.gold !== undefined) {
         userGold = Number(profile.gold);
       }
-    } catch (e) {
-    }
+    } catch (e) {}
 
     const rand = Math.random() * 100;
     let targetRarity: ItemRarity = "common";
 
     if (chest_type === "bronze") {
       if (rand < 5) targetRarity = "epic";
-      else if (rand < 30) targetRarity = "rare";
+      else if (rand < 25) targetRarity = "rare";
       else targetRarity = "common";
     } else if (chest_type === "silver") {
       if (rand < 5) targetRarity = "legendary";
-      else if (rand < 25) targetRarity = "epic";
-      else if (rand < 85) targetRarity = "rare";
+      else if (rand < 30) targetRarity = "epic";
+      else if (rand < 80) targetRarity = "rare";
       else targetRarity = "common";
     } else if (chest_type === "void") {
-      if (rand < 60) targetRarity = "legendary";
-      else targetRarity = "epic";
+      if (rand < 15) targetRarity = "mythic";
+      else if (rand < 45) targetRarity = "legendary";
+      else if (rand < 85) targetRarity = "epic";
+      else targetRarity = "rare";
     }
 
     const pool = EQUIPMENT_DICTIONARY.filter((item) => item.rarity === targetRarity);
@@ -88,24 +89,14 @@ export async function POST(request: Request) {
       dbErrorMsg = e.message || "Failed to commit to Supabase";
     }
 
-    const newInventoryRecord = {
-      inventory_id: insertedInventoryId,
-      user_id: userId,
-      item_id: selectedItem.item_id,
-      is_equipped: false,
-      item: selectedItem,
-    };
-
     return NextResponse.json({
       success: true,
+      item: selectedItem,
+      inventory_id: insertedInventoryId,
       new_gold: newGoldBalance,
-      drawn_item: newInventoryRecord,
-      db_status: dbErrorMsg ? `DB_ERROR: ${dbErrorMsg}` : "SAVED_TO_SUPABASE",
+      db_status: dbErrorMsg ? "offline_fallback" : "synced",
     });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to process Gacha purchase." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

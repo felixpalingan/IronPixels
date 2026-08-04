@@ -88,7 +88,7 @@ export function DashboardLayout() {
   ];
 
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
-  const [userGold, setUserGold] = useState<number>(12500);
+  const [userGold, setUserGold] = useState<number>(999999999);
 
   const todayStr = new Date().toISOString().split("T")[0];
   const todayRvsKey = `ironpixels_daily_rvs_${todayStr}`;
@@ -113,9 +113,10 @@ export function DashboardLayout() {
       try {
         const parsedProf = JSON.parse(localProf);
         if (parsedProf) {
+          parsedProf.gold = 999999999;
           currentProf = parsedProf;
           setProfile(parsedProf);
-          if (parsedProf.gold !== undefined) setUserGold(parsedProf.gold);
+          setUserGold(999999999);
           if (parsedProf.available_ap !== undefined) setAvailableAp(parsedProf.available_ap);
         }
       } catch (e) {}
@@ -136,10 +137,11 @@ export function DashboardLayout() {
         const resProf = await fetch("/api/user/profile");
         if (resProf.ok) {
           const dataProf = await resProf.json();
+          dataProf.gold = 999999999;
           setProfile(dataProf);
           currentProf = dataProf;
           localStorage.setItem("ironpixels_profile", JSON.stringify(dataProf));
-          if (dataProf.gold !== undefined) setUserGold(dataProf.gold);
+          setUserGold(999999999);
           if (dataProf.available_ap !== undefined) setAvailableAp(dataProf.available_ap);
         }
 
@@ -449,6 +451,14 @@ export function DashboardLayout() {
       localStorage.setItem("ironpixels_inventory", JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const handleFullHeal = () => {
+    if (profile) {
+      const updatedProf = { ...profile, current_hp: totalMaxHp };
+      setProfile(updatedProf);
+      localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+    }
   };
 
   return (
@@ -981,6 +991,7 @@ export function DashboardLayout() {
                     }
                   }}
                   onAddItemToInventory={handleAddItemToInventory}
+                  onFullHeal={handleFullHeal}
                 />
               </motion.div>
             )}

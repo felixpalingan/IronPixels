@@ -156,7 +156,7 @@ export function MultiplayerHub({
       invite_class: friendClass,
       invite_cp: friendCp,
     });
-    setPartyNotice(`Invited ${friendName} to your 4-Player Party!`);
+    setPartyNotice(`Invited ${friendName} to your 10-Player Party!`);
     setTimeout(() => setPartyNotice(null), 3000);
   };
 
@@ -350,7 +350,7 @@ export function MultiplayerHub({
                 <div>
                   <div className="text-[9px] text-zinc-500 font-bold uppercase">PARTY MEMBERS</div>
                   <div className="font-headline font-black text-sm text-purple-300">
-                    {inspectParty.member_count} / 4 WARRIORS
+                    {inspectParty.member_count} / 10 WARRIORS
                   </div>
                 </div>
               </div>
@@ -564,7 +564,7 @@ export function MultiplayerHub({
                               <span>{entry.party_name}</span>
                             </div>
                             <div className="text-[9px] text-zinc-400 font-bold">
-                              Leader: {entry.leader_name} &bull; {entry.member_count}/4 Members
+                              Leader: {entry.leader_name} &bull; {entry.member_count}/10 Members
                             </div>
                           </div>
                         </div>
@@ -867,7 +867,7 @@ export function MultiplayerHub({
                     NO ACTIVE RAID PARTY
                   </h3>
                   <p className="text-xs text-zinc-400 mt-1">
-                    Assemble a 4-Player Guild Party to tackle World Boss Raids with combined Combat Power!
+                    Assemble a 10-Player Guild Party to tackle World Boss Raids with combined Combat Power!
                   </p>
                 </div>
 
@@ -875,7 +875,7 @@ export function MultiplayerHub({
                   onClick={() => setIsCreatingPartyModal(true)}
                   className="w-full py-3.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
                 >
-                  CREATE 4-PLAYER PARTY
+                  CREATE 10-PLAYER PARTY
                 </button>
               </div>
             ) : (
@@ -883,7 +883,7 @@ export function MultiplayerHub({
                 <div className="flex items-center justify-between border-b border-red-900 pb-2">
                   <div>
                     <span className="text-[9px] text-red-400 font-bold uppercase tracking-widest">
-                      ACTIVE RAID SQUAD (4-SLOT MAX)
+                      ACTIVE RAID SQUAD (10-SLOT MAX)
                     </span>
                     <h3 className="font-headline font-black text-lg text-white uppercase">
                       {party.party_name}
@@ -898,7 +898,7 @@ export function MultiplayerHub({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
                   {party.members.map((member) => (
                     <div
                       key={member.user_id}
@@ -926,7 +926,7 @@ export function MultiplayerHub({
                     </div>
                   ))}
 
-                  {Array.from({ length: Math.max(0, 4 - party.members.length) }).map((_, emptyIdx) => (
+                  {Array.from({ length: Math.max(0, 10 - party.members.length) }).map((_, emptyIdx) => (
                     <div
                       key={emptyIdx}
                       className="border border-dashed border-zinc-800 bg-black/40 p-2.5 flex items-center justify-center text-center"

@@ -76,8 +76,8 @@ export async function POST(request: Request) {
     }
 
     if (action === "invite_member" && activeParty) {
-      if (activeParty.members.length >= 4) {
-        return NextResponse.json({ error: "Party is full! Max 4 members." }, { status: 400 });
+      if (activeParty.members.length >= 10) {
+        return NextResponse.json({ error: "Party is full! Max 10 members." }, { status: 400 });
       }
 
       const existing = activeParty.members.find((m) => m.user_id === invite_user_id);
