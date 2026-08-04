@@ -19,27 +19,44 @@ export function BossSprite({
   bossType = "orc",
   flipHorizontal = true,
 }: BossSpriteProps) {
-  const getSpriteClass = () => {
-    if (currentState === "hit") return "sprite-hit";
-    if (currentState === "dead") return "sprite-dead";
-    return "sprite-idle";
+  const getSpritePath = () => {
+    let folder = "orc";
+    let prefix = "Orc";
+
+    if (bossType === "blood") {
+      folder = "blood";
+      prefix = "Blood Monster_A";
+    } else if (bossType === "demon" || bossType === "dragon" || bossType === "mecha" || bossType === "lich") {
+      folder = "demon";
+      prefix = "Demon_A";
+    }
+
+    if (currentState === "hit") return `/assets/bosses/${folder}/${prefix}_Hurt.png`;
+    if (currentState === "dead") return `/assets/bosses/${folder}/${prefix}_Death.png`;
+    return `/assets/bosses/${folder}/${prefix}_Idle.png`;
+  };
+
+  const getAnimationClass = () => {
+    if (currentState === "hit") return "animate-boss-hit";
+    if (currentState === "dead") return "animate-boss-dead";
+    return "animate-boss-idle";
   };
 
   const getBossFilter = () => {
     switch (bossType) {
       case "orc":
-        return "hue-rotate(90deg) saturate(1.8) brightness(0.9)";
+        return "drop-shadow(0 0 10px rgba(0,255,65,0.4))";
       case "blood":
-        return "hue-rotate(-40deg) saturate(2.5) contrast(1.2)";
+        return "drop-shadow(0 0 10px rgba(255,0,85,0.6))";
       case "dragon":
-        return "hue-rotate(240deg) saturate(2.2) brightness(0.85)";
+        return "hue-rotate(220deg) saturate(2.5) drop-shadow(0 0 12px rgba(147,51,234,0.6))";
       case "mecha":
-        return "hue-rotate(180deg) saturate(1.5) brightness(1.2)";
+        return "hue-rotate(180deg) saturate(1.8) brightness(1.2) drop-shadow(0 0 12px rgba(56,189,248,0.7))";
       case "lich":
-        return "hue-rotate(45deg) saturate(2.0) contrast(1.4)";
+        return "hue-rotate(270deg) saturate(2.0) contrast(1.3) drop-shadow(0 0 12px rgba(192,38,211,0.7))";
       case "demon":
       default:
-        return "none";
+        return "drop-shadow(0 0 12px rgba(239,68,68,0.6))";
     }
   };
 
@@ -47,10 +64,13 @@ export function BossSprite({
     <div className="flex flex-col items-center justify-center">
       <div className="scale-[2.4] transform-gpu">
         <div
-          className={`sprite-boss ${getSpriteClass()} ${
+          className={`w-[100px] h-[100px] bg-no-repeat pixelated ${getAnimationClass()} ${
             flipHorizontal ? "flip-horizontal" : ""
           }`}
-          style={{ filter: getBossFilter() }}
+          style={{
+            backgroundImage: `url('${getSpritePath()}')`,
+            filter: getBossFilter(),
+          }}
         />
       </div>
     </div>
