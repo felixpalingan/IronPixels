@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
 import { BossSprite, BossState } from "@/components/BossSprite";
 import { HeroSprite, HeroState } from "@/components/HeroSprite";
+import { DungeonStageMap } from "@/components/DungeonStageMap";
 import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
 
 interface DamageParticle {
@@ -445,31 +446,31 @@ export function CombatArena({
           </div>
         </div>
 
-        <div className="relative border border-pixel-border dungeon-bg-stage overflow-hidden flex items-end justify-between px-8 pb-10 pt-12 min-h-[220px]">
-          <div className="z-20 relative bottom-2">
-            <HeroSprite
-              currentState={heroState}
-              characterClass={characterClass}
-              gender={gender}
-            />
-          </div>
+        <div className="relative overflow-hidden">
+          <DungeonStageMap stage={boss.stage || 1} bossType={boss.boss_type || "demon"}>
+            <div className="pointer-events-auto">
+              <HeroSprite
+                currentState={heroState}
+                characterClass={characterClass}
+                gender={gender}
+              />
+            </div>
 
-          <div className="z-20 relative bottom-2">
-            <BossSprite
-              currentState={bossState}
-              currentHp={boss.current_hp}
-              maxHp={boss.max_hp}
-              bossType={boss.boss_type || "demon"}
-              flipHorizontal={true}
-            />
-          </div>
-
-          <div className="dungeon-floor-tile" />
+            <div className="pointer-events-auto">
+              <BossSprite
+                currentState={bossState}
+                currentHp={boss.current_hp}
+                maxHp={boss.max_hp}
+                bossType={boss.boss_type || "demon"}
+                flipHorizontal={true}
+              />
+            </div>
+          </DungeonStageMap>
 
           <canvas
             ref={canvasRef}
             width={520}
-            height={220}
+            height={240}
             className="absolute inset-0 w-full h-full pointer-events-none z-30"
           />
         </div>

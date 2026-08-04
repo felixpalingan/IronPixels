@@ -10,11 +10,12 @@ const destWeapons = path.join(destBase, 'weapons');
 const destChests = path.join(destBase, 'chests');
 const destMonsters = path.join(destBase, 'monsters');
 const destTiles = path.join(destBase, 'tiles');
+const destDecor = path.join(destBase, 'decor');
 const destUi = path.join(destBase, 'ui');
 
 const itemWeapons = path.join(__dirname, '../public/assets/items/weapons');
 
-[destHeroes, destWeapons, destChests, destMonsters, destTiles, destUi, itemWeapons].forEach((dir) => {
+[destHeroes, destWeapons, destChests, destMonsters, destTiles, destDecor, destUi, itemWeapons].forEach((dir) => {
   fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -43,6 +44,20 @@ if (fs.existsSync(srcFrames)) {
     } else if (file.startsWith('flask_') || file.startsWith('ui_') || file.startsWith('coin_')) {
       fs.copyFileSync(srcFile, path.join(destUi, file));
     } else if (
+      file.startsWith('wall_banner') ||
+      file.startsWith('wall_fountain') ||
+      file.startsWith('column') ||
+      file.startsWith('doors_') ||
+      file === 'crate.png' ||
+      file === 'skull.png' ||
+      file.startsWith('lever_') ||
+      file.startsWith('button_')
+    ) {
+      fs.copyFileSync(srcFile, path.join(destDecor, file));
+      fs.copyFileSync(srcFile, path.join(destTiles, file));
+    } else if (file.startsWith('wall_') || file.startsWith('floor_') || file === 'hole.png' || file.startsWith('edge_')) {
+      fs.copyFileSync(srcFile, path.join(destTiles, file));
+    } else if (
       file.startsWith('big_') ||
       file.startsWith('ogre_') ||
       file.startsWith('chort_') ||
@@ -66,4 +81,4 @@ if (fs.existsSync(srcFrames)) {
   });
 }
 
-console.log('Successfully copied all 0x72 Dungeon Tileset II assets to public/assets/dungeon!');
+console.log('Successfully copied all sliced tiles & decors from 0x72 Dungeon Tileset II!');
