@@ -31,7 +31,47 @@ export async function GET() {
     const userId = user?.id;
 
     if (!userId) {
-      return NextResponse.json(null);
+      return NextResponse.json({ party: null, invites: [] });
+    }
+
+    const { data: rawInvites } = await supabase
+      .from("party_invites")
+      .select("*")
+      .eq("invitee_id", userId)
+      .eq("status", "pending");
+
+    let invitesList: any[] = [];
+    if (rawInvites && rawInvites.length > 0) {
+      const partyIds = rawInvites.map((inv: any) => inv.party_id);
+      const inviterIds = rawInvites.map((inv: any) => inv.inviter_id);
+
+      const { data: inviteParties } = await supabase
+        .from("Party")
+        .select("*")
+        .in("party_id", partyIds);
+
+      const { data: inviterProfiles } = await supabase
+        .from("profiles")
+        .select("*")
+        .or(`id.in.(${inviterIds.join(",")}),user_id.in.(${inviterIds.join(",")})`);
+
+      const partyMap: Record<string, any> = {};
+      (inviteParties || []).forEach((p: any) => { partyMap[p.party_id] = p; });
+
+      const inviterMap: Record<string, any> = {};
+      (inviterProfiles || []).forEach((p: any) => {
+        if (p.id) inviterMap[p.id] = p;
+        if (p.user_id) inviterMap[p.user_id] = p;
+      });
+
+      invitesList = rawInvites.map((inv: any) => ({
+        invite_id: inv.invite_id,
+        party_id: inv.party_id,
+        party_name: partyMap[inv.party_id]?.party_name || "Raid Party",
+        inviter_id: inv.inviter_id,
+        inviter_username: inviterMap[inv.inviter_id]?.username || "Leader",
+        created_at: inv.created_at,
+      }));
     }
 
     const { data: memberRecord } = await supabase
@@ -55,7 +95,7 @@ export async function GET() {
     }
 
     if (!partyId) {
-      return NextResponse.json(null);
+      return NextResponse.json({ party: null, invites: invitesList });
     }
 
     const { data: dbParty } = await supabase
@@ -112,18 +152,18 @@ export async function GET() {
         party_name: p.party_name,
         leader_id: p.leader_id,
         members: membersList,
-        total_party_cp: p.total_party_cp || 1250,
+        total_party_cp: membersList.reduce((sum, m) => sum + m.combat_power, 0),
         total_party_floor: p.total_party_floor || 1,
         total_party_rvs: p.total_party_rvs || 0,
         party_streak: p.party_streak || 1,
       };
 
       activePartyCache = syncedState;
-      return NextResponse.json(syncedState);
+      return NextResponse.json({ party: syncedState, invites: invitesList });
     }
   } catch (e) {}
 
-  return NextResponse.json(null);
+  return NextResponse.json({ party: null, invites: [] });
 }
 
 export async function POST(request: Request) {
@@ -132,10 +172,9 @@ export async function POST(request: Request) {
     const {
       action,
       party_name,
+      party_id,
       invite_user_id,
-      invite_username,
-      invite_class,
-      invite_cp,
+      invite_id,
       target_user_id,
       new_role,
     } = body;
@@ -145,6 +184,22 @@ export async function POST(request: Request) {
     const currentUserId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
     if (action === "create_party") {
+      try {
+        const { data: existingParties } = await supabase
+          .from("Party")
+          .select("party_id")
+          .eq("leader_id", currentUserId);
+
+        if (existingParties && existingParties.length > 0) {
+          for (const oldP of existingParties) {
+            await supabase.from("Party_Members").delete().eq("party_id", oldP.party_id);
+            await supabase.from("Party").delete().eq("party_id", oldP.party_id);
+          }
+        }
+
+        await supabase.from("Party_Members").delete().eq("user_id", currentUserId);
+      } catch (e) {}
+
       const newPartyId = crypto.randomUUID();
       const leaderId = currentUserId;
 
@@ -204,60 +259,85 @@ export async function POST(request: Request) {
       return NextResponse.json(newParty);
     }
 
-    if (action === "rename_party" && activePartyCache) {
-      activePartyCache.party_name = party_name || activePartyCache.party_name;
+    if (action === "invite_member") {
+      if (!party_id || !invite_user_id) {
+        return NextResponse.json({ error: "party_id and invite_user_id are required" }, { status: 400 });
+      }
 
       try {
-        await supabase
-          .from("Party")
-          .update({ party_name: activePartyCache.party_name })
-          .eq("party_id", activePartyCache.party_id);
+        const { data: existingInv } = await supabase
+          .from("party_invites")
+          .select("*")
+          .eq("party_id", party_id)
+          .eq("invitee_id", invite_user_id)
+          .eq("status", "pending");
+
+        if (!existingInv || existingInv.length === 0) {
+          await supabase.from("party_invites").insert({
+            party_id: party_id,
+            inviter_id: currentUserId,
+            invitee_id: invite_user_id,
+            status: "pending",
+          });
+        }
       } catch (e) {}
 
-      return NextResponse.json(activePartyCache);
+      return NextResponse.json({ success: true, message: "Party invite sent!" });
     }
 
-    if (action === "invite_member" && activePartyCache) {
-      if (activePartyCache.members.length >= 10) {
-        return NextResponse.json({ error: "Party is full! Max 10 members." }, { status: 400 });
+    if (action === "accept_party_invite") {
+      if (!party_id) {
+        return NextResponse.json({ error: "party_id required" }, { status: 400 });
       }
 
-      const existing = activePartyCache.members.find((m) => m.user_id === invite_user_id);
-      if (!existing) {
-        const newMemberId = invite_user_id || crypto.randomUUID();
-        const newMember: PartyMember = {
-          user_id: newMemberId,
-          username: invite_username || "Guild Knight",
-          character_class: invite_class || "SHADOW NINJA",
-          level: 30,
-          combat_power: invite_cp || 10000,
-          role: "member",
-          weapon_icon: "/assets/items/weapons/18.png",
-        };
-        activePartyCache.members.push(newMember);
+      try {
+        await supabase.from("Party_Members").delete().eq("user_id", currentUserId);
 
-        try {
+        const { data: existingM } = await supabase
+          .from("Party_Members")
+          .select("*")
+          .eq("party_id", party_id)
+          .eq("user_id", currentUserId);
+
+        if (!existingM || existingM.length === 0) {
           await supabase.from("Party_Members").insert({
-            party_id: activePartyCache.party_id,
-            user_id: newMemberId,
+            party_id: party_id,
+            user_id: currentUserId,
             role: "member",
           });
-        } catch (e) {}
-      }
+        }
 
-      activePartyCache.total_party_cp = activePartyCache.members.reduce(
-        (sum, m) => sum + m.combat_power,
-        0
-      );
+        if (invite_id) {
+          await supabase.from("party_invites").update({ status: "accepted" }).eq("invite_id", invite_id);
+        } else {
+          await supabase.from("party_invites").update({ status: "accepted" }).eq("party_id", party_id).eq("invitee_id", currentUserId);
+        }
+      } catch (e) {}
 
+      return NextResponse.json({ success: true, message: "Party invite accepted!" });
+    }
+
+    if (action === "decline_party_invite") {
+      try {
+        if (invite_id) {
+          await supabase.from("party_invites").update({ status: "declined" }).eq("invite_id", invite_id);
+        } else if (party_id) {
+          await supabase.from("party_invites").update({ status: "declined" }).eq("party_id", party_id).eq("invitee_id", currentUserId);
+        }
+      } catch (e) {}
+
+      return NextResponse.json({ success: true, message: "Party invite declined." });
+    }
+
+    if (action === "rename_party") {
       try {
         await supabase
           .from("Party")
-          .update({ total_party_cp: activePartyCache.total_party_cp })
-          .eq("party_id", activePartyCache.party_id);
+          .update({ party_name: party_name })
+          .eq("party_id", party_id);
       } catch (e) {}
 
-      return NextResponse.json(activePartyCache);
+      return NextResponse.json({ success: true, party_name });
     }
 
     if (action === "update_role" && activePartyCache) {
@@ -277,36 +357,25 @@ export async function POST(request: Request) {
       return NextResponse.json(activePartyCache);
     }
 
-    if (action === "kick_member" && activePartyCache) {
-      activePartyCache.members = activePartyCache.members.filter((m) => m.user_id !== target_user_id);
-      activePartyCache.total_party_cp = activePartyCache.members.reduce((sum, m) => sum + m.combat_power, 0);
+    if (action === "kick_member" || action === "leave_party") {
+      const targetId = action === "leave_party" ? currentUserId : target_user_id;
 
       try {
         await supabase
           .from("Party_Members")
           .delete()
-          .eq("party_id", activePartyCache.party_id)
-          .eq("user_id", target_user_id);
+          .eq("party_id", party_id)
+          .eq("user_id", targetId);
 
-        await supabase
-          .from("Party")
-          .update({ total_party_cp: activePartyCache.total_party_cp })
-          .eq("party_id", activePartyCache.party_id);
+        const { data: remaining } = await supabase
+          .from("Party_Members")
+          .select("*")
+          .eq("party_id", party_id);
+
+        if (!remaining || remaining.length === 0) {
+          await supabase.from("Party").delete().eq("party_id", party_id);
+        }
       } catch (e) {}
-
-      return NextResponse.json(activePartyCache);
-    }
-
-    if (action === "leave_party") {
-      if (activePartyCache) {
-        try {
-          await supabase
-            .from("Party_Members")
-            .delete()
-            .eq("party_id", activePartyCache.party_id)
-            .eq("user_id", "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c");
-        } catch (e) {}
-      }
 
       activePartyCache = null;
       return NextResponse.json({ success: true, party: null });

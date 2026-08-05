@@ -92,24 +92,33 @@ export function MultiplayerHub({
       const res = await fetch("/api/multiplayer/party");
       if (res.ok) {
         const data = await res.json();
-        if (data) {
-          setParty(data);
-          localStorage.setItem("ironpixels_active_party", JSON.stringify(data));
-          return;
-        } else {
-          setParty(null);
-          localStorage.removeItem("ironpixels_active_party");
+        if (data && typeof data === "object") {
+          setParty(data.party || null);
+          setPartyInvites(Array.isArray(data.invites) ? data.invites : []);
+          if (data.party) {
+            localStorage.setItem("ironpixels_active_party", JSON.stringify(data.party));
+          } else {
+            localStorage.removeItem("ironpixels_active_party");
+          }
           return;
         }
       }
     } catch (e) {}
     setParty(null);
+    setPartyInvites([]);
   };
 
   useEffect(() => {
     fetchLeaderboard(lbGroup, lbMetric);
     fetchFriends();
     fetchParty();
+
+    const interval = setInterval(() => {
+      fetchFriends();
+      fetchParty();
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, [lbGroup, lbMetric]);
 
   const handleSearchPlayers = async (queryStr: string) => {
@@ -146,6 +155,19 @@ export function MultiplayerHub({
     } catch (e) {}
   };
 
+  const handlePartyInviteAction = async (partyId: string, inviteId: string, action: "accept_party_invite" | "decline_party_invite") => {
+    try {
+      await fetch("/api/multiplayer/party", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, party_id: partyId, invite_id: inviteId }),
+      });
+      setPartyNotice(action === "accept_party_invite" ? "JOINED GUILD PARTY!" : "PARTY INVITE DECLINED.");
+      setTimeout(() => setPartyNotice(null), 3000);
+      fetchParty();
+    } catch (e) {}
+  };
+
   const handlePartyAction = async (action: string, payload?: any) => {
     try {
       const res = await fetch("/api/multiplayer/party", {
@@ -154,15 +176,11 @@ export function MultiplayerHub({
         body: JSON.stringify({ action, ...payload }),
       });
       if (res.ok) {
-        const data = await res.json();
         if (action === "leave_party") {
           setParty(null);
           localStorage.removeItem("ironpixels_active_party");
-        } else {
-          setParty(data);
-          localStorage.setItem("ironpixels_active_party", JSON.stringify(data));
         }
-        fetchLeaderboard(lbGroup, lbMetric);
+        fetchParty();
       }
     } catch (e) {}
   };
@@ -176,17 +194,27 @@ export function MultiplayerHub({
   };
 
   const handleInviteToParty = async (friendName: string, friendId: string, friendClass: string, friendCp: number) => {
-    if (!party) {
-      await handlePartyAction("create_party", { party_name: inputPartyName });
+    let currentPartyId = party?.party_id;
+    if (!currentPartyId) {
+      const res = await fetch("/api/multiplayer/party", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create_party", party_name: inputPartyName }),
+      });
+      if (res.ok) {
+        const pData = await res.json();
+        currentPartyId = pData?.party_id;
+      }
     }
-    await handlePartyAction("invite_member", {
-      invite_user_id: friendId,
-      invite_username: friendName,
-      invite_class: friendClass,
-      invite_cp: friendCp,
-    });
-    setPartyNotice(`Invited ${friendName} to your 10-Player Party!`);
-    setTimeout(() => setPartyNotice(null), 3000);
+    if (currentPartyId) {
+      await handlePartyAction("invite_member", {
+        party_id: currentPartyId,
+        invite_user_id: friendId,
+      });
+      setPartyNotice(`Party invite sent to ${friendName}!`);
+      setTimeout(() => setPartyNotice(null), 3000);
+      fetchParty();
+    }
   };
 
   const handleSaveEditedPartyName = () => {
@@ -891,6 +919,49 @@ export function MultiplayerHub({
             exit={{ opacity: 0, y: -10 }}
             className="space-y-4"
           >
+            {partyInvites.length > 0 && (
+              <div className="border border-purple-500 bg-purple-950/30 p-3 space-y-3 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                <div className="text-[10px] text-purple-300 font-extrabold uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                  <ShieldAlert className="w-4 h-4 text-purple-400" />
+                  <span>PENDING PARTY INVITES ({partyInvites.length})</span>
+                </div>
+
+                <div className="space-y-2">
+                  {partyInvites.map((inv) => (
+                    <div
+                      key={inv.invite_id}
+                      className="border border-purple-800 bg-black/60 p-3 flex items-center justify-between font-mono"
+                    >
+                      <div>
+                        <div className="font-headline font-bold text-xs text-white uppercase">
+                          {inv.party_name}
+                        </div>
+                        <div className="text-[9px] text-zinc-400 font-bold mt-0.5">
+                          Invited by <span className="text-purple-300">{inv.inviter_username}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handlePartyInviteAction(inv.party_id, inv.invite_id, "accept_party_invite")}
+                          className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] uppercase shadow-neon flex items-center gap-1 cursor-pointer"
+                        >
+                          <Check className="w-3 h-3" />
+                          <span>ACCEPT</span>
+                        </button>
+                        <button
+                          onClick={() => handlePartyInviteAction(inv.party_id, inv.invite_id, "decline_party_invite")}
+                          className="px-2 py-1 bg-red-950 border border-red-600 text-red-400 font-bold text-[10px] uppercase cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {party ? (
               <div className="border-2 border-purple-500 bg-surface p-4 space-y-4 shadow-[0_0_25px_rgba(168,85,247,0.4)] relative">
                 <div className="flex items-start justify-between border-b border-purple-900 pb-3">
