@@ -7,7 +7,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
 
     const body = await request.json();
-    const { username, character_class, weight_kg } = body;
+    const { username, character_class, gender, weight_kg } = body;
 
     const userId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
       id: userId,
       username: username || "Felix",
       character_class: character_class || "WARRIOR",
+      gender: gender || "m",
       weight_kg: Number(weight_kg) || 75,
       updated_at: new Date().toISOString(),
     };
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       }
     } catch (e) {}
 
-    return NextResponse.json({ success: true, profile: profileData });
+    return NextResponse.json({ success: true, profile: profileData, user: profileData });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Failed to submit onboarding." },

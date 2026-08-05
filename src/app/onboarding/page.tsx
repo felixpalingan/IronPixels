@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Minus, Plus } from "lucide-react";
+import { ArrowRight, Minus, Plus, Check, Sparkles, User, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StatRadarChart } from "@/components/StatRadarChart";
+import { HeroSprite } from "@/components/HeroSprite";
 
-type CharacterClass = "WARRIOR" | "ROGUE" | "CYBER KNIGHT";
+type CharacterClass = "WARRIOR" | "ROGUE" | "WIZARD" | "BERSERKER" | "CYBER KNIGHT";
+type CharacterGender = "m" | "f";
 
 interface ClassDetail {
   name: CharacterClass;
@@ -19,11 +21,11 @@ interface ClassDetail {
 const CHARACTER_CLASSES: ClassDetail[] = [
   {
     name: "WARRIOR",
-    title: "VANGUARD WARRIOR",
+    title: "VANGUARD KNIGHT",
     roleTag: "Melee / Tank",
     description: "Heavy armor specialist with formidable physical strength & high resistance.",
     hp: 1250,
-    stats: { str: 85, agi: 30, vit: 80, luk: 15 },
+    stats: { str: 85, agi: 35, vit: 80, luk: 20 },
   },
   {
     name: "ROGUE",
@@ -34,10 +36,26 @@ const CHARACTER_CLASSES: ClassDetail[] = [
     stats: { str: 55, agi: 95, vit: 40, luk: 85 },
   },
   {
+    name: "WIZARD",
+    title: "ARCANE MAGE",
+    roleTag: "Magic / Intellect",
+    description: "Master of elemental magic casting devastating tactical damage from afar.",
+    hp: 900,
+    stats: { str: 30, agi: 60, vit: 45, luk: 90 },
+  },
+  {
+    name: "BERSERKER",
+    title: "TITAN DWARF",
+    roleTag: "Heavy Offense",
+    description: "Unstoppable brute power wielding massive weapons with unmatched fury.",
+    hp: 1400,
+    stats: { str: 95, agi: 25, vit: 90, luk: 30 },
+  },
+  {
     name: "CYBER KNIGHT",
-    title: "CYBER KNIGHT",
+    title: "CYBER PALADIN",
+    roleTag: "Balanced / Defense",
     description: "Balanced futuristic paladin with versatile combat adaptability.",
-    roleTag: "Balanced / Versatile",
     hp: 1100,
     stats: { str: 70, agi: 70, vit: 70, luk: 70 },
   },
@@ -48,6 +66,7 @@ export default function OnboardingPage() {
   const [weightKg, setWeightKg] = useState<number>(75);
   const [weightInputStr, setWeightInputStr] = useState<string>("75");
   const [selectedClass, setSelectedClass] = useState<CharacterClass>("WARRIOR");
+  const [selectedGender, setSelectedGender] = useState<CharacterGender>("m");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -109,6 +128,7 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           weight_kg: val,
           character_class: selectedClass,
+          gender: selectedGender,
         }),
       });
 
@@ -118,9 +138,15 @@ export default function OnboardingPage() {
         setErrorMsg(data.error || "FAILED TO INITIALIZE PROFILE.");
         setLoading(false);
       } else {
-        if (data.user) {
-          localStorage.setItem("ironpixels_profile", JSON.stringify(data.user));
-        }
+        const savedProf = data.user || data.profile || {
+          username: "Felix",
+          character_class: selectedClass,
+          gender: selectedGender,
+          weight_kg: val,
+        };
+        savedProf.gender = selectedGender;
+        savedProf.character_class = selectedClass;
+        localStorage.setItem("ironpixels_profile", JSON.stringify(savedProf));
         document.cookie = "ironpixels_onboarded=true; path=/; max-age=31536000";
         window.location.href = "/";
       }
@@ -166,7 +192,8 @@ export default function OnboardingPage() {
               className="border border-zinc-800 bg-[#141416] p-6 space-y-6 shadow-2xl relative"
             >
               <div className="space-y-1">
-                <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest">
+                <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
                   CHARACTER CREATION // STEP 1
                 </span>
                 <h2 className="font-headline font-black text-xl text-white uppercase tracking-wider">
@@ -235,59 +262,116 @@ export default function OnboardingPage() {
               initial={{ opacity: 0, x: 15 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -15 }}
-              className="border border-zinc-800 bg-[#141416] p-6 space-y-6 shadow-2xl relative"
+              className="border border-zinc-800 bg-[#141416] p-5 space-y-5 shadow-2xl relative"
             >
               <div className="space-y-1">
-                <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest">
+                <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
                   CHARACTER CREATION // STEP 2
                 </span>
                 <h2 className="font-headline font-black text-xl text-white uppercase tracking-wider">
-                  CHOOSE YOUR CLASS
+                  CHOOSE YOUR HERO ARCHETYPE
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Select your hero class archetype to determine base attributes & skill affinities.
+                  Select hero class & gender to preview live pixel sprite & base attribute radar.
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                {CHARACTER_CLASSES.map((cls) => (
+              <div className="space-y-2">
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  SELECT GENDER:
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <button
-                    key={cls.name}
                     type="button"
-                    onClick={() => setSelectedClass(cls.name)}
-                    className={`py-3 px-2 border flex flex-col items-center justify-center gap-1 transition-all ${
-                      selectedClass === cls.name
-                        ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_15px_rgba(0,255,65,0.3)] font-bold"
+                    onClick={() => setSelectedGender("m")}
+                    className={`py-2 px-3 border flex items-center justify-center gap-2 transition-all ${
+                      selectedGender === "m"
+                        ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_12px_rgba(0,255,65,0.3)] font-bold"
                         : "border-zinc-800 bg-black text-zinc-400 hover:text-white"
                     }`}
                   >
-                    <span className="text-xs font-headline font-extrabold uppercase text-center line-clamp-1">
-                      {cls.name}
-                    </span>
+                    <span>♂️ MALE HERO</span>
+                    {selectedGender === "m" && <Check className="w-4 h-4" />}
                   </button>
-                ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGender("f")}
+                    className={`py-2 px-3 border flex items-center justify-center gap-2 transition-all ${
+                      selectedGender === "f"
+                        ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_12px_rgba(0,255,65,0.3)] font-bold"
+                        : "border-zinc-800 bg-black text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    <span>♀️ FEMALE HERO</span>
+                    {selectedGender === "f" && <Check className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
-              <div className="bg-black border border-zinc-800 p-4 space-y-3">
+              <div className="space-y-2">
+                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                  SELECT CLASS SPRITE ARCHETYPE:
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                  {CHARACTER_CLASSES.map((cls) => (
+                    <button
+                      key={cls.name}
+                      type="button"
+                      onClick={() => setSelectedClass(cls.name)}
+                      className={`py-2 px-1 border flex flex-col items-center justify-center gap-1 transition-all ${
+                        selectedClass === cls.name
+                          ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_12px_rgba(0,255,65,0.3)] font-bold"
+                          : "border-zinc-800 bg-black text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-[10px] font-headline font-extrabold uppercase text-center line-clamp-1">
+                        {cls.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-black border border-zinc-800 p-4 space-y-4 shadow-inner">
                 <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-                  <span className="font-headline font-black text-sm text-white uppercase">
-                    {activeClassDetail.title}
-                  </span>
-                  <span className="text-[10px] bg-zinc-900 border border-zinc-700 px-2 py-0.5 text-zinc-300 uppercase font-bold">
+                  <div>
+                    <div className="font-headline font-black text-sm text-white uppercase">
+                      {activeClassDetail.title}
+                    </div>
+                    <div className="text-[10px] text-zinc-400 italic">
+                      "{activeClassDetail.description}"
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-zinc-900 border border-zinc-700 px-2 py-0.5 text-[#00ff41] uppercase font-bold whitespace-nowrap">
                     {activeClassDetail.roleTag}
                   </span>
                 </div>
 
-                <p className="text-xs text-zinc-400 italic">
-                  "{activeClassDetail.description}"
-                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                  <div className="bg-zinc-950 border border-zinc-800 p-4 flex flex-col items-center justify-center relative overflow-hidden h-44 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                    <div className="absolute inset-0 bg-radial from-[#00ff41]/10 to-transparent pointer-events-none" />
+                    <div className="mb-2">
+                      <HeroSprite
+                        characterClass={selectedClass}
+                        gender={selectedGender}
+                        scale={3.2}
+                        weaponIcon="/assets/items/weapons/01.png"
+                      />
+                    </div>
+                    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest z-10 mt-1">
+                      {selectedGender === "m" ? "MALE" : "FEMALE"} {selectedClass}
+                    </div>
+                  </div>
 
-                <div className="border-t border-zinc-800 pt-2">
-                  <StatRadarChart stats={activeClassDetail.stats} />
+                  <div className="h-44 flex flex-col justify-center">
+                    <StatRadarChart stats={activeClassDetail.stats} />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
@@ -300,7 +384,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={handleCompleteOnboarding}
                   disabled={loading}
-                  className="w-2/3 h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-2/3 h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? "INITIALIZING HERO..." : "COMPLETE CREATION"}
                 </button>
