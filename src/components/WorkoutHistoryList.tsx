@@ -50,7 +50,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
         const res = await fetch("/api/workout/history");
         if (res.ok) {
           const data = await res.json();
-          if (Array.isArray(data.sessions) && data.sessions.length > 0) {
+          if (Array.isArray(data.sessions)) {
             setSessions(data.sessions);
             localStorage.setItem("ironpixels_workout_history", JSON.stringify(data.sessions));
           }

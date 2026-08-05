@@ -31,7 +31,10 @@ export async function POST(request: Request) {
     let updatedProfile = null;
 
     try {
-      await supabase.from("Workout_Sessions").insert(sessionRecord);
+      const { error: wsErr } = await supabase.from("workout_sessions").insert(sessionRecord);
+      if (wsErr) {
+        await supabase.from("Workout_Sessions").insert(sessionRecord);
+      }
 
       const { data: profileList } = await supabase
         .from("profiles")

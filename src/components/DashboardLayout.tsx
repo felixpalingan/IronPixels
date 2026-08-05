@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield, Users, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
@@ -274,7 +275,7 @@ export function DashboardLayout() {
     if (profile) {
       const updatedStats = {
         ...profile.stats,
-        [statKey]: profile.stats[statKey] + 1,
+        [statKey]: (profile.stats[statKey] || 0) + 1,
       };
       const updatedProf = {
         ...profile,
@@ -283,6 +284,20 @@ export function DashboardLayout() {
       };
       setProfile(updatedProf);
       localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+
+      try {
+        const supabase = createClient();
+        supabase
+          .from("profiles")
+          .update({
+            available_ap: nextAp,
+            [statKey]: updatedStats[statKey],
+            stats: updatedStats,
+            updated_at: new Date().toISOString(),
+          })
+          .or(`id.eq.${userData.user_id},user_id.eq.${userData.user_id}`)
+          .then(() => {});
+      } catch (e) {}
     }
   };
 
@@ -305,17 +320,35 @@ export function DashboardLayout() {
         setAvailableAp((prev) => prev + 5);
       }
 
+      const newGoldTotal = profile.gold + reward.gold;
+
       const updatedProf = {
         ...profile,
         level: newLevel,
         exp: newExp,
         max_exp: newMaxExp,
         available_ap: (profile.available_ap || 0) + addedAp,
-        gold: profile.gold + reward.gold,
+        gold: newGoldTotal,
       };
 
       setProfile(updatedProf);
       localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+
+      try {
+        const supabase = createClient();
+        supabase
+          .from("profiles")
+          .update({
+            gold: newGoldTotal,
+            exp: newExp,
+            level: newLevel,
+            max_exp: newMaxExp,
+            available_ap: updatedProf.available_ap,
+            updated_at: new Date().toISOString(),
+          })
+          .or(`id.eq.${userData.user_id},user_id.eq.${userData.user_id}`)
+          .then(() => {});
+      } catch (e) {}
     }
   };
 

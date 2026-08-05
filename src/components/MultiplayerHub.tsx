@@ -56,15 +56,16 @@ export function MultiplayerHub({
         if (group === "party") {
           const list: PartyLeaderboardEntry[] = Array.isArray(data) ? data : [];
           if (party && !list.some((p) => p.party_id === party.party_id || p.party_name === party.party_name)) {
+            const leaderMember = party.members.find((m) => m.role === "leader") || party.members[0];
             list.push({
               party_id: party.party_id,
               party_name: party.party_name,
-              leader_name: "Felix",
+              leader_name: leaderMember?.username || "Leader",
               member_count: party.members.length,
-              total_party_floor: party.total_party_floor || 15,
-              total_party_cp: party.total_party_cp || 16650,
-              total_party_rvs: party.total_party_rvs || 1350,
-              party_streak: party.party_streak || 10,
+              total_party_floor: party.total_party_floor || 1,
+              total_party_cp: party.total_party_cp || 1250,
+              total_party_rvs: party.total_party_rvs || 0,
+              party_streak: party.party_streak || 1,
               leader_weapon: "/assets/items/weapons/01.png",
             });
           }
@@ -95,16 +96,14 @@ export function MultiplayerHub({
           setParty(data);
           localStorage.setItem("ironpixels_active_party", JSON.stringify(data));
           return;
+        } else {
+          setParty(null);
+          localStorage.removeItem("ironpixels_active_party");
+          return;
         }
       }
     } catch (e) {}
-
-    try {
-      const saved = localStorage.getItem("ironpixels_active_party");
-      if (saved) {
-        setParty(JSON.parse(saved));
-      }
-    } catch (e) {}
+    setParty(null);
   };
 
   useEffect(() => {

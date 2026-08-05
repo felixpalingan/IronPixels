@@ -22,43 +22,46 @@ export interface PartyState {
   party_streak: number;
 }
 
-let activePartyCache: PartyState | null = {
-  party_id: "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-  party_name: "Iron Legion Squad",
-  leader_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-  members: [
-    {
-      user_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-      username: "Felix",
-      character_class: "WARRIOR",
-      level: 1,
-      combat_power: 1250,
-      role: "leader",
-      weapon_icon: "/assets/items/weapons/01.png",
-    },
-    {
-      user_id: "c2b3a4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d",
-      username: "IronSlayer99",
-      character_class: "TITAN BERSERKER",
-      level: 42,
-      combat_power: 15400,
-      role: "co_leader",
-      weapon_icon: "/assets/items/weapons/31.png",
-    },
-  ],
-  total_party_cp: 16650,
-  total_party_floor: 15,
-  total_party_rvs: 1350,
-  party_streak: 10,
-};
+let activePartyCache: PartyState | null = null;
 
 export async function GET() {
   try {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+
+    if (!userId) {
+      return NextResponse.json(null);
+    }
+
+    const { data: memberRecord } = await supabase
+      .from("Party_Members")
+      .select("party_id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    let partyId = memberRecord && memberRecord.length > 0 ? memberRecord[0].party_id : null;
+
+    if (!partyId) {
+      const { data: leaderRecord } = await supabase
+        .from("Party")
+        .select("party_id")
+        .eq("leader_id", userId)
+        .limit(1);
+
+      if (leaderRecord && leaderRecord.length > 0) {
+        partyId = leaderRecord[0].party_id;
+      }
+    }
+
+    if (!partyId) {
+      return NextResponse.json(null);
+    }
+
     const { data: dbParty } = await supabase
       .from("Party")
       .select("*")
-      .order("created_at", { ascending: false })
+      .eq("party_id", partyId)
       .limit(1);
 
     if (dbParty && dbParty.length > 0) {
@@ -108,11 +111,11 @@ export async function GET() {
         party_id: p.party_id,
         party_name: p.party_name,
         leader_id: p.leader_id,
-        members: membersList.length > 0 ? membersList : (activePartyCache?.members || []),
-        total_party_cp: p.total_party_cp || 16650,
-        total_party_floor: p.total_party_floor || 15,
-        total_party_rvs: p.total_party_rvs || 1350,
-        party_streak: p.party_streak || 10,
+        members: membersList,
+        total_party_cp: p.total_party_cp || 1250,
+        total_party_floor: p.total_party_floor || 1,
+        total_party_rvs: p.total_party_rvs || 0,
+        party_streak: p.party_streak || 1,
       };
 
       activePartyCache = syncedState;
@@ -120,7 +123,7 @@ export async function GET() {
     }
   } catch (e) {}
 
-  return NextResponse.json(activePartyCache);
+  return NextResponse.json(null);
 }
 
 export async function POST(request: Request) {
