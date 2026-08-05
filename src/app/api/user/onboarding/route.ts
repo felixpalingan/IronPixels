@@ -17,9 +17,20 @@ export async function POST(request: Request) {
       user?.email?.split("@")[0] ||
       "Warrior";
 
-    const selectedClass = character_class || "WARRIOR";
+    const selectedClass = (character_class || "WARRIOR").toUpperCase();
     const selectedGender = gender || "m";
     const selectedWeight = Number(weight_kg) || 75;
+
+    let classStats = { str: 95, agi: 30, vit: 85, luk: 40 };
+    let initialHp = 1300;
+
+    if (selectedClass === "HERO") {
+      classStats = { str: 70, agi: 70, vit: 70, luk: 70 };
+      initialHp = 1100;
+    } else if (selectedClass === "MAGE") {
+      classStats = { str: 40, agi: 95, vit: 60, luk: 85 };
+      initialHp = 950;
+    }
 
     const profileData = {
       id: userId,
@@ -30,10 +41,16 @@ export async function POST(request: Request) {
       weight_kg: selectedWeight,
       gold: 500,
       level: 1,
-      current_hp: 1000,
-      max_hp: 1000,
+      current_hp: initialHp,
+      max_hp: initialHp,
       exp: 0,
       max_exp: 1000,
+      available_ap: 5,
+      str: classStats.str,
+      agi: classStats.agi,
+      vit: classStats.vit,
+      luk: classStats.luk,
+      stats: classStats,
       updated_at: new Date().toISOString(),
     };
 
@@ -44,12 +61,7 @@ export async function POST(request: Request) {
     if (upsertErr) {
       await supabase
         .from("profiles")
-        .update({
-          username: resolvedUsername,
-          character_class: selectedClass,
-          gender: selectedGender,
-          weight_kg: selectedWeight,
-        })
+        .update(profileData)
         .or(`id.eq.${userId},user_id.eq.${userId}`);
     }
 

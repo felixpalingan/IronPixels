@@ -49,10 +49,10 @@ export async function GET() {
       weight_kg: Number(profile.weight_kg) || 75,
       available_ap: profile.available_ap ?? 5,
       stats: {
-        str: profile.str ?? 85,
-        agi: profile.agi ?? 70,
-        vit: profile.vit ?? 60,
-        luk: profile.luk ?? 50,
+        str: profile.str ?? (profile.stats?.str || 85),
+        agi: profile.agi ?? (profile.stats?.agi || 70),
+        vit: profile.vit ?? (profile.stats?.vit || 60),
+        luk: profile.luk ?? (profile.stats?.luk || 50),
       },
     });
   } catch (err: any) {
