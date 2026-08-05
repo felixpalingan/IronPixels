@@ -9,6 +9,7 @@ import { EnemySprite } from "@/components/EnemySprite";
 import { HeroSprite, HeroState } from "@/components/HeroSprite";
 import { DungeonStageMap } from "@/components/DungeonStageMap";
 import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
+import { createClient } from "@/lib/supabase/client";
 import type { EnemySpriteState } from "@/components/EnemySprite";
 
 interface DamageParticle {
@@ -229,13 +230,56 @@ export function CombatArena({
     fetchModeEnemy("solo");
     fetchModeEnemy("party");
 
+    const supabase = createClient();
+    const channel = supabase
+      .channel("party_combat_realtime_broadcast")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "dungeon_bosses",
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          if (updated && (updated.mode === "party" || updated.boss_id?.startsWith("party_"))) {
+            setPartyEnemy((prev) => {
+              if (prev.current_hp !== Number(updated.current_hp) || prev.floor !== updated.stage) {
+                const damageDealt = prev.current_hp - Number(updated.current_hp);
+                if (damageDealt > 0) {
+                  spawnDamageParticle(damageDealt, true, `PARTY ATTACK -${formatNumber(damageDealt)}`);
+                  setEnemyState("hit");
+                  setTimeout(() => setEnemyState("idle"), 500);
+                }
+                return {
+                  enemy_id: updated.boss_id,
+                  display_name: updated.sprite_config?.displayName || updated.boss_name,
+                  floor: updated.stage,
+                  current_hp: Number(updated.current_hp),
+                  max_hp: Number(updated.max_hp),
+                  status: updated.status || "Active",
+                  category: updated.category || "mob",
+                  mode: "party",
+                  sprite_config: updated.sprite_config || defaultSpriteConfig,
+                };
+              }
+              return prev;
+            });
+          }
+        }
+      )
+      .subscribe();
+
     const interval = setInterval(() => {
       if (activeMode === "party") {
         fetchModeEnemy("party");
       }
-    }, 2000);
+    }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, [activeMode]);
 
   const awardLoot = (enemyName: string, floor: number) => {

@@ -78,12 +78,44 @@ export async function POST(request: Request) {
           .from("profiles")
           .update(updatePayload)
           .or(`id.eq.${userId},user_id.eq.${userId}`)
-          .select("*")
-          .single();
+          .select("*");
 
-        if (profUpdate) {
-          updatedProfile = profUpdate;
+        if (profUpdate && profUpdate.length > 0) {
+          updatedProfile = profUpdate[0];
         }
+
+        try {
+          const { data: memberRec } = await supabase
+            .from("Party_Members")
+            .select("party_id")
+            .eq("user_id", userId)
+            .limit(1);
+
+          if (memberRec && memberRec.length > 0) {
+            const pId = memberRec[0].party_id;
+            const bossKey = `party_${pId}`;
+            const { data: bRecs } = await supabase
+              .from("dungeon_bosses")
+              .select("*")
+              .eq("boss_id", bossKey)
+              .limit(1);
+
+            if (bRecs && bRecs.length > 0) {
+              const b = bRecs[0];
+              const dmg = Math.round(total_rvs || 0);
+              if (dmg > 0) {
+                const newHp = Math.max(0, Number(b.current_hp) - dmg);
+                await supabase
+                  .from("dungeon_bosses")
+                  .update({
+                    current_hp: newHp,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("boss_id", bossKey);
+              }
+            }
+          }
+        } catch (e) {}
       }
     } catch (e) {
     }
