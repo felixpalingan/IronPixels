@@ -35,6 +35,7 @@ export function MultiplayerHub({
   const [searchResults, setSearchResults] = useState<FriendUser[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [party, setParty] = useState<PartyState | null>(null);
+  const [partyInvites, setPartyInvites] = useState<any[]>([]);
   const [partyNotice, setPartyNotice] = useState<string | null>(null);
   const [inputPartyName, setInputPartyName] = useState<string>("Iron Legion Squad");
   const [isCreatingPartyModal, setIsCreatingPartyModal] = useState<boolean>(false);
