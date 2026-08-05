@@ -357,22 +357,11 @@ export async function POST(request: Request) {
       return NextResponse.json(activePartyCache);
     }
 
-    if (action === "kick_member" || action === "leave_party") {
-      const targetId = action === "leave_party" ? currentUserId : target_user_id;
-
+    if (action === "disband_party") {
       try {
-        await supabase
-          .from("Party_Members")
-          .delete()
-          .eq("party_id", party_id)
-          .eq("user_id", targetId);
-
-        const { data: remaining } = await supabase
-          .from("Party_Members")
-          .select("*")
-          .eq("party_id", party_id);
-
-        if (!remaining || remaining.length === 0) {
+        if (party_id) {
+          await supabase.from("party_invites").delete().eq("party_id", party_id);
+          await supabase.from("Party_Members").delete().eq("party_id", party_id);
           await supabase.from("Party").delete().eq("party_id", party_id);
         }
       } catch (e) {}
@@ -381,7 +370,50 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, party: null });
     }
 
-    return NextResponse.json(activePartyCache);
+    if (action === "kick_member" || action === "leave_party") {
+      const targetId = action === "leave_party" ? currentUserId : target_user_id;
+
+      try {
+        const targetPartyId = party_id || (activePartyCache?.party_id);
+
+        if (targetPartyId) {
+          const { data: pRec } = await supabase
+            .from("Party")
+            .select("leader_id")
+            .eq("party_id", targetPartyId)
+            .limit(1);
+
+          const isLeaderLeaving = action === "leave_party" && pRec && pRec.length > 0 && pRec[0].leader_id === currentUserId;
+
+          if (isLeaderLeaving) {
+            await supabase.from("party_invites").delete().eq("party_id", targetPartyId);
+            await supabase.from("Party_Members").delete().eq("party_id", targetPartyId);
+            await supabase.from("Party").delete().eq("party_id", targetPartyId);
+          } else {
+            await supabase
+              .from("Party_Members")
+              .delete()
+              .eq("party_id", targetPartyId)
+              .eq("user_id", targetId);
+
+            const { data: remaining } = await supabase
+              .from("Party_Members")
+              .select("*")
+              .eq("party_id", targetPartyId);
+
+            if (!remaining || remaining.length === 0) {
+              await supabase.from("party_invites").delete().eq("party_id", targetPartyId);
+              await supabase.from("Party").delete().eq("party_id", targetPartyId);
+            }
+          }
+        }
+      } catch (e) {}
+
+      activePartyCache = null;
+      return NextResponse.json({ success: true, party: null });
+    }
+
+    return NextResponse.json(activePartyCache || { success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

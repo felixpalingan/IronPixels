@@ -177,9 +177,11 @@ export function MultiplayerHub({
         body: JSON.stringify({ action, ...payload }),
       });
       if (res.ok) {
-        if (action === "leave_party") {
+        if (action === "leave_party" || action === "disband_party") {
           setParty(null);
           localStorage.removeItem("ironpixels_active_party");
+          setPartyNotice(action === "disband_party" ? "GUILD PARTY DISBANDED." : "LEFT GUILD PARTY.");
+          setTimeout(() => setPartyNotice(null), 3000);
         }
         fetchParty();
       }
@@ -1021,10 +1023,10 @@ export function MultiplayerHub({
 
                   <div className="flex items-center gap-2">
                     {party.members.some(
-                      (m) => m.user_id === "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" && m.role === "leader"
+                      (m) => m.role === "leader"
                     ) && (
                       <button
-                        onClick={() => handlePartyAction("leave_party")}
+                        onClick={() => handlePartyAction("disband_party", { party_id: party.party_id })}
                         className="px-2.5 py-1 bg-red-950 border border-red-600 text-red-400 hover:bg-red-600 hover:text-white text-[10px] font-bold uppercase transition-all cursor-pointer"
                         title="Disband Party as Leader"
                       >
@@ -1033,7 +1035,7 @@ export function MultiplayerHub({
                     )}
 
                     <button
-                      onClick={() => handlePartyAction("leave_party")}
+                      onClick={() => handlePartyAction("leave_party", { party_id: party.party_id })}
                       className="px-2.5 py-1 bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 text-[10px] font-bold uppercase transition-all cursor-pointer"
                     >
                       LEAVE PARTY
