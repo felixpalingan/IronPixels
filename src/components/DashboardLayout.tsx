@@ -965,6 +965,7 @@ export function DashboardLayout() {
                     }
                     onAddItemToInventory={handleAddItemToInventory}
                     onConsumeSessionDamage={() => setLastSessionDamage(0)}
+                    onNavigateToMultiplayer={() => setActiveTab("multiplayer")}
                   />
                 )}
               </motion.div>

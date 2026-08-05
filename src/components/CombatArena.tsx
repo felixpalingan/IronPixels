@@ -52,6 +52,7 @@ interface CombatArenaProps {
   equippedWeaponIcon?: string;
   onAddItemToInventory?: (newItem: InventoryRecord) => void;
   onConsumeSessionDamage?: () => void;
+  onNavigateToMultiplayer?: () => void;
 }
 
 export function CombatArena({
@@ -65,6 +66,7 @@ export function CombatArena({
   equippedWeaponIcon = "/assets/items/weapons/01.png",
   onAddItemToInventory,
   onConsumeSessionDamage,
+  onNavigateToMultiplayer,
 }: CombatArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<DamageParticle[]>([]);
@@ -87,8 +89,12 @@ export function CombatArena({
         const res = await fetch("/api/multiplayer/party");
         if (res.ok) {
           const data = await res.json();
-          if (data && data.members) {
+          if (data && data.party && Array.isArray(data.party.members)) {
+            setPartyMembers(data.party.members);
+          } else if (data && Array.isArray(data.members)) {
             setPartyMembers(data.members);
+          } else {
+            setPartyMembers([]);
           }
         }
       } catch (e) {}
@@ -488,6 +494,35 @@ export function CombatArena({
         </button>
       </div>
 
+      {activeMode === "party" && partyMembers.length === 0 ? (
+        <div className="border-2 border-purple-500/80 bg-purple-950/20 p-8 text-center space-y-4 shadow-[0_0_30px_rgba(168,85,247,0.3)] font-mono">
+          <div className="w-16 h-16 border-2 border-purple-500 bg-purple-950 text-purple-300 flex items-center justify-center mx-auto shadow-[0_0_20px_rgba(168,85,247,0.5)] animate-pulse">
+            <Crown className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider">
+              NO ACTIVE PARTY FOUND
+            </h3>
+            <p className="text-xs text-purple-300 font-bold uppercase">
+              PARTY RAID REQUIRES AN ACTIVE GUILD PARTY!
+            </p>
+            <p className="text-[11px] text-zinc-400 mt-2">
+              You must create a Guild Squad or accept a pending party invite in the Multiplayer Realm tab before participating in Party Raid Boss battles.
+            </p>
+          </div>
+
+          <button
+            onClick={() => onNavigateToMultiplayer?.()}
+            className="w-full py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.6)] cursor-pointer transition-all flex items-center justify-center gap-2"
+          >
+            <Shield className="w-4 h-4" />
+            <span>GO TO MULTIPLAYER REALM TO JOIN / CREATE PARTY</span>
+          </button>
+        </div>
+      ) : (
+        <>
+
       <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between text-xs font-bold border-l-4 border-l-[#00ff41] shadow-neon">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-[#00ff41]" />
@@ -622,6 +657,8 @@ export function CombatArena({
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
