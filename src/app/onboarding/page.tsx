@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StatRadarChart } from "@/components/StatRadarChart";
 import { HeroSprite } from "@/components/HeroSprite";
 
-type CharacterClass = "WARRIOR" | "ROGUE" | "WIZARD" | "BERSERKER" | "CYBER KNIGHT";
+type CharacterClass = "WARRIOR" | "HERO" | "MAGE";
 type CharacterGender = "m" | "f";
 
 interface ClassDetail {
@@ -21,43 +21,27 @@ interface ClassDetail {
 const CHARACTER_CLASSES: ClassDetail[] = [
   {
     name: "WARRIOR",
-    title: "VANGUARD KNIGHT",
-    roleTag: "Melee / Tank",
-    description: "Heavy armor specialist with formidable physical strength & high resistance.",
-    hp: 1250,
-    stats: { str: 85, agi: 35, vit: 80, luk: 20 },
+    title: "VANGUARD POWERLIFTER",
+    roleTag: "Heavy Weightlifting",
+    description: "Specialist in heavy compound lifts (Bench Press, Squat, & Deadlift) possessing immense strength.",
+    hp: 1300,
+    stats: { str: 95, agi: 30, vit: 85, luk: 40 },
   },
   {
-    name: "ROGUE",
-    title: "SHADOW STRIKER",
-    roleTag: "Agility / Burst",
-    description: "Swift assassin possessing lethal critical hit chance and extreme speed.",
-    hp: 950,
-    stats: { str: 55, agi: 95, vit: 40, luk: 85 },
-  },
-  {
-    name: "WIZARD",
-    title: "ARCANE MAGE",
-    roleTag: "Magic / Intellect",
-    description: "Master of elemental magic casting devastating tactical damage from afar.",
-    hp: 900,
-    stats: { str: 30, agi: 60, vit: 45, luk: 90 },
-  },
-  {
-    name: "BERSERKER",
-    title: "TITAN DWARF",
-    roleTag: "Heavy Offense",
-    description: "Unstoppable brute power wielding massive weapons with unmatched fury.",
-    hp: 1400,
-    stats: { str: 95, agi: 25, vit: 90, luk: 30 },
-  },
-  {
-    name: "CYBER KNIGHT",
-    title: "CYBER PALADIN",
-    roleTag: "Balanced / Defense",
-    description: "Balanced futuristic paladin with versatile combat adaptability.",
+    name: "HERO",
+    title: "BALANCED HERO",
+    roleTag: "Balanced All-Rounder",
+    description: "Versatile all-rounder athlete possessing perfect equilibrium across all physical traits.",
     hp: 1100,
     stats: { str: 70, agi: 70, vit: 70, luk: 70 },
+  },
+  {
+    name: "MAGE",
+    title: "ARCANE ATHLETE",
+    roleTag: "Cardio & Bodyweight",
+    description: "Calisthenics & high-intensity cardio specialist possessing extreme endurance, speed, and agility.",
+    hp: 950,
+    stats: { str: 40, agi: 95, vit: 60, luk: 85 },
   },
 ];
 
@@ -250,7 +234,7 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleStep1Next}
-                className="w-full h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon transition-all flex items-center justify-center gap-2"
+                className="w-full h-12 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>PROCEED TO CLASS SELECTION</span>
                 <ArrowRight className="w-4 h-4" />
@@ -270,10 +254,10 @@ export default function OnboardingPage() {
                   CHARACTER CREATION // STEP 2
                 </span>
                 <h2 className="font-headline font-black text-xl text-white uppercase tracking-wider">
-                  CHOOSE YOUR HERO ARCHETYPE
+                  CHOOSE YOUR CLASS SPECIALIZATION
                 </h2>
                 <p className="text-xs text-zinc-400">
-                  Select hero class & gender to preview live pixel sprite & base attribute radar.
+                  Select your training discipline & gender to preview live pixel sprite & stat radar.
                 </p>
               </div>
 
@@ -285,7 +269,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedGender("m")}
-                    className={`py-2 px-3 border flex items-center justify-center gap-2 transition-all ${
+                    className={`py-2 px-3 border flex items-center justify-center gap-2 transition-all cursor-pointer ${
                       selectedGender === "m"
                         ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_12px_rgba(0,255,65,0.3)] font-bold"
                         : "border-zinc-800 bg-black text-zinc-400 hover:text-white"
@@ -298,7 +282,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedGender("f")}
-                    className={`py-2 px-3 border flex items-center justify-center gap-2 transition-all ${
+                    className={`py-2 px-3 border flex items-center justify-center gap-2 transition-all cursor-pointer ${
                       selectedGender === "f"
                         ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_12px_rgba(0,255,65,0.3)] font-bold"
                         : "border-zinc-800 bg-black text-zinc-400 hover:text-white"
@@ -312,22 +296,22 @@ export default function OnboardingPage() {
 
               <div className="space-y-2">
                 <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                  SELECT CLASS SPRITE ARCHETYPE:
+                  SELECT TRAINING SPECIALIZATION:
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {CHARACTER_CLASSES.map((cls) => (
                     <button
                       key={cls.name}
                       type="button"
                       onClick={() => setSelectedClass(cls.name)}
-                      className={`py-2 px-1 border flex flex-col items-center justify-center gap-1 transition-all ${
+                      className={`py-2.5 px-2 border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                         selectedClass === cls.name
                           ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-[0_0_12px_rgba(0,255,65,0.3)] font-bold"
                           : "border-zinc-800 bg-black text-zinc-400 hover:text-white"
                       }`}
                     >
-                      <span className="text-[10px] font-headline font-extrabold uppercase text-center line-clamp-1">
-                        {cls.name}
+                      <span className="text-xs font-headline font-extrabold uppercase text-center line-clamp-1">
+                        {cls.title}
                       </span>
                     </button>
                   ))}
@@ -361,7 +345,7 @@ export default function OnboardingPage() {
                       />
                     </div>
                     <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest z-10 mt-1">
-                      {selectedGender === "m" ? "MALE" : "FEMALE"} {selectedClass}
+                      {selectedGender === "m" ? "MALE" : "FEMALE"} {activeClassDetail.title}
                     </div>
                   </div>
 
@@ -375,7 +359,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="w-1/3 py-3 border border-zinc-700 bg-zinc-900 text-zinc-300 font-bold text-xs uppercase hover:bg-zinc-800"
+                  className="w-1/3 py-3 border border-zinc-700 bg-zinc-900 text-zinc-300 font-bold text-xs uppercase hover:bg-zinc-800 cursor-pointer"
                 >
                   BACK
                 </button>

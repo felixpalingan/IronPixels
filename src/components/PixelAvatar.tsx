@@ -21,14 +21,12 @@ export function PixelAvatar({
   let mappedClass = "knight";
   const clsLower = (characterClass || "").toLowerCase();
 
-  if (clsLower.includes("elf") || clsLower.includes("rogue") || clsLower.includes("ninja")) {
+  if (clsLower.includes("hero") || clsLower.includes("elf") || clsLower.includes("rogue") || clsLower.includes("ninja")) {
     mappedClass = "elf";
-  } else if (clsLower.includes("wizzard") || clsLower.includes("wizard") || clsLower.includes("mage")) {
+  } else if (clsLower.includes("mage") || clsLower.includes("wizzard") || clsLower.includes("wizard") || clsLower.includes("cardio")) {
     mappedClass = "wizzard";
-  } else if (clsLower.includes("dwarf") || clsLower.includes("titan") || clsLower.includes("berserker")) {
-    mappedClass = "dwarf";
-  } else if (clsLower.includes("lizard") || clsLower.includes("paladin") || clsLower.includes("vanguard")) {
-    mappedClass = "lizard";
+  } else {
+    mappedClass = "knight";
   }
 
   const genderSuffix = gender === "f" ? "f" : "m";
