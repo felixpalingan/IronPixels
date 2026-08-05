@@ -341,7 +341,6 @@ export default function OnboardingPage() {
                         characterClass={selectedClass}
                         gender={selectedGender}
                         scale={3.2}
-                        weaponIcon="/assets/items/weapons/01.png"
                       />
                     </div>
                     <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest z-10 mt-1">

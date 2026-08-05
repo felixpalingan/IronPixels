@@ -10,10 +10,16 @@ export async function POST(request: Request) {
     const { username, character_class, gender, weight_kg } = body;
 
     const userId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+    const resolvedUsername =
+      username ||
+      user?.user_metadata?.username ||
+      user?.email?.split("@")[0] ||
+      "Warrior";
 
     const profileData = {
       id: userId,
-      username: username || "Felix",
+      user_id: userId,
+      username: resolvedUsername,
       character_class: character_class || "WARRIOR",
       gender: gender || "m",
       weight_kg: Number(weight_kg) || 75,

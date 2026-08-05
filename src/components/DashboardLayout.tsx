@@ -89,7 +89,9 @@ export function DashboardLayout() {
   ];
 
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
-  const [userGold, setUserGold] = useState<number>(999999999);
+  const [userGold, setUserGold] = useState<number>(500);
+  const [topWarriors, setTopWarriors] = useState<any[]>([]);
+  const [topParties, setTopParties] = useState<any[]>([]);
 
   const todayStr = new Date().toISOString().split("T")[0];
   const todayRvsKey = `ironpixels_daily_rvs_${todayStr}`;
@@ -114,10 +116,9 @@ export function DashboardLayout() {
       try {
         const parsedProf = JSON.parse(localProf);
         if (parsedProf) {
-          parsedProf.gold = 999999999;
           currentProf = parsedProf;
           setProfile(parsedProf);
-          setUserGold(999999999);
+          setUserGold(parsedProf.gold ?? 500);
           if (parsedProf.available_ap !== undefined) setAvailableAp(parsedProf.available_ap);
         }
       } catch (e) {}
@@ -138,11 +139,10 @@ export function DashboardLayout() {
         const resProf = await fetch("/api/user/profile");
         if (resProf.ok) {
           const dataProf = await resProf.json();
-          dataProf.gold = 999999999;
           setProfile(dataProf);
           currentProf = dataProf;
           localStorage.setItem("ironpixels_profile", JSON.stringify(dataProf));
-          setUserGold(999999999);
+          setUserGold(dataProf.gold ?? 500);
           if (dataProf.available_ap !== undefined) setAvailableAp(dataProf.available_ap);
         }
 
@@ -153,6 +153,18 @@ export function DashboardLayout() {
             setUserInventory(dataInv);
             localStorage.setItem("ironpixels_inventory", JSON.stringify(dataInv));
           }
+        }
+
+        const resLead = await fetch("/api/multiplayer/leaderboard?category=user_floor");
+        if (resLead.ok) {
+          const dataLead = await resLead.json();
+          if (Array.isArray(dataLead)) setTopWarriors(dataLead.slice(0, 3));
+        }
+
+        const resPartyLead = await fetch("/api/multiplayer/leaderboard?category=party_floor");
+        if (resPartyLead.ok) {
+          const dataPartyLead = await resPartyLead.json();
+          if (Array.isArray(dataPartyLead)) setTopParties(dataPartyLead.slice(0, 3));
         }
       } catch (err) {}
 
@@ -782,111 +794,73 @@ export function DashboardLayout() {
                     <div className="space-y-1.5">
                       <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <Users className="w-3 h-3 text-[#00ff41]" />
-                        <span>TOP 3 SOLO WARRIORS (CLICK TO INSPECT)</span>
+                        <span>TOP SOLO WARRIORS (CLICK TO INSPECT)</span>
                       </div>
 
-                      <div
-                        onClick={() => setActiveTab("multiplayer")}
-                        className="p-2 border border-amber-500/50 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Crown className="w-4 h-4 text-amber-400" />
-                          <div>
-                            <div className="font-bold text-white">#1 Vanguard_Zero</div>
-                            <div className="text-[9px] text-zinc-400">CYBER KNIGHT &bull; Lv.48</div>
+                      {topWarriors.length === 0 ? (
+                        <div className="p-3 border border-zinc-800 bg-black text-center text-xs text-zinc-500 italic">
+                          No solo warriors logged yet.
+                        </div>
+                      ) : (
+                        topWarriors.map((usr, idx) => (
+                          <div
+                            key={usr.user_id || idx}
+                            onClick={() => setActiveTab("multiplayer")}
+                            className="p-2 border border-amber-500/40 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
+                          >
+                            <div className="flex items-center gap-2">
+                              {idx === 0 ? (
+                                <Crown className="w-4 h-4 text-amber-400" />
+                              ) : (
+                                <Trophy className="w-4 h-4 text-zinc-400" />
+                              )}
+                              <div>
+                                <div className="font-bold text-white">#{idx + 1} {usr.username}</div>
+                                <div className="text-[9px] text-zinc-400">{usr.character_class} &bull; Lv.{usr.level}</div>
+                              </div>
+                            </div>
+                            <div className="font-headline font-black text-xs text-[#00ff41]">
+                              FLOOR {usr.max_floor}
+                            </div>
                           </div>
-                        </div>
-                        <div className="font-headline font-black text-xs text-[#00ff41]">
-                          FLOOR 28
-                        </div>
-                      </div>
-
-                      <div
-                        onClick={() => setActiveTab("multiplayer")}
-                        className="p-2 border border-zinc-500/50 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Trophy className="w-4 h-4 text-zinc-300" />
-                          <div>
-                            <div className="font-bold text-white">#2 IronSlayer99</div>
-                            <div className="text-[9px] text-zinc-400">TITAN BERSERKER &bull; Lv.42</div>
-                          </div>
-                        </div>
-                        <div className="font-headline font-black text-xs text-[#00ff41]">
-                          FLOOR 24
-                        </div>
-                      </div>
-
-                      <div
-                        onClick={() => setActiveTab("multiplayer")}
-                        className="p-2 border border-amber-700/50 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-amber-600" />
-                          <div>
-                            <div className="font-bold text-white">#3 ShadowKage</div>
-                            <div className="text-[9px] text-zinc-400">SHADOW NINJA &bull; Lv.39</div>
-                          </div>
-                        </div>
-                        <div className="font-headline font-black text-xs text-[#00ff41]">
-                          FLOOR 20
-                        </div>
-                      </div>
+                        ))
+                      )}
                     </div>
 
                     <div className="space-y-1.5 pt-1 border-t border-pixel-border/40">
                       <div className="text-[10px] text-purple-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <Shield className="w-3 h-3 text-purple-400" />
-                        <span>TOP 3 GUILD PARTIES (CLICK TO INSPECT)</span>
+                        <span>TOP GUILD PARTIES (CLICK TO INSPECT)</span>
                       </div>
 
-                      <div
-                        onClick={() => setActiveTab("multiplayer")}
-                        className="p-2 border border-purple-500/60 bg-purple-950/20 flex items-center justify-between text-xs hover:border-purple-400 cursor-pointer transition-all"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Crown className="w-4 h-4 text-amber-400" />
-                          <div>
-                            <div className="font-bold text-purple-300">#1 Apex Cyber Vanguard</div>
-                            <div className="text-[9px] text-zinc-400">4 Members &bull; Leader: Vanguard_Zero</div>
+                      {topParties.length === 0 ? (
+                        <div className="p-3 border border-purple-950/40 bg-black text-center text-xs text-zinc-500 italic">
+                          No active guild parties created yet.
+                        </div>
+                      ) : (
+                        topParties.map((prt, idx) => (
+                          <div
+                            key={prt.party_id || idx}
+                            onClick={() => setActiveTab("multiplayer")}
+                            className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs hover:border-purple-400 cursor-pointer transition-all"
+                          >
+                            <div className="flex items-center gap-2">
+                              {idx === 0 ? (
+                                <Crown className="w-4 h-4 text-amber-400" />
+                              ) : (
+                                <Trophy className="w-4 h-4 text-zinc-400" />
+                              )}
+                              <div>
+                                <div className="font-bold text-purple-300">#{idx + 1} {prt.party_name}</div>
+                                <div className="text-[9px] text-zinc-400">{prt.member_count} Members &bull; Leader: {prt.leader_name}</div>
+                              </div>
+                            </div>
+                            <div className="font-headline font-black text-xs text-[#00ff41]">
+                              FLOOR {prt.total_party_floor}
+                            </div>
                           </div>
-                        </div>
-                        <div className="font-headline font-black text-xs text-[#00ff41]">
-                          FLOOR 38
-                        </div>
-                      </div>
-
-                      <div
-                        onClick={() => setActiveTab("multiplayer")}
-                        className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs hover:border-purple-400 cursor-pointer transition-all"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Trophy className="w-4 h-4 text-zinc-300" />
-                          <div>
-                            <div className="font-bold text-purple-300">#2 Iron Titan Legion</div>
-                            <div className="text-[9px] text-zinc-400">4 Members &bull; Leader: IronSlayer99</div>
-                          </div>
-                        </div>
-                        <div className="font-headline font-black text-xs text-[#00ff41]">
-                          FLOOR 32
-                        </div>
-                      </div>
-
-                      <div
-                        onClick={() => setActiveTab("multiplayer")}
-                        className="p-2 border border-purple-500/40 bg-purple-950/20 flex items-center justify-between text-xs hover:border-purple-400 cursor-pointer transition-all"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-amber-600" />
-                          <div>
-                            <div className="font-bold text-purple-300">#3 Shadow Assassins Squad</div>
-                            <div className="text-[9px] text-zinc-400">3 Members &bull; Leader: ShadowKage</div>
-                          </div>
-                        </div>
-                        <div className="font-headline font-black text-xs text-[#00ff41]">
-                          FLOOR 25
-                        </div>
-                      </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ export interface FriendUser {
   user_id: string;
   username: string;
   character_class: string;
+  gender?: string;
   level: number;
   combat_power: number;
   status: "friend" | "pending_incoming" | "pending_outgoing" | "none";
@@ -17,12 +18,15 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
     if (query) {
       const { data: dbProfiles } = await supabase
         .from("profiles")
         .select("*")
-        .ilike("username", `%${query}%`);
+        .ilike("username", `%${query}%`)
+        .neq("id", currentUserId);
 
       const results: FriendUser[] = (dbProfiles || []).map((prof: any) => {
         const cp =
@@ -35,6 +39,7 @@ export async function GET(request: Request) {
           user_id: prof.id || prof.user_id,
           username: prof.username || "Warrior",
           character_class: prof.character_class || "WARRIOR",
+          gender: prof.gender || "m",
           level: prof.level || 1,
           combat_power: Math.round(cp),
           status: "none",
@@ -44,8 +49,6 @@ export async function GET(request: Request) {
 
       return NextResponse.json(results);
     }
-
-    const currentUserId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
     const { data: dbFriends } = await supabase
       .from("friends")
@@ -75,6 +78,7 @@ export async function GET(request: Request) {
           user_id: prof.id,
           username: prof.username || "Warrior",
           character_class: prof.character_class || "WARRIOR",
+          gender: prof.gender || "m",
           level: prof.level || 1,
           combat_power: Math.round(cp),
           status: "friend",
@@ -95,6 +99,7 @@ export async function GET(request: Request) {
           user_id: prof.id,
           username: prof.username || "Warrior",
           character_class: prof.character_class || "WARRIOR",
+          gender: prof.gender || "m",
           level: prof.level || 1,
           combat_power: Math.round(cp),
           status: "pending_incoming",
@@ -116,11 +121,13 @@ export async function POST(request: Request) {
   try {
     const { action, target_user_id } = await request.json();
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
     if (action === "send_request") {
       try {
         await supabase.from("friends").insert({
-          user_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+          user_id: currentUserId,
           friend_id: target_user_id,
           status: "pending",
         });
@@ -133,7 +140,7 @@ export async function POST(request: Request) {
         await supabase
           .from("friends")
           .update({ status: "accepted" })
-          .eq("user_id", target_user_id);
+          .or(`and(user_id.eq.${target_user_id},friend_id.eq.${currentUserId}),and(user_id.eq.${currentUserId},friend_id.eq.${target_user_id})`);
       } catch (e) {}
       return NextResponse.json({ success: true, status: "friend" });
     }
@@ -143,7 +150,7 @@ export async function POST(request: Request) {
         await supabase
           .from("friends")
           .delete()
-          .eq("friend_id", target_user_id);
+          .or(`and(user_id.eq.${target_user_id},friend_id.eq.${currentUserId}),and(user_id.eq.${currentUserId},friend_id.eq.${target_user_id})`);
       } catch (e) {}
       return NextResponse.json({ success: true, status: "none" });
     }
