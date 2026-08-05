@@ -55,6 +55,11 @@ export default function RegisterPage() {
         }
         setLoading(false);
       } else if (data.user) {
+        if (!data.session) {
+          try {
+            await supabase.auth.signInWithPassword({ email, password });
+          } catch (e) {}
+        }
         window.location.href = "/onboarding";
       }
     } catch (err: any) {

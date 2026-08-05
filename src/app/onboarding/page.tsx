@@ -5,6 +5,7 @@ import { ArrowRight, Minus, Plus, Check, Sparkles, User, Shield } from "lucide-r
 import { motion, AnimatePresence } from "framer-motion";
 import { StatRadarChart } from "@/components/StatRadarChart";
 import { HeroSprite } from "@/components/HeroSprite";
+import { createClient } from "@/lib/supabase/client";
 
 type CharacterClass = "WARRIOR" | "HERO" | "MAGE";
 type CharacterGender = "m" | "f";
@@ -106,10 +107,16 @@ export default function OnboardingPage() {
     setErrorMsg("");
 
     try {
+      const supabase = createClient();
+      const { data: authData } = await supabase.auth.getUser();
+      const activeUser = authData?.user;
+
       const res = await fetch("/api/user/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          user_id: activeUser?.id,
+          username: activeUser?.user_metadata?.username || activeUser?.email?.split("@")[0],
           weight_kg: val,
           character_class: selectedClass,
           gender: selectedGender,

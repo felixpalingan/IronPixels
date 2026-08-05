@@ -8,9 +8,9 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
 
     const body = await request.json();
-    const { username, character_class, gender, weight_kg } = body;
+    const { user_id, username, character_class, gender, weight_kg } = body;
 
-    const userId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+    const userId = user_id || user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
     const resolvedUsername =
       username ||
       user?.user_metadata?.username ||
