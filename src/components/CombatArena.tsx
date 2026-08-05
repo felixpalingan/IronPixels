@@ -200,17 +200,7 @@ export function CombatArena({
 
   const fetchModeEnemy = async (mode: "solo" | "party") => {
     try {
-      let savedFloor = 1;
-      try {
-        const key = mode === "party" ? "ironpixels_active_party_enemy" : "ironpixels_active_solo_enemy";
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.floor) savedFloor = parsed.floor;
-        }
-      } catch (e) {}
-
-      const res = await fetch(`/api/combat/boss?mode=${mode}&floor=${savedFloor}`);
+      const res = await fetch(`/api/combat/boss?mode=${mode}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.stage && data.sprite_config) {
@@ -227,10 +217,8 @@ export function CombatArena({
           };
           if (mode === "party") {
             setPartyEnemy(mapped);
-            localStorage.setItem("ironpixels_active_party_enemy", JSON.stringify(mapped));
           } else {
             setSoloEnemy(mapped);
-            localStorage.setItem("ironpixels_active_solo_enemy", JSON.stringify(mapped));
           }
         }
       }
@@ -240,7 +228,15 @@ export function CombatArena({
   useEffect(() => {
     fetchModeEnemy("solo");
     fetchModeEnemy("party");
-  }, []);
+
+    const interval = setInterval(() => {
+      if (activeMode === "party") {
+        fetchModeEnemy("party");
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [activeMode]);
 
   const awardLoot = (enemyName: string, floor: number) => {
     const pool = EQUIPMENT_DICTIONARY.filter(
