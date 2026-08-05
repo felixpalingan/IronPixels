@@ -78,6 +78,7 @@ export function CombatArena({
     user_id: string;
     username: string;
     character_class: string;
+    gender: "m" | "f";
     level: number;
     combat_power: number;
     role: string;
@@ -127,8 +128,8 @@ export function CombatArena({
     enemy_id: "party-floor-1-init",
     display_name: "Goblin Raider Squad",
     floor: 1,
-    current_hp: 4000,
-    max_hp: 4000,
+    current_hp: 2000,
+    max_hp: 2000,
     status: "Active",
     category: "mob",
     mode: "party",
@@ -342,15 +343,27 @@ export function CombatArena({
 
       if (res.ok) {
         const data = await res.json();
+        const who = data.attacker_username || "YOU";
 
         if (data.is_defeated) {
           if (targetMode === activeMode) setEnemyState("dead");
 
           const wasFloor = targetEnemy.floor;
           const wasBoss = wasFloor % 5 === 0;
-          addLog(`${wasBoss ? "🏆 BOSS" : "⚔️"} ${targetEnemy.display_name} DEFEATED on Floor ${wasFloor}!`, "#00ff41", targetMode);
+          addLog(`${wasBoss ? "🏆 BOSS" : "⚔️"} ${targetEnemy.display_name} DEFEATED on Floor ${wasFloor} by ${who}!`, "#00ff41", targetMode);
 
-          if (wasBoss && targetMode === activeMode) awardLoot(targetEnemy.display_name, wasFloor);
+          if (wasBoss) {
+            if (targetMode === activeMode) awardLoot(targetEnemy.display_name, wasFloor);
+            if (targetMode === "party") {
+              try {
+                await fetch("/api/combat/attack", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "distribute_party_loot", floor: wasFloor }),
+                });
+              } catch (e) {}
+            }
+          }
 
           const nextEnemyData: EnemyData = {
             enemy_id: data.boss_id,
@@ -415,8 +428,8 @@ export function CombatArena({
       executeAttack(totalDmg, "Gym RVS Strike", "attack01", "solo");
       executeAttack(totalDmg, "Gym RVS Strike", "attack01", "party");
 
-      addLog(`Gym Workout Attack dealt ${formatNumber(totalDmg)} damage to BOTH Solo and Party lobbies!`, "#00ff41", "solo");
-      addLog(`Gym Workout Attack dealt ${formatNumber(totalDmg)} damage to BOTH Solo and Party lobbies!`, "#00ff41", "party");
+      addLog(`🏋️ YOU dealt ${formatNumber(totalDmg)} RVS damage to BOTH Solo and Party lobbies!`, "#00ff41", "solo");
+      addLog(`🏋️ YOU dealt ${formatNumber(totalDmg)} RVS damage to BOTH Solo and Party lobbies!`, "#00ff41", "party");
 
       if (onConsumeSessionDamage) onConsumeSessionDamage();
     }
@@ -457,7 +470,7 @@ export function CombatArena({
     attackType: "attack01" | "attack02" | "attack03"
   ) => {
     executeAttack(damageDealt, skillName, attackType, activeMode);
-    addLog(`Casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${currentEnemy.display_name}.`, "#FFD60A", activeMode);
+    addLog(`⚔️ YOU casted ${skillName}! Dealt ${formatNumber(damageDealt)} damage to ${currentEnemy.display_name}.`, "#FFD60A", activeMode);
   };
 
   const hpPct = Math.max(0, Math.min(100, (currentEnemy.current_hp / currentEnemy.max_hp) * 100));
@@ -523,7 +536,7 @@ export function CombatArena({
           }`}
         >
           <Shield className="w-4 h-4" />
-          <span>PARTY RAID (4X HP)</span>
+          <span>PARTY RAID (2X HP)</span>
         </button>
       </div>
 
@@ -607,7 +620,7 @@ export function CombatArena({
 
         <div className="w-full bg-surface border border-pixel-border p-2 shadow-red-glow">
           <div className="flex justify-between text-xs font-mono text-health-red font-bold mb-1">
-            <span>{activeMode === "party" ? "PARTY RAID MONSTER HP (4X HP)" : isBossFloor ? "BOSS HP" : "MOB HP"}</span>
+            <span>{activeMode === "party" ? "PARTY RAID MONSTER HP (2X HP)" : isBossFloor ? "BOSS HP" : "MOB HP"}</span>
             <span>{formatNumber(currentEnemy.current_hp)} / {formatNumber(currentEnemy.max_hp)}</span>
           </div>
           <div className="w-full bg-black h-3 border border-pixel-border overflow-hidden">
@@ -630,7 +643,7 @@ export function CombatArena({
                       <HeroSprite
                         currentState={heroState}
                         characterClass={member.character_class}
-                        gender={idx % 2 === 0 ? "m" : "f"}
+                        gender={member.gender || "m"}
                         scale={1.25}
                         weaponIcon={member.weapon_icon || "/assets/items/weapons/01.png"}
                         showNameTag={member.username.split(" ")[0]}

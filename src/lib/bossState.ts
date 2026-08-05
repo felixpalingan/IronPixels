@@ -68,7 +68,7 @@ export function getHpForFloor(floor: number, category: EnemyCategory, mode: "sol
     : Math.round(1000 * Math.pow(1.2, floor));
 
   if (mode === "party") {
-    baseHp = baseHp * 4;
+    baseHp = baseHp * 2;
   }
   return baseHp;
 }

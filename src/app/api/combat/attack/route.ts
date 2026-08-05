@@ -1,10 +1,108 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildFloorEnemy } from "@/lib/bossState";
+import { buildFloorEnemy, getRewardsForFloor, getEnemyForFloor } from "@/lib/bossState";
+import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
 export async function POST(request: Request) {
   try {
-    const { user_id, party_id, rvs_damage, mode = "solo" } = await request.json();
+    const body = await request.json();
+    const { action, user_id, party_id, rvs_damage, mode = "solo", floor } = body;
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user_id || user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
+    // Fetch attacker username
+    let attackerUsername = "Warrior";
+    try {
+      const { data: profRec } = await supabase
+        .from("profiles")
+        .select("username")
+        .or(`id.eq.${currentUserId},user_id.eq.${currentUserId}`)
+        .limit(1);
+      if (profRec && profRec.length > 0) {
+        attackerUsername = profRec[0].username || "Warrior";
+      }
+    } catch (e) {}
+
+    // Handle distribute_party_loot action
+    if (action === "distribute_party_loot" && floor) {
+      try {
+        // Resolve party
+        let resolvedPid = party_id;
+        if (!resolvedPid) {
+          const { data: mRec } = await supabase
+            .from("Party_Members")
+            .select("party_id")
+            .eq("user_id", currentUserId)
+            .limit(1);
+          if (mRec && mRec.length > 0) resolvedPid = mRec[0].party_id;
+        }
+
+        if (resolvedPid) {
+          const { data: members } = await supabase
+            .from("Party_Members")
+            .select("user_id")
+            .eq("party_id", resolvedPid);
+
+          if (members && members.length > 0) {
+            const lootPool = EQUIPMENT_DICTIONARY.filter(
+              (i) => i.rarity === "rare" || i.rarity === "epic" || i.rarity === "legendary" || i.rarity === "mythic"
+            );
+            const rewards = getRewardsForFloor(floor, "boss", "party");
+
+            for (const m of members) {
+              const rewardItem = lootPool[Math.floor(Math.random() * lootPool.length)] || EQUIPMENT_DICTIONARY[0];
+              try {
+                await supabase.from("user_inventory").insert({
+                  user_id: m.user_id,
+                  item_id: rewardItem.item_id,
+                  item_data: rewardItem,
+                  is_equipped: false,
+                });
+              } catch (e) {}
+
+              // Award gold and exp
+              try {
+                const { data: profData } = await supabase
+                  .from("profiles")
+                  .select("gold, exp, max_exp, level, available_ap")
+                  .or(`id.eq.${m.user_id},user_id.eq.${m.user_id}`)
+                  .limit(1);
+
+                if (profData && profData.length > 0) {
+                  const p = profData[0];
+                  let newExp = (p.exp || 0) + rewards.exp;
+                  let newLevel = p.level || 1;
+                  let newMaxExp = p.max_exp || 1000;
+                  let newAp = p.available_ap || 0;
+
+                  while (newExp >= newMaxExp) {
+                    newExp -= newMaxExp;
+                    newLevel += 1;
+                    newMaxExp = Math.round(newMaxExp * 1.5);
+                    newAp += 5;
+                  }
+
+                  await supabase
+                    .from("profiles")
+                    .update({
+                      gold: (p.gold || 0) + rewards.gold,
+                      exp: newExp,
+                      max_exp: newMaxExp,
+                      level: newLevel,
+                      available_ap: newAp,
+                    })
+                    .or(`id.eq.${m.user_id},user_id.eq.${m.user_id}`);
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (e) {}
+
+      return NextResponse.json({ success: true, action: "distribute_party_loot" });
+    }
 
     if (!rvs_damage || rvs_damage <= 0) {
       return NextResponse.json(
@@ -12,10 +110,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    const currentUserId = user_id || user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
     let bossKey = `solo_${currentUserId}`;
     let resolvedPartyId = party_id;
@@ -140,6 +234,7 @@ export async function POST(request: Request) {
         category: nextEnemy.category,
         sprite_config: nextEnemy.sprite_config,
         mode,
+        attacker_username: attackerUsername,
       });
     }
 
@@ -167,6 +262,7 @@ export async function POST(request: Request) {
       category: currentEnemy.category || "mob",
       sprite_config: currentEnemy.sprite_config,
       mode,
+      attacker_username: attackerUsername,
     });
   } catch (err: any) {
     return NextResponse.json(
@@ -175,3 +271,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

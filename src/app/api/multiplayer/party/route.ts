@@ -5,6 +5,7 @@ export interface PartyMember {
   user_id: string;
   username: string;
   character_class: string;
+  gender: "m" | "f";
   level: number;
   combat_power: number;
   role: "leader" | "co_leader" | "member";
@@ -128,6 +129,26 @@ export async function GET() {
         }
       }
 
+      let equippedWeaponsMap: Record<string, string> = {};
+      if (memberUserIds.length > 0) {
+        try {
+          const { data: invRecs } = await supabase
+            .from("user_inventory")
+            .select("user_id, item_data")
+            .in("user_id", memberUserIds)
+            .eq("is_equipped", true);
+
+          if (invRecs) {
+            invRecs.forEach((rec: any) => {
+              const itemData = rec.item_data;
+              if (itemData && itemData.type === "weapon" && itemData.image_url) {
+                equippedWeaponsMap[rec.user_id] = itemData.image_url;
+              }
+            });
+          }
+        } catch (e) {}
+      }
+
       const membersList: PartyMember[] = (dbMembers || []).map((m: any) => {
         const prof = memberProfilesMap[m.user_id] || {};
         const cp =
@@ -140,10 +161,11 @@ export async function GET() {
           user_id: m.user_id,
           username: prof.username || "Warrior",
           character_class: prof.character_class || "WARRIOR",
+          gender: (prof.gender || "m") as "m" | "f",
           level: prof.level || 1,
           combat_power: Math.round(cp),
           role: m.role || "member",
-          weapon_icon: "/assets/items/weapons/01.png",
+          weapon_icon: equippedWeaponsMap[m.user_id] || "/assets/items/weapons/01.png",
         };
       });
 
@@ -217,6 +239,8 @@ export async function POST(request: Request) {
         leaderClass = leaderProf[0].character_class || "WARRIOR";
       }
 
+      const leaderGender = (leaderProf && leaderProf.length > 0 ? leaderProf[0].gender : "m") || "m";
+
       const newParty: PartyState = {
         party_id: newPartyId,
         party_name: party_name || "Vanguard Raid Squad",
@@ -226,6 +250,7 @@ export async function POST(request: Request) {
             user_id: leaderId,
             username: leaderName,
             character_class: leaderClass,
+            gender: leaderGender as "m" | "f",
             level: 1,
             combat_power: 1250,
             role: "leader",
