@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/formatters";
 import { LeaderboardEntry, PartyLeaderboardEntry } from "@/app/api/multiplayer/leaderboard/route";
 import { FriendUser } from "@/app/api/multiplayer/friends/route";
 import { PartyState } from "@/app/api/multiplayer/party/route";
+import { createClient } from "@/lib/supabase/client";
 
 interface MultiplayerHubProps {
   userCp?: number;
