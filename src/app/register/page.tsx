@@ -56,9 +56,12 @@ export default function RegisterPage() {
         setLoading(false);
       } else if (data.user) {
         if (!data.session) {
-          try {
-            await supabase.auth.signInWithPassword({ email, password });
-          } catch (e) {}
+          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInErr || !signInData?.user) {
+            setErrorMsg("ACCOUNT INITIALIZED! IF EMAIL CONFIRMATION IS ENABLED IN SUPABASE, PLEASE CONFIRM YOUR EMAIL BEFORE LOGIN.");
+            setLoading(false);
+            return;
+          }
         }
         window.location.href = "/onboarding";
       }
