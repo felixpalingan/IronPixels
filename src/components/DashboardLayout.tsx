@@ -944,6 +944,7 @@ export function DashboardLayout() {
                   <WorkoutTrackerForm
                     userId={userData.user_id}
                     userWeightKg={userData.weight_kg}
+                    heroStats={userData.stats}
                     onFinishSession={handleFinishWorkout}
                   />
                 ) : subView === "history" ? (

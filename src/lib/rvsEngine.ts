@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getExerciseScalingStat, EXERCISE_DATABASE } from "@/lib/exercisesData";
 
 export interface SetItem {
   set_number: number;
@@ -14,6 +15,7 @@ export interface ExerciseLogInput {
 export interface ExerciseCalcResult {
   exercise_id: string;
   movement_coefficient: number;
+  scaling_stat: "STR" | "AGI";
   sets_count: number;
   reps_count: number;
   weight_lifted: number;
@@ -23,16 +25,21 @@ export interface ExerciseCalcResult {
 
 export async function calculateSessionRVS(userId: string, exercises: ExerciseLogInput[]) {
   let userWeightKg = 75.0;
+  let userStr = 85;
+  let userAgi = 70;
+
   try {
     const supabase = await createClient();
     const { data: profile } = await supabase
       .from("profiles")
-      .select("weight_kg")
+      .select("weight_kg, str, agi")
       .eq("user_id", userId)
       .single();
 
-    if (profile && profile.weight_kg) {
-      userWeightKg = parseFloat(profile.weight_kg);
+    if (profile) {
+      if (profile.weight_kg) userWeightKg = parseFloat(profile.weight_kg);
+      if (profile.str) userStr = Number(profile.str);
+      if (profile.agi) userAgi = Number(profile.agi);
     }
   } catch (e) {
   }
@@ -45,7 +52,13 @@ export async function calculateSessionRVS(userId: string, exercises: ExerciseLog
   const exerciseResults: ExerciseCalcResult[] = [];
 
   for (const ex of exercises) {
-    let coeff = 1.2;
+    const exDef = EXERCISE_DATABASE.find((d) => d.id === ex.exercise_id);
+    const coeff = exDef?.rvsMultiplier || 1.0;
+    const scalingStat = getExerciseScalingStat(exDef || { category: "Chest", equipment: "Barbell" });
+    const isAgilityEx = scalingStat === "AGI";
+
+    const relevantStat = isAgilityEx ? userAgi : userStr;
+    const statMultiplier = relevantStat / 50;
 
     let exVolume = 0;
     let exRVS = 0;
@@ -55,12 +68,17 @@ export async function calculateSessionRVS(userId: string, exercises: ExerciseLog
       const w = set.weight_kg || 0;
       const r = set.reps || 0;
       let setRVS = 0;
-      if (w > 0 && r > 0 && userWeightKg > 0) {
-        setRVS = (w / userWeightKg) * r * coeff;
+
+      if (r > 0 && userWeightKg > 0) {
+        const actualWeight = isAgilityEx && w <= 0 ? userWeightKg : Math.max(1, w);
+        const bodyweightRatio = actualWeight / Math.max(40, userWeightKg);
+        setRVS = actualWeight * r * bodyweightRatio * 0.1 * coeff * statMultiplier;
       }
+
       exVolume += w * r;
       exRVS += setRVS;
       exReps += r;
+
       return {
         set_number: idx + 1,
         weight_kg: w,
@@ -77,6 +95,7 @@ export async function calculateSessionRVS(userId: string, exercises: ExerciseLog
     exerciseResults.push({
       exercise_id: ex.exercise_id,
       movement_coefficient: coeff,
+      scaling_stat: scalingStat,
       sets_count: setsResult.length,
       reps_count: exReps,
       weight_lifted: exVolume,

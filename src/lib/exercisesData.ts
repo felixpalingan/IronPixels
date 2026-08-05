@@ -8,6 +8,15 @@ export interface ExerciseDefinition {
   targetMuscles: string[];
   instructions: string[];
   rvsMultiplier: number;
+  scalingStat?: "STR" | "AGI";
+}
+
+export function getExerciseScalingStat(ex: { category?: string; equipment?: string; scalingStat?: "STR" | "AGI" }): "STR" | "AGI" {
+  if (ex.scalingStat) return ex.scalingStat;
+  if (ex.equipment === "Bodyweight" || ex.category === "Cardio" || ex.category === "Core") {
+    return "AGI";
+  }
+  return "STR";
 }
 
 export const EXERCISE_DATABASE: ExerciseDefinition[] = [
