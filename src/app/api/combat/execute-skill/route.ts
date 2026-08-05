@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { setSkillCooldown, getSkillRemainingSeconds } from "@/lib/skillState";
-import { updateBossHp } from "@/lib/bossState";
 
-const DEFAULT_BOSS_ID = "b055d7ac-1234-4567-89ab-cdef01234567";
+const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
 export async function POST(request: Request) {
   try {
-    const { user_id = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c", skill_id, cooldown_minutes = 3, damage_multiplier = 2.5, base_damage = 1500 } = await request.json();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const body = await request.json();
+    const { skill_id, cooldown_minutes = 3, damage_multiplier = 2.5, base_damage = 1500 } = body;
+    const userId = user?.id || body.user_id || DEFAULT_USER_ID;
 
     if (!skill_id) {
       return NextResponse.json(
@@ -16,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const currentCd = getSkillRemainingSeconds(user_id, skill_id);
+    const currentCd = getSkillRemainingSeconds(userId, skill_id);
     if (currentCd > 0) {
       return NextResponse.json(
         { error: "Skill is currently on cooldown.", remaining_seconds: currentCd },
@@ -24,18 +28,16 @@ export async function POST(request: Request) {
       );
     }
 
-    setSkillCooldown(user_id, skill_id, cooldown_minutes);
+    setSkillCooldown(userId, skill_id, cooldown_minutes);
 
     const totalSkillDamage = Math.round(base_damage * damage_multiplier);
-    const { boss, is_defeated } = updateBossHp(totalSkillDamage);
 
     try {
-      const supabase = await createClient();
       await supabase
         .from("user_skills")
         .update({ last_used_at: new Date().toISOString() })
         .eq("skill_id", skill_id)
-        .eq("user_id", user_id);
+        .or(`user_id.eq.${userId}`);
     } catch (e) {
     }
 
@@ -43,9 +45,6 @@ export async function POST(request: Request) {
       success: true,
       skill_id,
       damage_dealt: totalSkillDamage,
-      boss_current_hp: boss.current_hp,
-      boss_max_hp: boss.max_hp,
-      is_defeated,
       remaining_seconds: cooldown_minutes * 60,
     });
   } catch (err: any) {

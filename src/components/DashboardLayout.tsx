@@ -373,6 +373,30 @@ export function DashboardLayout() {
       localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
     }
 
+    try {
+      fetch("/api/workout/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userData.user_id,
+          date: todayStr,
+          duration_minutes: 45,
+          total_rvs: summary.totalRvs,
+          total_volume_kg: summary.totalVolume,
+          exercises_log: summary.exercisesLog || [],
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.profile) {
+            setProfile(data.profile);
+            localStorage.setItem("ironpixels_profile", JSON.stringify(data.profile));
+            if (data.profile.gold !== undefined) setUserGold(data.profile.gold);
+          }
+        })
+        .catch(() => {});
+    } catch (e) {}
+
     setTimeout(() => {
       setSessionVictoryModal(null);
       setSubView("combat");

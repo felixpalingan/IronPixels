@@ -68,15 +68,41 @@ export async function GET() {
         .select("*")
         .eq("party_id", p.party_id);
 
-      const membersList: PartyMember[] = (dbMembers || []).map((m: any) => ({
-        user_id: m.user_id,
-        username: m.user_id === "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" ? "Felix" : "Warrior",
-        character_class: "WARRIOR",
-        level: 1,
-        combat_power: 1250,
-        role: m.role || "member",
-        weapon_icon: "/assets/items/weapons/01.png",
-      }));
+      const memberUserIds = (dbMembers || []).map((m: any) => m.user_id);
+      let memberProfilesMap: Record<string, any> = {};
+
+      if (memberUserIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("*")
+          .or(`id.in.(${memberUserIds.join(",")}),user_id.in.(${memberUserIds.join(",")})`);
+
+        if (profs) {
+          profs.forEach((prof: any) => {
+            if (prof.id) memberProfilesMap[prof.id] = prof;
+            if (prof.user_id) memberProfilesMap[prof.user_id] = prof;
+          });
+        }
+      }
+
+      const membersList: PartyMember[] = (dbMembers || []).map((m: any) => {
+        const prof = memberProfilesMap[m.user_id] || {};
+        const cp =
+          (prof.level || 1) * 100 +
+          (prof.str || 85) * 3.5 +
+          (prof.agi || 70) * 2.5 +
+          (prof.vit || 60) * 2.5;
+
+        return {
+          user_id: m.user_id,
+          username: prof.username || "Warrior",
+          character_class: prof.character_class || "WARRIOR",
+          level: prof.level || 1,
+          combat_power: Math.round(cp),
+          role: m.role || "member",
+          weapon_icon: "/assets/items/weapons/01.png",
+        };
+      });
 
       const syncedState: PartyState = {
         party_id: p.party_id,
@@ -112,10 +138,26 @@ export async function POST(request: Request) {
     } = body;
 
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
 
     if (action === "create_party") {
       const newPartyId = crypto.randomUUID();
-      const leaderId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+      const leaderId = currentUserId;
+
+      let leaderName = "Leader";
+      let leaderClass = "WARRIOR";
+
+      const { data: leaderProf } = await supabase
+        .from("profiles")
+        .select("*")
+        .or(`id.eq.${leaderId},user_id.eq.${leaderId}`)
+        .limit(1);
+
+      if (leaderProf && leaderProf.length > 0) {
+        leaderName = leaderProf[0].username || "Leader";
+        leaderClass = leaderProf[0].character_class || "WARRIOR";
+      }
 
       const newParty: PartyState = {
         party_id: newPartyId,
@@ -124,8 +166,8 @@ export async function POST(request: Request) {
         members: [
           {
             user_id: leaderId,
-            username: "Felix",
-            character_class: "WARRIOR",
+            username: leaderName,
+            character_class: leaderClass,
             level: 1,
             combat_power: 1250,
             role: "leader",

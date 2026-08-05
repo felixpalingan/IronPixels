@@ -9,8 +9,8 @@ export async function middleware(request: NextRequest) {
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://gwyqrhaipihirpeknyey.supabase.co",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_AyF4vSPu2pq_FoYXYzrokQ_0Fe1co9D",
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wrvazjrpvwaippcsqxvg.supabase.co",
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_JcebXyaBailBLK8l1o44wg_wXpN6bVr",
     {
       cookies: {
         getAll() {
@@ -39,22 +39,22 @@ export async function middleware(request: NextRequest) {
   }
 
   const isPublicRoute = path === "/login" || path === "/register";
-  const isOnboardedCookie = request.cookies.get("ironpixels_onboarded")?.value === "true";
 
-  if (!user && !isPublicRoute && !isOnboardedCookie) {
+  if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (user) {
-    let isOnboarded = isOnboardedCookie;
+    let isOnboarded = request.cookies.get("ironpixels_onboarded")?.value === "true";
 
     if (!isOnboarded) {
-      const { data: profile } = await supabase
+      const { data: profileList } = await supabase
         .from("profiles")
         .select("weight_kg, character_class")
-        .eq("user_id", user.id)
-        .single();
+        .or(`id.eq.${user.id},user_id.eq.${user.id}`)
+        .limit(1);
 
+      const profile = profileList && profileList.length > 0 ? profileList[0] : null;
       isOnboarded = Boolean(profile && profile.weight_kg && profile.character_class);
     }
 
@@ -65,8 +65,6 @@ export async function middleware(request: NextRequest) {
     if (isOnboarded && (isPublicRoute || path === "/onboarding")) {
       return NextResponse.redirect(new URL("/", request.url));
     }
-  } else if (isOnboardedCookie && (isPublicRoute || path === "/onboarding")) {
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return response;

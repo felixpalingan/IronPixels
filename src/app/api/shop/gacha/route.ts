@@ -33,6 +33,13 @@ export async function POST(request: Request) {
       }
     } catch (e) {}
 
+    if (userGold < price) {
+      return NextResponse.json(
+        { error: `INSUFFICIENT GOLD. Chest costs ${price} Gold, but you only have ${userGold} Gold.` },
+        { status: 400 }
+      );
+    }
+
     const rand = Math.random() * 100;
     let targetRarity: ItemRarity = "common";
 
