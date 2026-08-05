@@ -9,13 +9,14 @@ export async function GET() {
     const userId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
     const authUsername = user?.user_metadata?.username || user?.email?.split("@")[0] || "Warrior";
 
-    const { data: profile, error } = await supabase
+    const { data: profileList } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", userId)
-      .single();
+      .or(`id.eq.${userId},user_id.eq.${userId}`);
 
-    if (error || !profile) {
+    const profile = profileList && profileList.length > 0 ? profileList[0] : null;
+
+    if (!profile) {
       const defaultProf = {
         user_id: userId,
         username: authUsername,
@@ -35,7 +36,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      user_id: profile.id,
+      user_id: profile.id || profile.user_id || userId,
       username: profile.username || authUsername,
       character_class: profile.character_class || "WARRIOR",
       gender: profile.gender || "m",

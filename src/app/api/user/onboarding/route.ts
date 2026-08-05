@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
 export async function POST(request: Request) {
   try {
@@ -23,16 +24,26 @@ export async function POST(request: Request) {
       character_class: character_class || "WARRIOR",
       gender: gender || "m",
       weight_kg: Number(weight_kg) || 75,
+      gold: 500,
+      level: 1,
+      current_hp: 1000,
+      max_hp: 1000,
+      exp: 0,
+      max_exp: 1000,
       updated_at: new Date().toISOString(),
     };
 
     try {
       await supabase.from("profiles").upsert(profileData);
 
+      const starterWeaponId = EQUIPMENT_DICTIONARY[0]?.item_id || "e1010001-0000-0000-0000-000000000001";
+      const starterArmorId = EQUIPMENT_DICTIONARY[1]?.item_id || "e1010002-0000-0000-0000-000000000002";
+      const starterAccId = EQUIPMENT_DICTIONARY[2]?.item_id || "e1010003-0000-0000-0000-000000000003";
+
       const starterItems = [
-        { user_id: userId, item_id: "wep-novice-sword", is_equipped: true },
-        { user_id: userId, item_id: "arm-iron-plate", is_equipped: true },
-        { user_id: userId, item_id: "acc-#00ff41-ring", is_equipped: true },
+        { user_id: userId, item_id: starterWeaponId, is_equipped: true },
+        { user_id: userId, item_id: starterArmorId, is_equipped: true },
+        { user_id: userId, item_id: starterAccId, is_equipped: true },
       ];
 
       for (const item of starterItems) {

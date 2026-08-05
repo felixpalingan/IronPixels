@@ -57,36 +57,7 @@ export function DashboardLayout() {
   } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
-  const INITIAL_INVENTORY: InventoryRecord[] = [
-    {
-      inventory_id: "inv-init-1",
-      user_id: "user-1",
-      item_id: EQUIPMENT_DICTIONARY[0].item_id,
-      is_equipped: true,
-      item: EQUIPMENT_DICTIONARY[0],
-    },
-    {
-      inventory_id: "inv-init-2",
-      user_id: "user-1",
-      item_id: EQUIPMENT_DICTIONARY[1].item_id,
-      is_equipped: true,
-      item: EQUIPMENT_DICTIONARY[1],
-    },
-    {
-      inventory_id: "inv-init-3",
-      user_id: "user-1",
-      item_id: EQUIPMENT_DICTIONARY[2].item_id,
-      is_equipped: true,
-      item: EQUIPMENT_DICTIONARY[2],
-    },
-    {
-      inventory_id: "inv-init-4",
-      user_id: "user-1",
-      item_id: EQUIPMENT_DICTIONARY[7].item_id,
-      is_equipped: true,
-      item: EQUIPMENT_DICTIONARY[7],
-    },
-  ];
+  const INITIAL_INVENTORY: InventoryRecord[] = [];
 
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
   const [userGold, setUserGold] = useState<number>(500);

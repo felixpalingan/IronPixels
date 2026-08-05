@@ -20,17 +20,16 @@ export async function POST(request: Request) {
     const { data: authData } = await supabase.auth.getUser();
 
     const userId = authData?.user?.id || DEFAULT_USER_ID;
-    let userGold = 999999999;
+    let userGold = 500;
 
     try {
-      const { data: profile } = await supabase
+      const { data: profileList } = await supabase
         .from("profiles")
         .select("gold")
-        .eq("user_id", userId)
-        .single();
+        .or(`id.eq.${userId},user_id.eq.${userId}`);
 
-      if (profile && profile.gold !== undefined) {
-        userGold = Number(profile.gold);
+      if (profileList && profileList.length > 0 && profileList[0].gold !== undefined) {
+        userGold = Number(profileList[0].gold);
       }
     } catch (e) {}
 
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
       await supabase
         .from("profiles")
         .update({ gold: newGoldBalance })
-        .eq("user_id", userId);
+        .or(`id.eq.${userId},user_id.eq.${userId}`);
 
       const { data: invInsertData, error: invErr } = await supabase
         .from("user_inventory")

@@ -32,17 +32,16 @@ async function wipeDatabase() {
   console.log("Cleaning up and resetting all Supabase DB tables...");
 
   const queries = [
-    { table: "dungeon_bosses", column: "boss_id" },
-    { table: "Dungeon_Bosses", column: "boss_id" },
-    { table: "Party_Members", column: "member_id" },
-    { table: "Party", column: "party_id" },
-    { table: "friends", column: "id" },
-    { table: "profiles", column: "id" },
     { table: "Session_Sets", column: "set_id" },
     { table: "Session_Exercises", column: "log_id" },
     { table: "Workout_Sessions", column: "session_id" },
+    { table: "user_inventory", column: "inventory_id" },
+    { table: "Party_Members", column: "member_id" },
+    { table: "Party", column: "party_id" },
+    { table: "friends", column: "id" },
     { table: "Equipped_Gear", column: "id" },
-    { table: "User_Skills", column: "skill_id" }
+    { table: "User_Skills", column: "skill_id" },
+    { table: "profiles", column: "id" },
   ];
 
   for (const item of queries) {
