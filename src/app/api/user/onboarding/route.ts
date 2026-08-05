@@ -17,13 +17,17 @@ export async function POST(request: Request) {
       user?.email?.split("@")[0] ||
       "Warrior";
 
+    const selectedClass = character_class || "WARRIOR";
+    const selectedGender = gender || "m";
+    const selectedWeight = Number(weight_kg) || 75;
+
     const profileData = {
       id: userId,
       user_id: userId,
       username: resolvedUsername,
-      character_class: character_class || "WARRIOR",
-      gender: gender || "m",
-      weight_kg: Number(weight_kg) || 75,
+      character_class: selectedClass,
+      gender: selectedGender,
+      weight_kg: selectedWeight,
       gold: 500,
       level: 1,
       current_hp: 1000,
@@ -33,8 +37,27 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     };
 
+    const { error: upsertErr } = await supabase
+      .from("profiles")
+      .upsert(profileData, { onConflict: "id" });
+
+    if (upsertErr) {
+      await supabase
+        .from("profiles")
+        .update({
+          username: resolvedUsername,
+          character_class: selectedClass,
+          gender: selectedGender,
+          weight_kg: selectedWeight,
+        })
+        .or(`id.eq.${userId},user_id.eq.${userId}`);
+    }
+
     try {
-      await supabase.from("profiles").upsert(profileData);
+      await supabase
+        .from("user_inventory")
+        .delete()
+        .eq("user_id", userId);
 
       const starterWeaponId = EQUIPMENT_DICTIONARY[0]?.item_id || "e1010001-0000-0000-0000-000000000001";
       const starterArmorId = EQUIPMENT_DICTIONARY[1]?.item_id || "e1010002-0000-0000-0000-000000000002";
