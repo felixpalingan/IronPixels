@@ -114,12 +114,43 @@ export function MultiplayerHub({
     fetchFriends();
     fetchParty();
 
-    const interval = setInterval(() => {
-      fetchFriends();
-      fetchParty();
-    }, 4000);
+    const supabase = createClient();
+    const channel = supabase
+      .channel("multiplayer_realtime_channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "friends" },
+        () => {
+          fetchFriends();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "party_invites" },
+        () => {
+          fetchParty();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Party" },
+        () => {
+          fetchParty();
+          fetchLeaderboard(lbGroup, lbMetric);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Party_Members" },
+        () => {
+          fetchParty();
+        }
+      )
+      .subscribe();
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [lbGroup, lbMetric]);
 
   const handleSearchPlayers = async (queryStr: string) => {

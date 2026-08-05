@@ -270,15 +270,8 @@ export function CombatArena({
       )
       .subscribe();
 
-    const interval = setInterval(() => {
-      if (activeMode === "party") {
-        fetchModeEnemy("party");
-      }
-    }, 3000);
-
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(interval);
     };
   }, [activeMode]);
 
