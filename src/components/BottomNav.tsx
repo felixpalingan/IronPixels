@@ -18,8 +18,8 @@ export function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-pixel-border/60 flex justify-center">
-      <div className="w-full max-w-[600px] grid grid-cols-6 p-1.5 gap-1 font-mono">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-pixel-border/60 flex justify-center pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="w-full max-w-[600px] grid grid-cols-6 p-1 sm:p-1.5 gap-0.5 sm:gap-1 font-mono">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -27,14 +27,14 @@ export function BottomNav({ activeTab, onSelectTab }: BottomNavProps) {
             <button
               key={tab.id}
               onClick={() => onSelectTab(tab.id)}
-              className={`py-2 px-1 flex flex-col items-center justify-center gap-1 transition-all ${
+              className={`py-1.5 sm:py-2 px-0.5 flex flex-col items-center justify-center gap-0.5 sm:gap-1 transition-all cursor-pointer ${
                 isActive
                   ? "bg-pixel-green text-black font-extrabold shadow-neon"
                   : "text-gray-400 hover:text-white hover:bg-surface/50"
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span className="text-[9px] tracking-wider uppercase font-bold">
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+              <span className="text-[8px] sm:text-[9px] tracking-tight sm:tracking-wider uppercase font-bold truncate max-w-full">
                 {tab.label}
               </span>
             </button>

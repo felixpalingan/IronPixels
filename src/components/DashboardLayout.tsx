@@ -536,7 +536,7 @@ export function DashboardLayout() {
         <div className="pointer-events-none fixed inset-0 border-4 border-red-600/80 shadow-[inset_0_0_80px_rgba(255,0,0,0.5)] animate-pulse z-30" />
       )}
 
-      <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-20 relative z-10">
+      <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-24 relative z-10">
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-pixel-border/60 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img
