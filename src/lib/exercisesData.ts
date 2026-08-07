@@ -9,6 +9,7 @@ export interface ExerciseDefinition {
   instructions: string[];
   rvsMultiplier: number;
   scalingStat?: "STR" | "AGI";
+  isCustom?: boolean;
 }
 
 export function getExerciseScalingStat(ex: { category?: string; equipment?: string; scalingStat?: "STR" | "AGI" }): "STR" | "AGI" {
