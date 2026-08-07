@@ -11,6 +11,7 @@ interface ExerciseSet {
   set_number: number;
   weight: number;
   reps: number;
+  completed?: boolean;
 }
 
 interface LoggedExercise {
@@ -375,6 +376,26 @@ export function WorkoutTrackerForm({
     );
   };
 
+  const handleToggleCompleteSet = (exId: string, setIdx: number) => {
+    setLoggedExercises((prev) =>
+      prev.map((ex) => {
+        if (ex.id !== exId) return ex;
+        const updatedSets = ex.sets.map((set, idx) => {
+          if (idx !== setIdx) return set;
+          const isNowCompleted = !set.completed;
+          if (isNowCompleted) {
+            soundEngine.play("select");
+            soundEngine.triggerHaptic(60);
+            // Auto-start 90s rest timer when completing set (LiftOff style)
+            handleStartRestTimer(90);
+          }
+          return { ...set, completed: isNowCompleted };
+        });
+        return { ...ex, sets: updatedSets };
+      })
+    );
+  };
+
   const handleFinish = () => {
     if (loggedExercises.length === 0) return;
     const totalVolume = calculateTotalVolume();
@@ -702,11 +723,12 @@ export function WorkoutTrackerForm({
                 </div>
 
                 <div className="space-y-2">
-                  <div className="grid grid-cols-12 gap-2 text-[10px] text-zinc-400 font-bold uppercase text-center border-b border-pixel-border/30 pb-1">
-                    <span className="col-span-2">SET</span>
-                    <span className="col-span-4">KG (WEIGHT)</span>
-                    <span className="col-span-4">REPS</span>
+                  <div className="grid grid-cols-12 gap-1.5 text-[9px] text-zinc-400 font-bold uppercase text-center border-b border-pixel-border/30 pb-1.5">
+                    <span className="col-span-1">SET</span>
+                    <span className="col-span-3">KG (WEIGHT)</span>
+                    <span className="col-span-3">REPS</span>
                     <span className="col-span-2">RVS</span>
+                    <span className="col-span-3">STATUS / LOG</span>
                   </div>
 
                   {ex.sets.map((set, setIdx) => {
@@ -718,42 +740,74 @@ export function WorkoutTrackerForm({
                       ex.equipment
                     );
 
+                    const isDone = Boolean(set.completed);
+
                     return (
-                      <div key={setIdx} className="grid grid-cols-12 gap-2 items-center text-xs">
-                        <div className="col-span-2 text-center font-bold text-zinc-400">
+                      <div
+                        key={setIdx}
+                        className={`grid grid-cols-12 gap-1.5 items-center text-xs p-1 transition-all ${
+                          isDone
+                            ? "border border-[#00ff41]/50 bg-[#00ff41]/10"
+                            : "border border-zinc-800/80 bg-black/40"
+                        }`}
+                      >
+                        <div className="col-span-1 text-center font-bold text-zinc-400 text-[11px]">
                           #{set.set_number}
                         </div>
 
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           <input
                             type="number"
                             value={set.weight || ""}
                             onChange={(e) =>
                               handleUpdateSet(ex.id, setIdx, "weight", Number(e.target.value))
                             }
-                            className="w-full bg-black border border-pixel-border px-2 py-1 text-center font-bold text-white focus:border-[#00ff41] outline-none"
-                            placeholder={isAgilityEx ? "0 (Body)" : "0"}
+                            className={`w-full bg-black border px-2 py-1 text-center font-bold outline-none text-xs ${
+                              isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
+                            }`}
+                            placeholder={isAgilityEx ? "0 (BW)" : "0"}
                           />
                         </div>
 
-                        <div className="col-span-4">
+                        <div className="col-span-3">
                           <input
                             type="number"
                             value={set.reps || ""}
                             onChange={(e) =>
                               handleUpdateSet(ex.id, setIdx, "reps", Number(e.target.value))
                             }
-                            className="w-full bg-black border border-pixel-border px-2 py-1 text-center font-bold text-white focus:border-[#00ff41] outline-none"
+                            className={`w-full bg-black border px-2 py-1 text-center font-bold outline-none text-xs ${
+                              isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
+                            }`}
                             placeholder="0"
                           />
                         </div>
 
-                        <div className="col-span-2 flex items-center justify-between text-center pl-1">
-                          <span className="font-bold text-[#00ff41] text-[11px]">+{setRvs}</span>
+                        <div className="col-span-2 text-center">
+                          <span className="font-bold text-[#00ff41] text-[10px]">+{setRvs}</span>
+                        </div>
+
+                        <div className="col-span-3 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCompleteSet(ex.id, setIdx)}
+                            className={`flex-1 py-1 px-1.5 border text-[9px] font-extrabold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer truncate ${
+                              isDone
+                                ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
+                                : "border-zinc-700 bg-surface text-zinc-300 hover:border-[#00ff41] hover:text-[#00ff41]"
+                            }`}
+                            title={isDone ? "Click to uncheck set" : "Click to complete set & start 90s Rest Timer"}
+                          >
+                            <Check className={`w-3 h-3 ${isDone ? "stroke-[3]" : "opacity-40"}`} />
+                            <span>{isDone ? "DONE" : "LOG SET"}</span>
+                          </button>
+
                           {ex.sets.length > 1 && (
                             <button
+                              type="button"
                               onClick={() => handleRemoveSet(ex.id, setIdx)}
-                              className="text-zinc-600 hover:text-red-500 text-[10px] font-bold cursor-pointer"
+                              className="text-zinc-600 hover:text-red-500 p-1 font-bold cursor-pointer flex-shrink-0"
+                              title="Delete Set"
                             >
                               <X className="w-3 h-3" />
                             </button>
