@@ -17,6 +17,7 @@ import { BlacksmithShop } from "@/components/BlacksmithShop";
 import { InventoryGrid } from "@/components/InventoryGrid";
 import { DailyQuestsWidget } from "@/components/DailyQuestsWidget";
 import { MultiplayerHub } from "@/components/MultiplayerHub";
+import { AnalyticsView } from "@/components/AnalyticsView";
 import { EQUIPMENT_DICTIONARY, InventoryRecord, ItemType } from "@/lib/equipment";
 
 interface UserProfileData {
@@ -914,6 +915,27 @@ export function DashboardLayout() {
                     onNavigateToMultiplayer={() => setActiveTab("multiplayer")}
                   />
                 )}
+              </motion.div>
+            )}
+
+            {activeTab === "analytics" && (
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                <AnalyticsView
+                  userId={userData.user_id}
+                  heroStats={{
+                    level: userData.level,
+                    str: totalStats.str,
+                    agi: totalStats.agi,
+                    vit: totalStats.vit,
+                    luk: totalStats.luk,
+                  }}
+                />
               </motion.div>
             )}
 

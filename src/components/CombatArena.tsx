@@ -10,6 +10,7 @@ import { HeroSprite, HeroState } from "@/components/HeroSprite";
 import { DungeonStageMap } from "@/components/DungeonStageMap";
 import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
 import { createClient } from "@/lib/supabase/client";
+import { soundEngine } from "@/lib/soundEffects";
 import type { EnemySpriteState } from "@/components/EnemySprite";
 
 interface DamageParticle {
@@ -321,6 +322,8 @@ export function CombatArena({
       return;
     }
 
+    soundEngine.play("attack");
+    soundEngine.triggerHaptic(50);
     setHeroState(attackType);
     setTimeout(() => setHeroState("idle"), 500);
 

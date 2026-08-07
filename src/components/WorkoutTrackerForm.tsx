@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat } from "@/lib/exercisesData";
+import { soundEngine } from "@/lib/soundEffects";
 
 interface ExerciseSet {
   set_number: number;
@@ -63,6 +64,33 @@ export function WorkoutTrackerForm({
   const [newRoutineName, setNewRoutineName] = useState<string>("");
   const [newRoutineSplit, setNewRoutineSplit] = useState<string>("Push");
   const [routineNotice, setRoutineNotice] = useState<string | null>(null);
+
+  // Rest Timer states
+  const [restTimerSecs, setRestTimerSecs] = useState<number>(0);
+  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    let interval: any = null;
+    if (isTimerActive && restTimerSecs > 0) {
+      interval = setInterval(() => {
+        setRestTimerSecs((prev) => prev - 1);
+      }, 1000);
+    } else if (restTimerSecs === 0 && isTimerActive) {
+      setIsTimerActive(false);
+      soundEngine.play("timer");
+      soundEngine.triggerHaptic([100, 50, 100, 50, 150]);
+      setRoutineNotice("REST TIMER FINISHED! GET READY FOR YOUR NEXT SET! 🏋️");
+      setTimeout(() => setRoutineNotice(null), 5000);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerActive, restTimerSecs]);
+
+  const handleStartRestTimer = (secs: number) => {
+    soundEngine.play("select");
+    soundEngine.triggerHaptic(50);
+    setRestTimerSecs(secs);
+    setIsTimerActive(true);
+  };
 
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
@@ -455,6 +483,59 @@ export function WorkoutTrackerForm({
             <span>{routineNotice}</span>
           </div>
         )}
+
+        {/* REST TIMER & HAPTIC ALARM WIDGET */}
+        <div className="border border-[#00ff41]/60 bg-black/80 p-3 space-y-2 shadow-neon">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Timer className="w-4 h-4 text-[#00ff41]" />
+              <span className="font-headline font-bold text-xs text-white uppercase tracking-wider">
+                REST INTERVAL TIMER & HAPTIC ALARM
+              </span>
+            </div>
+            {isTimerActive ? (
+              <span className="font-headline font-black text-sm text-[#00ff41] animate-pulse">
+                {Math.floor(restTimerSecs / 60)}:{(restTimerSecs % 60).toString().padStart(2, "0")}
+              </span>
+            ) : (
+              <span className="text-[9px] text-zinc-500 font-bold uppercase">IDLE</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+            <span className="text-[9px] text-zinc-400 font-bold uppercase mr-1">QUICK START:</span>
+            {[60, 90, 120].map((s) => (
+              <button
+                key={s}
+                onClick={() => handleStartRestTimer(s)}
+                className={`px-2.5 py-1 border text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                  isTimerActive && restTimerSecs === s
+                    ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
+                    : "border-zinc-700 bg-surface text-zinc-300 hover:border-[#00ff41] hover:text-[#00ff41]"
+                }`}
+              >
+                {s}s REST
+              </button>
+            ))}
+
+            {isTimerActive && (
+              <>
+                <button
+                  onClick={() => setRestTimerSecs((prev) => prev + 30)}
+                  className="px-2 py-1 border border-amber-400 bg-amber-950/40 text-amber-300 text-[10px] font-bold uppercase cursor-pointer"
+                >
+                  +30s
+                </button>
+                <button
+                  onClick={() => setIsTimerActive(false)}
+                  className="px-2 py-1 border border-red-900 bg-red-950/40 text-red-400 text-[10px] font-bold uppercase cursor-pointer"
+                >
+                  CANCEL
+                </button>
+              </>
+            )}
+          </div>
+        </div>
 
         {/* WORKOUT ROUTINE TEMPLATES ACCORDION */}
         <div className="border border-pixel-border/80 bg-black/60 p-3 space-y-2">

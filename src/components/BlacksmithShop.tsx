@@ -5,6 +5,7 @@ import { Coins, X, HeartPulse, Check, Triangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EQUIPMENT_DICTIONARY, EquipmentItem, InventoryRecord } from "@/lib/equipment";
+import { soundEngine } from "@/lib/soundEffects";
 
 interface BlacksmithShopProps {
   userGold: number;
@@ -145,6 +146,8 @@ export function BlacksmithShop({
       setTargetX(calculatedTargetX);
 
       // Start rolling animation
+      soundEngine.play("chest");
+      soundEngine.triggerHaptic([80, 40, 80]);
       setOpeningPhase("rolling");
 
       if (data.new_gold !== undefined) {
