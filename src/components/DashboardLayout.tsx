@@ -503,6 +503,32 @@ export function DashboardLayout() {
     }
   };
 
+  const handleSellItem = async (inventoryId: string, sellGoldValue: number) => {
+    setUserInventory((prev) => {
+      const updated = prev.filter((rec) => rec.inventory_id !== inventoryId);
+      localStorage.setItem("ironpixels_inventory", JSON.stringify(updated));
+      return updated;
+    });
+
+    setUserGold((prev) => {
+      const newGold = prev + sellGoldValue;
+      if (profile) {
+        const updatedProf = { ...profile, gold: newGold };
+        setProfile(updatedProf);
+        localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+      }
+      return newGold;
+    });
+
+    try {
+      await fetch("/api/inventory/sell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inventory_id: inventoryId }),
+      });
+    } catch (err) {}
+  };
+
   return (
     <div className="min-h-screen bg-background text-white flex justify-center selection:bg-pixel-green selection:text-black relative">
       {isCriticalHp && (
@@ -668,86 +694,6 @@ export function DashboardLayout() {
                       gender={userData.gender}
                     />
 
-                    <div className="flex-1 flex flex-col justify-between min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="font-headline font-extrabold text-2xl tracking-tight text-white flex items-center gap-2">
-                            <span>Lv. {formatNumber(userData.level)}</span>
-                            <span className="text-[10px] bg-[#00ff41]/20 border border-[#00ff41]/60 text-[#00ff41] px-2 py-0.5 font-bold uppercase tracking-widest">
-                              {userData.username}
-                            </span>
-                          </div>
-                          <div className="font-mono text-[11px] text-gray-400 uppercase tracking-wider font-bold mt-0.5">
-                            {userData.character_class} ({userData.weight_kg} KG)
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 bg-black/60 border border-gold-loot/40 px-2.5 py-1 text-gold-loot shadow-gold-glow">
-                          <Coins className="w-3.5 h-3.5" />
-                          <span className="font-mono font-bold text-xs">
-                            {formatNumber(userData.gold)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 mt-3">
-                        <div>
-                          <div className="flex justify-between font-mono text-[10px] mb-1 font-bold">
-                            <span className={isCriticalHp ? "text-red-500 animate-pulse" : "text-health-red"}>
-                              HP {isCriticalHp ? "(CRITICAL)" : ""}
-                            </span>
-                            <span className="text-gray-300">
-                              {formatNumber(userData.current_hp)} / {formatNumber(userData.max_hp)}
-                            </span>
-                          </div>
-                          <div className="w-full h-2.5 bg-black border border-pixel-border overflow-hidden relative">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${hpPercent}%` }}
-                              transition={{ duration: 0.8, ease: "easeOut" }}
-                              className={`h-full relative ${isCriticalHp ? "bg-red-600 shadow-[0_0_15px_rgba(255,0,0,0.8)]" : "bg-health-red shadow-red-glow"}`}
-                            >
-                              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_50%,rgba(0,0,0,0.3)_50%)] bg-[length:4px_100%]" />
-                            </motion.div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="flex justify-between font-mono text-[10px] mb-1">
-                            <span className="text-exp-blue font-bold">EXP</span>
-                            <span className="text-gray-300">
-                              {formatNumber(userData.exp)} / {formatNumber(userData.max_exp)}
-                            </span>
-                          </div>
-                          <div className="w-full h-2.5 bg-black border border-pixel-border overflow-hidden relative">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${expPercent}%` }}
-                              transition={{ duration: 0.8, ease: "easeOut" }}
-                              className="h-full bg-exp-blue relative shadow-blue-glow"
-                            >
-                              <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_50%,rgba(0,0,0,0.3)_50%)] bg-[length:4px_100%]" />
-                            </motion.div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between font-mono">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-[#00ff41] animate-pulse" />
-                    <div>
-                      <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">TOTAL COMBAT POWER</div>
-                      <div className="font-headline font-black text-xl text-[#00ff41]">
-                        {formatNumber(totalCp)} CP
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`px-3 py-1.5 border text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ${classPerk.color}`}>
-                    <Award className="w-4 h-4" />
                     <span>{classPerk.perk}</span>
                   </div>
                 </div>
@@ -1023,6 +969,7 @@ export function DashboardLayout() {
                 <InventoryGrid
                   inventory={userInventory}
                   onToggleEquip={handleToggleEquip}
+                  onSellItem={handleSellItem}
                 />
               </motion.div>
             )}

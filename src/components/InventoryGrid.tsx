@@ -1,15 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { Swords, Shield, Heart, Sparkles, Check, Package } from "lucide-react";
+import { Coins, Swords, Shield, Heart, Sparkles, Check, Package, Trash2 } from "lucide-react";
 import { InventoryRecord, ItemType } from "@/lib/equipment";
+import { formatNumber } from "@/lib/formatters";
 
 interface InventoryGridProps {
   inventory: InventoryRecord[];
   onToggleEquip: (inventoryId: string, currentEquippedState: boolean, itemType: ItemType) => void;
+  onSellItem?: (inventoryId: string, sellGoldValue: number) => void;
 }
 
-export function InventoryGrid({ inventory, onToggleEquip }: InventoryGridProps) {
+export function getSellPriceByRarity(rarity: string): number {
+  switch (rarity?.toLowerCase()) {
+    case "mythic":
+      return 3500;
+    case "legendary":
+      return 1200;
+    case "epic":
+      return 400;
+    case "rare":
+      return 150;
+    case "common":
+    default:
+      return 50;
+  }
+}
+
+export function InventoryGrid({ inventory, onToggleEquip, onSellItem }: InventoryGridProps) {
   const [filter, setFilter] = useState<"all" | ItemType>("all");
 
   const filteredInventory = inventory.filter(
@@ -48,7 +66,7 @@ export function InventoryGrid({ inventory, onToggleEquip }: InventoryGridProps) 
           <button
             key={t}
             onClick={() => setFilter(t)}
-            className={`py-2 uppercase font-bold text-[10px] sm:text-xs transition-colors ${
+            className={`py-2 uppercase font-bold text-[10px] sm:text-xs transition-colors cursor-pointer ${
               filter === t
                 ? "bg-[#00ff41] text-black shadow-[0_0_10px_rgba(0,255,65,0.3)]"
                 : "text-zinc-400 hover:text-white"
@@ -70,6 +88,8 @@ export function InventoryGrid({ inventory, onToggleEquip }: InventoryGridProps) 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {filteredInventory.map((rec) => {
             const { item, is_equipped, inventory_id } = rec;
+            const sellPrice = getSellPriceByRarity(item.rarity);
+
             return (
               <div
                 key={inventory_id}
@@ -141,16 +161,27 @@ export function InventoryGrid({ inventory, onToggleEquip }: InventoryGridProps) 
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onToggleEquip(inventory_id, is_equipped, item.type)}
-                  className={`w-full py-2.5 border font-mono font-bold text-xs uppercase transition-all ${
-                    is_equipped
-                      ? "border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-white"
-                      : "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] hover:bg-[#00ff41] hover:text-black"
-                  }`}
-                >
-                  {is_equipped ? "UNEQUIP GEAR" : "EQUIP GEAR"}
-                </button>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    onClick={() => onToggleEquip(inventory_id, is_equipped, item.type)}
+                    className={`py-2.5 border font-mono font-bold text-xs uppercase transition-all cursor-pointer ${
+                      is_equipped
+                        ? "border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-white"
+                        : "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] hover:bg-[#00ff41] hover:text-black"
+                    }`}
+                  >
+                    {is_equipped ? "UNEQUIP" : "EQUIP"}
+                  </button>
+
+                  <button
+                    onClick={() => onSellItem && onSellItem(inventory_id, sellPrice)}
+                    className="py-2.5 border border-amber-500/80 bg-amber-950/40 hover:bg-amber-500 hover:text-black text-amber-400 font-mono font-bold text-xs uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                    title={`Sell item for ${formatNumber(sellPrice)} Gold`}
+                  >
+                    <Coins className="w-3.5 h-3.5" />
+                    <span>SELL (+{formatNumber(sellPrice)})</span>
+                  </button>
+                </div>
               </div>
             );
           })}
