@@ -67,6 +67,14 @@ export function WorkoutTrackerForm({
   const [routineNotice, setRoutineNotice] = useState<string | null>(null);
 
   // Rest Timer states
+  const [defaultRestTimerSecs, setDefaultRestTimerSecs] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_default_rest_timer");
+      return saved ? Number(saved) : 90;
+    } catch (e) {
+      return 90;
+    }
+  });
   const [restTimerSecs, setRestTimerSecs] = useState<number>(0);
   const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
 
@@ -85,6 +93,15 @@ export function WorkoutTrackerForm({
     }
     return () => clearInterval(interval);
   }, [isTimerActive, restTimerSecs]);
+
+  const handleSetDefaultRestTimer = (secs: number) => {
+    soundEngine.play("select");
+    soundEngine.triggerHaptic(50);
+    setDefaultRestTimerSecs(secs);
+    try {
+      localStorage.setItem("ironpixels_default_rest_timer", secs.toString());
+    } catch (e) {}
+  };
 
   const handleStartRestTimer = (secs: number) => {
     soundEngine.play("select");
@@ -386,8 +403,8 @@ export function WorkoutTrackerForm({
           if (isNowCompleted) {
             soundEngine.play("select");
             soundEngine.triggerHaptic(60);
-            // Auto-start 90s rest timer when completing set (LiftOff style)
-            handleStartRestTimer(90);
+            // Auto-start rest timer using user's configured defaultRestTimerSecs (LiftOff style)
+            handleStartRestTimer(defaultRestTimerSecs);
           }
           return { ...set, completed: isNowCompleted };
         });
@@ -511,49 +528,78 @@ export function WorkoutTrackerForm({
             <div className="flex items-center gap-2">
               <Timer className="w-4 h-4 text-[#00ff41]" />
               <span className="font-headline font-bold text-xs text-white uppercase tracking-wider">
-                REST INTERVAL TIMER & HAPTIC ALARM
+                AUTO REST TIMER (LIFTOFF STYLE)
               </span>
             </div>
             {isTimerActive ? (
               <span className="font-headline font-black text-sm text-[#00ff41] animate-pulse">
-                {Math.floor(restTimerSecs / 60)}:{(restTimerSecs % 60).toString().padStart(2, "0")}
+                REST: {Math.floor(restTimerSecs / 60)}:{(restTimerSecs % 60).toString().padStart(2, "0")}
               </span>
             ) : (
-              <span className="text-[9px] text-zinc-500 font-bold uppercase">IDLE</span>
+              <span className="text-[9px] text-zinc-400 font-bold uppercase">
+                DEFAULT: {defaultRestTimerSecs >= 60 ? `${defaultRestTimerSecs / 60}m` : `${defaultRestTimerSecs}s`}
+              </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-            <span className="text-[9px] text-zinc-400 font-bold uppercase mr-1">QUICK START:</span>
-            {[60, 90, 120].map((s) => (
-              <button
-                key={s}
-                onClick={() => handleStartRestTimer(s)}
-                className={`px-2.5 py-1 border text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                  isTimerActive && restTimerSecs === s
-                    ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
-                    : "border-zinc-700 bg-surface text-zinc-300 hover:border-[#00ff41] hover:text-[#00ff41]"
-                }`}
-              >
-                {s}s REST
-              </button>
-            ))}
+          <div className="space-y-1.5 pt-0.5">
+            <div className="flex items-center justify-between text-[9px] text-zinc-400 font-bold uppercase">
+              <span>SET DEFAULT TIMER DURATION (AUTO-RUNS ON SET COMPLETION):</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { sec: 30, label: "30s" },
+                { sec: 60, label: "60s (1m)" },
+                { sec: 90, label: "90s (1.5m)" },
+                { sec: 120, label: "120s (2m)" },
+                { sec: 180, label: "180s (3m)" },
+              ].map((item) => {
+                const isDefault = defaultRestTimerSecs === item.sec;
+                return (
+                  <button
+                    key={item.sec}
+                    type="button"
+                    onClick={() => handleSetDefaultRestTimer(item.sec)}
+                    className={`px-2 py-1 border text-[9px] font-extrabold uppercase transition-all cursor-pointer ${
+                      isDefault
+                        ? "border-amber-400 bg-amber-500 text-black shadow-gold-glow"
+                        : "border-zinc-800 bg-black text-zinc-400 hover:border-[#00ff41] hover:text-white"
+                    }`}
+                  >
+                    {isDefault ? "★ " : ""}{item.label}
+                  </button>
+                );
+              })}
+            </div>
 
             {isTimerActive && (
-              <>
+              <div className="pt-1 flex items-center justify-between border-t border-zinc-800/80 gap-1 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setRestTimerSecs((prev) => Math.max(0, prev - 30))}
+                    className="px-2 py-1 border border-zinc-700 bg-black text-zinc-300 hover:text-white font-bold cursor-pointer"
+                  >
+                    -30s
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRestTimerSecs((prev) => prev + 30)}
+                    className="px-2 py-1 border border-amber-400/80 bg-amber-950/40 text-amber-300 font-bold cursor-pointer"
+                  >
+                    +30s
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setRestTimerSecs((prev) => prev + 30)}
-                  className="px-2 py-1 border border-amber-400 bg-amber-950/40 text-amber-300 text-[10px] font-bold uppercase cursor-pointer"
-                >
-                  +30s
-                </button>
-                <button
+                  type="button"
                   onClick={() => setIsTimerActive(false)}
-                  className="px-2 py-1 border border-red-900 bg-red-950/40 text-red-400 text-[10px] font-bold uppercase cursor-pointer"
+                  className="px-2.5 py-1 border border-red-900 bg-red-950/40 text-red-400 font-bold uppercase cursor-pointer"
                 >
-                  CANCEL
+                  SKIP / CANCEL TIMER
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
