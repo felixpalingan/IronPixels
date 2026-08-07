@@ -686,16 +686,93 @@ export function DashboardLayout() {
                 transition={{ duration: 0.25 }}
                 className="space-y-4"
               >
-                <div className="border border-pixel-border bg-surface p-4 relative overflow-hidden font-mono shadow-neon">
-                  <div className="flex gap-4">
+                <div className="border border-pixel-border bg-surface p-4 relative overflow-hidden font-mono shadow-neon space-y-3">
+                  <div className="flex items-start gap-4">
                     <PixelAvatar
-                      className="w-24 h-24 flex-shrink-0"
+                      className="w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 border-2 border-pixel-border"
                       isCritical={isCriticalHp}
                       characterClass={userData.character_class}
                       gender={userData.gender}
                     />
 
-                    <span>{classPerk.perk}</span>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-headline font-black text-lg text-white uppercase tracking-wider truncate">
+                            {userData.username}
+                          </h2>
+                          <span className="px-2 py-0.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] font-headline font-black text-xs uppercase shadow-neon">
+                            LVL.{userData.level}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 border border-amber-400 bg-amber-950/60 text-amber-300 font-bold text-xs shadow-gold-glow">
+                          <Coins className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <span>{formatNumber(userGold)} GOLD</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold uppercase">
+                        <span className="px-1.5 py-0.2 border border-zinc-700 bg-black text-zinc-300">
+                          {userData.gender === "f" ? "FEMALE" : "MALE"} {userData.character_class}
+                        </span>
+                        <span className="text-[#00ff41] truncate">{classPerk.perk}</span>
+                      </div>
+
+                      {/* HP METER BAR */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] font-bold">
+                          <span className="text-health-red flex items-center gap-1">
+                            <HeartPulse className="w-3 h-3 animate-pulse" />
+                            HP HEALTH METER
+                          </span>
+                          <span className="text-white">
+                            {formatNumber(userData.current_hp)} / {formatNumber(userData.max_hp)} ({Math.round((userData.current_hp / Math.max(1, userData.max_hp)) * 100)}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-black h-2.5 border border-pixel-border overflow-hidden p-0.5">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              isCriticalHp
+                                ? "bg-health-red shadow-red-glow animate-pulse"
+                                : "bg-[#00ff41] shadow-neon"
+                            }`}
+                            style={{ width: `${Math.round((userData.current_hp / Math.max(1, userData.max_hp)) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* EXP METER BAR */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] font-bold">
+                          <span className="text-sky-400 flex items-center gap-1">
+                            <Zap className="w-3 h-3 text-sky-400" />
+                            EXP HERO PROGRESS
+                          </span>
+                          <span className="text-white">
+                            {formatNumber(userData.exp)} / {formatNumber(userData.max_exp)} ({Math.round((userData.exp / Math.max(1, userData.max_exp)) * 100)}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-black h-2 border border-pixel-border overflow-hidden p-0.5">
+                          <div
+                            className="h-full bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.8)] transition-all duration-300"
+                            style={{ width: `${Math.round((userData.exp / Math.max(1, userData.max_exp)) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* HERO OVERVIEW CARDS */}
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-pixel-border/50 text-center text-xs">
+                    <div className="p-2 border border-pixel-border/60 bg-black/60">
+                      <div className="text-[9px] text-zinc-400 uppercase font-bold">COMBAT POWER</div>
+                      <div className="font-headline font-black text-amber-300 text-sm">{formatNumber(totalCp)} CP</div>
+                    </div>
+                    <div className="p-2 border border-pixel-border/60 bg-black/60">
+                      <div className="text-[9px] text-zinc-400 uppercase font-bold">DAILY RVS POWER</div>
+                      <div className="font-headline font-black text-[#00ff41] text-sm">+{formatNumber(dailyRvs)} RVS</div>
+                    </div>
                   </div>
                 </div>
 
