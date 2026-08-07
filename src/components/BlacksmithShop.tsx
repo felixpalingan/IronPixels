@@ -121,18 +121,8 @@ export function BlacksmithShop({
       );
     }
 
-    const lockedWinner =
+    const fallbackWinner =
       candidates[Math.floor(Math.random() * candidates.length)] || EQUIPMENT_DICTIONARY[0];
-    const strip = generateReelStrip(lockedWinner);
-    setReelStrip(strip);
-
-    const winnerIndex = 28;
-    const itemWidth = 112;
-    const offsetInWinner = Math.floor(Math.random() * 50) + 30;
-    const calculatedTargetX = winnerIndex * itemWidth + offsetInWinner - 170;
-    setTargetX(calculatedTargetX);
-
-    setOpeningPhase("rolling");
 
     try {
       const res = await fetch("/api/shop/gacha", {
@@ -142,7 +132,20 @@ export function BlacksmithShop({
       });
 
       const data = await res.json();
-      const finalItem: EquipmentItem = data.item || lockedWinner;
+      const finalItem: EquipmentItem = data.item || fallbackWinner;
+
+      // Generate reel strip containing the EXACT final server item at winnerIndex (28)
+      const strip = generateReelStrip(finalItem);
+      setReelStrip(strip);
+
+      const winnerIndex = 28;
+      const itemWidth = 112;
+      const offsetInWinner = Math.floor(Math.random() * 50) + 30;
+      const calculatedTargetX = winnerIndex * itemWidth + offsetInWinner - 170;
+      setTargetX(calculatedTargetX);
+
+      // Start rolling animation
+      setOpeningPhase("rolling");
 
       if (data.new_gold !== undefined) {
         onUpdateGold(data.new_gold);
@@ -170,9 +173,19 @@ export function BlacksmithShop({
         setIsOpening(false);
       }, 4300);
     } catch (err) {
+      const strip = generateReelStrip(fallbackWinner);
+      setReelStrip(strip);
+
+      const winnerIndex = 28;
+      const itemWidth = 112;
+      const calculatedTargetX = winnerIndex * itemWidth + 50 - 170;
+      setTargetX(calculatedTargetX);
+
+      setOpeningPhase("rolling");
+
       setTimeout(() => {
         setDrawnResult({
-          item: lockedWinner,
+          item: fallbackWinner,
           inventory_id: `inv-${Date.now()}`,
         });
         setOpeningPhase("revealed");

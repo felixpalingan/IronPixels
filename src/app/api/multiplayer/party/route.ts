@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
 export interface PartyMember {
   user_id: string;
@@ -134,15 +135,21 @@ export async function GET() {
         try {
           const { data: invRecs } = await supabase
             .from("user_inventory")
-            .select("user_id, item_data")
+            .select("user_id, item_id, item_data")
             .in("user_id", memberUserIds)
             .eq("is_equipped", true);
 
           if (invRecs) {
             invRecs.forEach((rec: any) => {
-              const itemData = rec.item_data;
-              if (itemData && itemData.type === "weapon" && itemData.image_url) {
-                equippedWeaponsMap[rec.user_id] = itemData.image_url;
+              let weaponUrl = "";
+              const dictItem = EQUIPMENT_DICTIONARY.find((i) => i.item_id === rec.item_id);
+              if (dictItem && dictItem.type === "weapon" && dictItem.image_url) {
+                weaponUrl = dictItem.image_url;
+              } else if (rec.item_data && rec.item_data.type === "weapon" && rec.item_data.image_url) {
+                weaponUrl = rec.item_data.image_url;
+              }
+              if (weaponUrl) {
+                equippedWeaponsMap[rec.user_id] = weaponUrl;
               }
             });
           }

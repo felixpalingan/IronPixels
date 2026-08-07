@@ -638,6 +638,9 @@ export function CombatArena({
                 partyMembers.slice(0, 5).map((member, idx) => {
                   const yOffset = idx === 0 ? "translate-y-2" : idx === 1 || idx === 2 ? "translate-y-0" : "-translate-y-2";
                   const tagPos = idx % 2 === 0 ? "top" : "bottom";
+                  const isCurrentUser = member.user_id === userId;
+                  const activeWeapon = isCurrentUser && equippedWeaponIcon ? equippedWeaponIcon : (member.weapon_icon || "/assets/items/weapons/01.png");
+
                   return (
                     <div key={member.user_id || idx} className={`transition-transform duration-300 ${yOffset}`}>
                       <HeroSprite
@@ -645,7 +648,7 @@ export function CombatArena({
                         characterClass={member.character_class}
                         gender={member.gender || "m"}
                         scale={1.25}
-                        weaponIcon={member.weapon_icon || "/assets/items/weapons/01.png"}
+                        weaponIcon={activeWeapon}
                         showNameTag={member.username.split(" ")[0]}
                         nameTagPosition={tagPos}
                       />
