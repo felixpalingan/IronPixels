@@ -28,18 +28,39 @@ export async function POST(request: Request) {
           .eq("user_id", userId);
 
         if (userItems && userItems.length > 0) {
-          const sameTypeEquippedIds = userItems
-            .filter((rec: any) => {
+          if (item_type === "accessory") {
+            const equippedAccs = userItems.filter((rec: any) => {
               const itemConfig = EQUIPMENT_DICTIONARY.find((i) => i.item_id === rec.item_id);
-              return itemConfig?.type === item_type && rec.is_equipped;
-            })
-            .map((rec: any) => rec.inventory_id);
+              const type = itemConfig?.type || rec.item_data?.type;
+              return type === "accessory" && rec.is_equipped && rec.inventory_id !== inventory_id;
+            });
 
-          if (sameTypeEquippedIds.length > 0) {
-            await supabase
-              .from("user_inventory")
-              .update({ is_equipped: false })
-              .in("inventory_id", sameTypeEquippedIds);
+            // If there are already 2 accessories equipped, un-equip the oldest 1 so max 2 accessories remain equipped
+            if (equippedAccs.length >= 2) {
+              const idsToUnequip = equippedAccs.slice(0, equippedAccs.length - 1).map((r: any) => r.inventory_id);
+              if (idsToUnequip.length > 0) {
+                await supabase
+                  .from("user_inventory")
+                  .update({ is_equipped: false })
+                  .in("inventory_id", idsToUnequip);
+              }
+            }
+          } else {
+            // Weapons and Armor max limit 1
+            const sameTypeEquippedIds = userItems
+              .filter((rec: any) => {
+                const itemConfig = EQUIPMENT_DICTIONARY.find((i) => i.item_id === rec.item_id);
+                const type = itemConfig?.type || rec.item_data?.type;
+                return type === item_type && rec.is_equipped && rec.inventory_id !== inventory_id;
+              })
+              .map((rec: any) => rec.inventory_id);
+
+            if (sameTypeEquippedIds.length > 0) {
+              await supabase
+                .from("user_inventory")
+                .update({ is_equipped: false })
+                .in("inventory_id", sameTypeEquippedIds);
+            }
           }
         }
       }
