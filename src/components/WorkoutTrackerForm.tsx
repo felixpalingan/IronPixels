@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
@@ -57,10 +57,17 @@ export function WorkoutTrackerForm({
       return [];
     }
   });
+  const [routines, setRoutines] = useState<any[]>([]);
+  const [isRoutinesOpen, setIsRoutinesOpen] = useState<boolean>(true);
+  const [isSaveRoutineModalOpen, setIsSaveRoutineModalOpen] = useState<boolean>(false);
+  const [newRoutineName, setNewRoutineName] = useState<string>("");
+  const [newRoutineSplit, setNewRoutineSplit] = useState<string>("Push");
+  const [routineNotice, setRoutineNotice] = useState<string | null>(null);
+
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("" );
   const [activeGuideExercise, setActiveGuideExercise] = useState<ExerciseDefinition | null>(null);
 
   // Custom exercise form fields
@@ -68,6 +75,123 @@ export function WorkoutTrackerForm({
   const [cCategory, setCCategory] = useState<ExerciseDefinition["category"]>("Chest");
   const [cEquipment, setCEquipment] = useState<ExerciseDefinition["equipment"]>("Dumbbell");
   const [cMultiplier, setCMultiplier] = useState<number>(1.0);
+
+  useEffect(() => {
+    const fetchRoutines = async () => {
+      try {
+        const res = await fetch("/api/workout/routines");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.routines && Array.isArray(data.routines)) {
+            setRoutines(data.routines);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Fallback local routines
+      const savedLocal = localStorage.getItem("ironpixels_saved_routines");
+      if (savedLocal) {
+        try {
+          setRoutines(JSON.parse(savedLocal));
+        } catch (e) {}
+      }
+    };
+
+    fetchRoutines();
+  }, []);
+
+  const handleStartFromRoutine = (routine: any) => {
+    const allDefs = [...customExercises, ...EXERCISE_DATABASE];
+    const newLoggedList: LoggedExercise[] = [];
+
+    if (routine.exercises && Array.isArray(routine.exercises)) {
+      routine.exercises.forEach((exItem: any, i: number) => {
+        const def = allDefs.find((d) => d.id === exItem.definitionId || d.name === exItem.exercise_name) || EXERCISE_DATABASE[0];
+        const numSets = exItem.defaultSets || 3;
+        const targetWeight = exItem.defaultWeight || 40;
+        const targetReps = exItem.defaultReps || 10;
+
+        const setsList: ExerciseSet[] = [];
+        for (let s = 1; s <= numSets; s++) {
+          setsList.push({
+            set_number: s,
+            weight: targetWeight,
+            reps: targetReps,
+          });
+        }
+
+        newLoggedList.push({
+          id: `ex-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 5)}`,
+          definitionId: def.id,
+          name: def.name,
+          category: def.category,
+          equipment: def.equipment,
+          rvsMultiplier: def.rvsMultiplier,
+          sets: setsList,
+        });
+      });
+    }
+
+    setLoggedExercises(newLoggedList);
+    setRoutineNotice(`LOADED TEMPLATE: "${routine.routine_name.toUpperCase()}" WITH ${newLoggedList.length} EXERCISES!`);
+    setTimeout(() => setRoutineNotice(null), 4000);
+  };
+
+  const handleSaveCurrentAsRoutine = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoutineName.trim() || loggedExercises.length === 0) return;
+
+    const routinePayload = {
+      routine_name: newRoutineName.trim(),
+      target_split: newRoutineSplit,
+      description: `Custom ${newRoutineSplit} routine saved by ${userId.substring(0, 6)}.`,
+      exercises: loggedExercises.map((ex) => ({
+        definitionId: ex.definitionId,
+        exercise_name: ex.name,
+        defaultSets: ex.sets.length,
+        defaultWeight: ex.sets[0]?.weight || 20,
+        defaultReps: ex.sets[0]?.reps || 10,
+      })),
+    };
+
+    let newRoutineObj = {
+      ...routinePayload,
+      routine_id: `routine-${Date.now()}`,
+      is_preset: false,
+    };
+
+    try {
+      const res = await fetch("/api/workout/routines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(routinePayload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.routine) newRoutineObj = data.routine;
+      }
+    } catch (err) {}
+
+    const updated = [newRoutineObj, ...routines];
+    setRoutines(updated);
+    try {
+      localStorage.setItem("ironpixels_saved_routines", JSON.stringify(updated));
+    } catch (e) {}
+
+    setNewRoutineName("");
+    setIsSaveRoutineModalOpen(false);
+    setRoutineNotice(`ROUTINE TEMPLATE "${newRoutineObj.routine_name.toUpperCase()}" SAVED SUCCESSFULLY!`);
+    setTimeout(() => setRoutineNotice(null), 4000);
+  };
+
+  const handleDeleteRoutine = async (routineId: string) => {
+    setRoutines((prev) => prev.filter((r) => r.routine_id !== routineId));
+    try {
+      await fetch(`/api/workout/routines?routine_id=${routineId}`, { method: "DELETE" });
+    } catch (e) {}
+  };
 
   const handleCreateCustomExercise = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -325,6 +449,84 @@ export function WorkoutTrackerForm({
           </div>
         </div>
 
+        {routineNotice && (
+          <div className="p-2.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-bounce">
+            <Sparkles className="w-4 h-4 flex-shrink-0" />
+            <span>{routineNotice}</span>
+          </div>
+        )}
+
+        {/* WORKOUT ROUTINE TEMPLATES ACCORDION */}
+        <div className="border border-pixel-border/80 bg-black/60 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setIsRoutinesOpen(!isRoutinesOpen)}
+              className="flex items-center gap-2 text-xs font-headline font-bold text-amber-400 hover:text-amber-300 uppercase cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>ROUTINE TEMPLATES & PRESETS ({routines.length})</span>
+            </button>
+            <span className="text-[9px] text-zinc-500 font-bold uppercase">
+              {isRoutinesOpen ? "TAP TO COLLAPSE" : "TAP TO EXPAND"}
+            </span>
+          </div>
+
+          {isRoutinesOpen && (
+            <div className="space-y-2 pt-1 border-t border-zinc-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                {routines.map((rt) => {
+                  const exCount = rt.exercises?.length || 0;
+                  return (
+                    <div
+                      key={rt.routine_id}
+                      className="p-2.5 border border-zinc-800 bg-[#141416] hover:border-amber-400 transition-all flex flex-col justify-between space-y-2 relative"
+                    >
+                      <div className="space-y-1 pr-6">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-headline font-bold text-white uppercase line-clamp-1">
+                            {rt.routine_name}
+                          </span>
+                          {rt.is_preset ? (
+                            <span className="px-1.5 py-0.2 border border-sky-500/80 bg-sky-950/60 text-sky-300 text-[8px] font-bold uppercase">
+                              PRESET
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.2 border border-amber-400 bg-amber-950/80 text-amber-300 text-[8px] font-bold uppercase">
+                              CUSTOM
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-zinc-400 italic line-clamp-1">
+                          {rt.description || `${exCount} Exercises included`}
+                        </p>
+                      </div>
+
+                      {!rt.is_preset && (
+                        <button
+                          onClick={() => handleDeleteRoutine(rt.routine_id)}
+                          className="absolute top-2 right-2 text-zinc-600 hover:text-red-400 p-1 cursor-pointer"
+                          title="Delete Custom Routine"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleStartFromRoutine(rt)}
+                        className="w-full py-1.5 border border-amber-400/80 bg-amber-500/20 hover:bg-amber-400 hover:text-black text-amber-300 font-headline font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>START TEMPLATE ({exCount} EXERCISES)</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-2 gap-2 text-center text-xs">
           <div className="p-2 border border-pixel-border/60 bg-black/60">
             <div className="text-[9px] text-zinc-400 uppercase font-bold">TOTAL VOLUME</div>
@@ -509,15 +711,109 @@ export function WorkoutTrackerForm({
         </button>
 
         {loggedExercises.length > 0 && (
-          <button
-            onClick={handleFinish}
-            className="w-full py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer"
-          >
-            <Check className="w-5 h-5 stroke-[3]" />
-            <span>FINISH SESSION & ATTACK BOSS</span>
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={() => setIsSaveRoutineModalOpen(true)}
+              className="w-full py-2.5 border border-amber-400 bg-amber-950/40 hover:bg-amber-400 hover:text-black text-amber-300 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-gold-glow"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>SAVE CURRENT WORKOUT AS ROUTINE TEMPLATE</span>
+            </button>
+
+            <button
+              onClick={handleFinish}
+              className="w-full py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer"
+            >
+              <Check className="w-5 h-5 stroke-[3]" />
+              <span>FINISH SESSION & ATTACK BOSS</span>
+            </button>
+          </div>
         )}
       </div>
+
+      {/* SAVE ROUTINE MODAL */}
+      <AnimatePresence>
+        {isSaveRoutineModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
+          >
+            <div className="w-full max-w-md border-2 border-amber-400 bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(251,191,36,0.4)] font-mono relative">
+              <button
+                onClick={() => setIsSaveRoutineModalOpen(false)}
+                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-400" />
+                  <h3 className="font-headline font-black text-lg text-white uppercase tracking-wider">
+                    SAVE ROUTINE TEMPLATE
+                  </h3>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  SAVE YOUR CURRENT {loggedExercises.length} EXERCISES AS A REUSABLE WORKOUT TEMPLATE
+                </p>
+              </div>
+
+              <form onSubmit={handleSaveCurrentAsRoutine} className="space-y-3 pt-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-zinc-400 font-bold uppercase">
+                    ROUTINE TEMPLATE NAME:
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newRoutineName}
+                    onChange={(e) => setNewRoutineName(e.target.value)}
+                    placeholder="e.g. Upper Body Hypertrophy A, Leg Day Destroyer..."
+                    className="w-full bg-black border border-pixel-border px-3 py-2 text-xs font-bold text-white focus:border-amber-400 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-zinc-400 font-bold uppercase">
+                    TARGET SPLIT CATEGORY:
+                  </label>
+                  <select
+                    value={newRoutineSplit}
+                    onChange={(e) => setNewRoutineSplit(e.target.value)}
+                    className="w-full bg-black border border-pixel-border px-2 py-2 text-xs font-bold text-white focus:border-amber-400 outline-none uppercase"
+                  >
+                    {(["Push", "Pull", "Legs", "Full Body", "Upper", "Lower", "Custom"] as const).map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsSaveRoutineModalOpen(false)}
+                    className="w-1/3 py-2.5 border border-zinc-700 bg-black text-zinc-400 hover:text-white font-bold text-xs uppercase cursor-pointer"
+                  >
+                    CANCEL
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="w-2/3 py-2.5 border border-amber-400 bg-amber-500 hover:bg-amber-400 text-black font-headline font-black text-xs uppercase tracking-wider cursor-pointer shadow-gold-glow flex items-center justify-center gap-1"
+                  >
+                    <Check className="w-4 h-4 stroke-[3]" />
+                    <span>SAVE ROUTINE TEMPLATE</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isPickerOpen && (
