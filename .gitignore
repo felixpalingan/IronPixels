@@ -9,9 +9,13 @@ out/
 build/
 dist/
 
-# Environment files
+# Environment files (NEVER commit secrets or real env files)
+.env
 .env.local
 .env*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # TypeScript build cache
 *.tsbuildinfo
@@ -20,8 +24,17 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Raw local assets & agent workspace scratch
+# Supabase CLI local state & pooler cache
+supabase/.temp/
+
+# Raw local assets
+Helton Yan's Pixel Combat - Single Files/
+
+# AI workspace, agent memory, handover notes, and internal planning documents
+.agents/
 agent.txt
 skills-lock.json
-.agents/
-Helton Yan's Pixel Combat - Single Files/
+AI_HANDOVER*.md
+*REQUIREMENT*.md
+DESIGN.md
+ROADMAP.md
