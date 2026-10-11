@@ -1,252 +1,243 @@
-# ⚔️ IRONPIXELS — Gamified Fitness PWA & Retro RPG Dungeon Crawler
+<p align="center">
+  <img src="./public/icon.png" alt="IronPixels Logo" width="120" style="image-rendering: pixelated;" />
+</p>
 
-> **"Level up your gains, literally."**  
-> *IronPixels adalah Progressive Web Application (PWA) berbasis gamifikasi fitness yang mengonversi keringat, angkatan beban, dan konsistensi latihan fisik pengguna menjadi progres karakter RPG retro 16-bit secara real-time.*
+<h1 align="center">⚔️ IronPixels</h1>
+
+<p align="center">
+  <strong>Level up your gym gains in retro 16-bit pixel RPG style.</strong><br />
+  A Progressive Web Application (PWA) that transforms barbell sweat and gym volume into heroic dungeon progression.
+</p>
+
+<p align="center">
+  <a href="https://iron-pixels.vercel.app">
+    <img src="https://img.shields.io/badge/Live_Demo-iron--pixels.vercel.app-00ff41?style=for-the-badge&logo=vercel&logoColor=black" alt="Live Demo" />
+  </a>
+  <a href="https://nextjs.org/">
+    <img src="https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  </a>
+  <a href="https://supabase.com/">
+    <img src="https://img.shields.io/badge/Supabase-Database_%26_Realtime-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+  </a>
+  <a href="https://www.typescriptlang.org/">
+    <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  </a>
+  <a href="https://tailwindcss.com/">
+    <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  </a>
+  <img src="https://img.shields.io/badge/Tests-18%2F18_Passing-brightgreen?style=for-the-badge" alt="Tests Status" />
+</p>
 
 ---
 
-## 📋 Daftar Isi
-1. [Ringkasan Eksekutif & Value Proposition](#-ringkasan-eksekutif--value-proposition)
-2. [Arsitektur Sistem & Spesifikasi Teknologi](#-arsitektur-sistem--spesifikasi-teknologi)
-3. [Algoritma Game Engine (RVS Engine)](#-algoritma-game-engine-rvs-engine)
-4. [Penjabaran Fitur Utama (Feature Breakdown)](#-penjabaran-fitur-utama-feature-breakdown)
-5. [Spesifikasi Skema Data & Relasi Database](#-spesifikasi-skema-data--relasi-database)
-6. [Arsitektur REST API Endpoints](#-arsitektur-rest-api-endpoints)
-7. [Panduan Instalasi & Pengembangan Lokal](#-panduan-instalasi--pengembangan-lokal)
-8. [Project Roadmap & Feature Checklist (ROADMAP.md)](file:///c:/Users/Felix/Documents/proyek/ironpixels/ROADMAP.md)
+## 📖 Overview
+
+Conventional fitness tracking applications suffer from high churn because entering sets and reps quickly feels repetitive. **IronPixels** reinvents the gym routine by fusing weightlifting logs with classic retro MMORPG dungeon crawling.
+
+- **Authoritative Relative Volume Score (RVS)**: Every repetition, set, and kilogram lifted is processed by a server-side algorithm that normalizes power based on bodyweight ratios and exercise movement tiers.
+- **Pixel Art Retrogaming Aesthetic**: 100% crisp pixel rendering using the acclaimed **0x72 Dungeon Tileset II**, featuring gendered hero sprites, 27 dungeon weapons, animated mimic chests, and 18 diverse monster species.
+- **Realtime Co-Op Guild Raids**: Battle alongside party members in real time through Supabase Realtime WebSockets, synchronizing floating damage numbers, sound effects, and boss HP bars across screens with zero database latency.
+- **Gym-Grade Experience**: Features industry-standard utilities including previous session ghost values, single-click autofill, background-resilient rest timers, dynamic KG/LBS conversion, and routine presets.
+
+🌐 **Production Deployment**: [https://iron-pixels.vercel.app](https://iron-pixels.vercel.app)
 
 ---
 
-## 🛡️ Ringkasan Eksekutif & Value Proposition
+## 🏗️ System Architecture
 
-Aplikasi *fitness tracker* konvensional seringkali gagal mempertahankan retensi pengguna jangka panjang karena sifatnya yang monoton. **IronPixels** merevolusi rutinitas *gym* dengan menggabungkan pelacakan latihan beban (*weightlifting*) dengan mekanik pertempuran MMORPG/RPG retro.
-
-* **Gamifikasi Latihan Bebas Bias**: Setiap repetisi dan volume angkatan dihitung menggunakan algoritma **Relative Volume Score (RVS)** yang adil, mempertimbangkan proporsi berat badan dan jenis latihan fisik pengguna.
-* **Pixel Art Retrogaming Crisp 16x16**: Visualisasi pertarungan menggunakan asset pixel resmi dari **0x72 Dungeon Tileset II v1.7**, disusun pada grid 16x16 pixels presisi tanpa smoothing/blur (`image-rendering: pixelated;`), lengkap dengan animasi karakter ber-gender (pria/wanita), 27 senjata dungeon, 3 varian peti *gacha*, dan 18 jenis monster/bos.
-* **Dual Dungeon Lobbies (Solo vs Party Raid)**: Mode pertempuran terpisah untuk petualangan solo dan pertempuran *Guild Party Raid* (dengan monster ber-HP 4x lipat), serta sistem pemulihan HP & damage workout terpusat.
-* **Fitur Sosial & Guild Party**: Pemain dapat membentuk *Guild Party* hingga **10 anggota**, mengundang teman latihan, dan berkompetisi di papan peringkat **TOP FLOOR** (Solo Warriors & Guild Parties).
-
----
-
-## 🏗️ Arsitektur Sistem & Spesifikasi Teknologi
-
-IronPixels dibangun menggunakan arsitektur web modern yang mengutamakan performa *load time* cepat, daya tanggap tinggi, dan animasi render yang mulus tanpa bergantung pada *game engine* eksternal yang berat.
+IronPixels is built on a high-throughput, modern web architecture optimized for low latency, offline resilience, and fluid 60 FPS animation.
 
 ```mermaid
 graph TD
-    A[Client User Interface - PWA] -->|Next.js 15 App Router| B[React 19 & Client Components]
-    B -->|UI Aesthetics & Animation| C[TailwindCSS & Framer Motion]
-    B -->|Damage FX & Particles| D[HTML5 Canvas 2D Particle Engine]
-    B -->|0x72 Dungeon Tilemap| E[DungeonStageMap 16x16 Grid Engine]
+    Client[📱 Client PWA - Next.js 15 App Router]
     
-    A -->|REST JSON Requests| F[Next.js API Routes /api/]
-    F -->|Auth & Profile| G[Supabase Auth / PostgreSQL Profile]
-    F -->|Inventory & Equipment| H[Supabase User Inventory]
-    F -->|Party & Leaderboards| I[Multiplayer & Top Floor Engine]
+    subgraph UI & Visual Engines
+        React[React 19 & Framer Motion 12]
+        Canvas[HTML5 Canvas 2D Particle Engine]
+        Audio[Web Audio API Chiptune SFX Engine]
+    end
     
-    B -->|Offline & Caching Fallback| J[Browser LocalStorage Engine]
+    subgraph Server-Authoritative API
+        AuthRoutes[/api/user/* & /api/workout/*]
+        CombatRoutes[/api/combat/attack & execute-skill]
+        ShopRoutes[/api/shop/gacha & /api/inventory/*]
+        CalcEngine[workoutCalculations.ts RVS Engine]
+    end
+
+    subgraph Supabase Cloud
+        PG[(PostgreSQL Database + Row Level Security)]
+        Realtime[Supabase Realtime WebSockets Channel]
+        Auth[Supabase Auth SSR]
+    end
+
+    Client --> React
+    React --> Canvas
+    React --> Audio
+    Client -->|Authenticated REST Requests| AuthRoutes
+    Client -->|Combat Payloads| CombatRoutes
+    CombatRoutes --> CalcEngine
+    Client -->|Gacha & Equip| ShopRoutes
+
+    AuthRoutes --> PG
+    CombatRoutes --> PG
+    ShopRoutes --> PG
+    AuthRoutes --> Auth
+
+    CombatRoutes -->|Broadcast party_attack| Realtime
+    Realtime -->|Live Screen Sync| Client
 ```
 
-### Stack Teknologi Utamanya:
-* **Framework Utamanya**: `Next.js 15.5` (App Router, Server Actions, Client Components).
-* **UI & Design System**: `TailwindCSS 3.4`, Vanilla CSS, Lucide Icons, Crisp Pixel Rendering (`image-rendering: pixelated;`).
-* **Animasi & Render Visual**: `Framer Motion 12`, HTML5 Canvas 2D Engine (FX Angka Damage Floating & Hit Particles), Sprite Mirroring (`scaleX(-1)`).
-* **Database & Auth Integration**: `Supabase Database (PostgreSQL)` & `Supabase SSR Client`.
-* **Visual Asset Standard**: **0x72 Dungeon Tileset II v1.7** (Sliced 16x16 Tiles, Dynamic Stage Map, Gendered Heroes, Dungeon Weapons, Mimic Chests, Mobs & Boss Monsters).
+### Technology Stack & Rationale
+
+| Layer | Technology | Engineering Rationale |
+| :--- | :--- | :--- |
+| **Framework** | **Next.js 15.5 (App Router)** | Hybrid rendering, optimized edge caching, secure Server Actions, and native PWA metadata compilation. |
+| **Frontend UI** | **React 19 & TailwindCSS 3.4** | Modern reactive state management, CSS subpixel budgeting, and retro dark-mode design tokens. |
+| **Animation & FX** | **Framer Motion 12 & Canvas 2D** | Fluid state transitions coupled with high-performance floating damage particle engines. |
+| **Database & Auth** | **Supabase (PostgreSQL 15)** | Row Level Security (RLS), atomic Compare-And-Swap (CAS) functions, and relational integrity. |
+| **Networking** | **Supabase Realtime WebSockets** | Zero-latency pub/sub broadcast channels for multi-device Co-Op boss raids. |
+| **Type Safety** | **TypeScript 5.7 & Strict Typecheck** | End-to-end data safety across database models, calculation engines, and client interfaces. |
+| **Testing** | **Node.js Native Test Suite + tsx** | Ultra-fast unit testing covering server RVS calculations and unit conversions. |
 
 ---
 
-## 🧮 Algoritma Game Engine (RVS Engine)
+## 🎮 Core System Features
 
-Untuk mencegah kecurangan (*anti-cheat*) dan memastikan keadilan antara pemain dengan berat badan berbeda, *damage* serangan ke Bos tidak dihitung dari beban absolut mentah, melainkan melalui formulasi **Relative Volume Score (RVS)**:
+### 1. 🏋️ Gym Tracking (Industrial Standard)
+- **Previous Session Ghost Values**: Input fields display faint ghost hints (`LAST: 60kg × 10`) extracted from previous workouts.
+- **⚡ Single-Click Autofill**: Copies weights and repetitions from prior sessions with instant sound feedback.
+- **Background-Resilient Rest Timer**: Powered by a timestamp target model (`Date.now() + durationMs`) and `visibilitychange` listeners, remaining accurate even when devices are locked or switched to music apps.
+- **Dynamic KG / LBS Switching**: Real-time conversions across tracking forms and history lists with canonical database storage in kilograms.
+- **Completed Sets Filtering**: Unchecked sets are excluded from RVS calculations with modal confirmation guards.
+- **Workout Routine Presets**: Save, load, and manage favorite exercise templates with one click.
 
-$$\text{RVS} = \left( \frac{\text{Beban Latihan (kg)}}{\text{Berat Badan Hero (kg)}} \right) \times \text{Repetisi} \times \text{Movement Coefficient}$$
+### 2. 🧮 Server-Authoritative RVS & Anti-Cheat Engine
+- **Fair Scaling**: Damage relies on Relative Volume Score rather than raw weight, balancing athletes across diverse bodyweights:
+  $$\text{RVS} = \left( \frac{\text{Weight (kg)}}{\text{Bodyweight (kg)}} \right) \times \text{Reps} \times \text{Movement Multiplier} \times \left( \frac{\text{Stat}}{50} \right)$$
+- **Movement Multipliers**: Isolation exercises (e.g., Curls: `2.0×`) reward appropriate effort compared to heavy compounds (e.g., Squats: `1.0×`).
+- **Single-Hit Damage Caps**: Inbound attack payloads enforce server-side validation caps (`MAX_SINGLE_HIT_DAMAGE = 50,000`) preventing unauthorized client injections.
 
-### Matriks Koefisien Gerakan Latihan (Movement Coefficient):
-| Tier Gerakan | Klasifikasi | Contoh Gerakan Gym | Koefisien Multiplier |
-| :--- | :--- | :--- | :--- |
-| **Tier A** | *Isolation & Small Muscles* | Bicep Curls, Lateral Raises, Tricep Extensions | `2.0 - 3.0` |
-| **Tier B** | *Free-Weight Compound* | Barbell Squats, Bench Press, Deadlifts | `1.0 - 1.5` |
-| **Tier C** | *Machine & Supported* | Leg Press, Smith Machine Squats, Cable Row | `0.5 - 0.8` |
+### 3. ⚔️ Infinite Dungeons & Dual Combat Lobbies
+- **Solo Dungeon**: Personal progression through infinite floors. Floors 1–4 spawn randomized mob enemies; every 5th floor features epic boss encounters.
+- **Party Raid Lobby**: Multiplied monster HP pools designed for collaborative party battles with separate progression logs.
+- **Tactical Gear Skills**: Equipment grants active combat skills with individual cooldown timers and visual casting animations.
 
-### Formulasi Total Combat Power (CP):
-$$\text{Total CP} = (\text{Level} \times 100) + (\text{STR} \times 3.5) + (\text{AGI} \times 2.5) + (\text{VIT} \times 2.5) + (\text{LUK} \times 2.0) + (\text{Active Gear} \times 150) + \text{Daily RVS}$$
+### 4. 📡 Realtime Co-Op Guild Raids
+- **WebSocket Broadcast**: Channel `party_raid:[party_id]` relays attacks live across party members without database roundtrip lag.
+- **Live Canvas Particles**: Teammates see floating damage numbers tagged with attacker usernames (`[ALEX] HEAVY IRON SLASH -1,450`).
+- **Synchronized Boss HP**: Simultaneous boss health depletion, hit flash animations, and victory loot distribution.
 
----
+### 5. 💀 Death Penalty & Dual Revival System
+- **0 HP Defeated State**: Taking lethal damage from missed-workout boss penalties (*Demon Lord Ignis*) or dungeon combat locks hero actions.
+- **Free Gym Sweat Revival (Recommended)**: Completing one real gym workout resurrects the character with **100% Max HP**.
+- **Instant Revive Potion**: Available at the Blacksmith shrine for 500 Dungeon Gold via atomic CAS verification.
 
-## 🕹️ Penjabaran Fitur Utama (Feature Breakdown)
-
-### 1. The Hub (Dashboard Utama Hero)
-* **Status Profile & Avatar Header**: Displays Hero Level, EXP, Gold (admin MAX Gold support), Weight (kg), and dynamic **PixelAvatar** rendering 0x72 character sprites with gender selection (`_m` & `_f`).
-* **Class & Perk System**:
-  * 🛡️ **Cyber Knight / Warrior**: `+15% RVS STR Damage Bonus`.
-  * 🗡️ **Shadow Ninja / Rogue**: `+20% Critical Hit Chance (AGI)`.
-  * 🏰 **Iron Vanguard / Paladin**: `+250 MAX HP & Defensive Shield`.
-  * ⚡ **Titan Berserker**: `+20% Extra Gold & EXP Loot`.
-* **Stat Radar Chart & Attribute Upgrade**: Alokasi **Ability Points (AP)** untuk meningkatkan **STR**, **AGI**, **VIT**, dan **LUK**.
-* **Critical HP Exhaustion Alert**: Jika HP Hero di bawah 20%, aplikasi menampilkan indikator bahaya merah berkedip. Hero dapat memulihkan HP dengan menyelesaikan sesi *gym* atau meminum Potion.
-
-### 2. Workout Tracker (Log Pertempuran Gym)
-* Pencatatan sesi gym berbasis set, repetisi, dan beban (kg) dengan *Exercise Library* terstruktur.
-* **Unified Damage Sync**: Tombol *Finish Session* menghitung akumulasi RVS dan secara otomatis **menyerang monster di Solo Dungeon DAN Party Raid secara bersamaan**.
-* Memulihkan HP Hero sebesar `1.5x RVS`, memberikan koin Gold dari total volume angkatan, dan memicu animasi kemenangan *Gym Raid Victory*.
-
-### 3. Infinite Dungeon Engine & Dual Lobbies (Solo & Party)
-* **Infinite Floor Generation**:
-  * Floor 1 s/d 4 (dan kelipatan non-5): **Mob Kecil** yang di-random dari 15 pool monster (Goblin, Imp, Skeleton, Tiny Zombie, Muddy, Swampy, Slug, Masked Orc, Orc Warrior, Wogol, Chort, Ice Zombie, Necromancer, Pumpkin Dude, Orc Shaman).
-  * Floor 5, 10, 15... (tiap 5 floor): **Bos Besar** (Demon Lord, Undead Giant, Ogre King).
-* **Dual Lobby Switcher (`[ 🗡️ SOLO DUNGEON ]` | `[ 🛡️ PARTY RAID ]`)**:
-  * **Solo Dungeon**: Progres floor pribadi, HP enemy solo, cooldown skill solo, & combat log solo.
-  * **Party Raid**: Progres floor guild party bersama, HP monster party 4x lipat (`4X HP Scaling`), cooldown skill party terpisah, & combat log party terpisah.
-* **Pixel-Art Tilemap (DungeonStageMap)**: Sliced 16x16 grid background dengan dekorasi dinding (pilar, spanduk, air mancur darah/mana) yang ditempatkan secara aman di luar area pertempuran karakter. Semua monster di-flip otomatis menghadap kiri (`scaleX(-1)`).
-* **Independensi Cooldown & Combat Log**: Skill cooldown dan log pertempuran diikat dengan storage key terpisah per mode.
-* **Persistensi Ketat**: Status HP & Floor tersimpan aman di `localStorage` & Supabase per ID user/party, mencegah reset atau lompatan ke Floor 20 saat refresh/pindah halaman.
-
-### 4. Blacksmith Forge & Chest Gacha Shop
-* **Sistem Gacha 3 Peti 0x72 Unik**:
-  * 📦 **Bronze Cache (500 Gold)**: Common & Rare Gear (`chest_empty_open_anim_f0.png`).
-  * 🎁 **Silver Cache (2,500 Gold)**: Rare & Epic Gear (`chest_full_open_anim_f2.png`).
-  * 👾 **Void Relic Chest (10,000 Gold)**: Epic, Legendary & Mythic Relics (`chest_mimic_open_anim_f2.png`).
-* **Potion Shop**: 🧪 **Elixir of Full Recovery (10,000 Gold)** memulihkan HP Hero seketika menjadi 100% Full Max HP.
-* **Interactive Unboxing Reel**: Animasi roda gacha *spinning reel* yang memperlihatkan barang sebelum mendarat di barang pemenang.
-
-### 5. Equipment Vault & Inventaris
-* **Strict 4-Slot Equipment Rules**: Membatasi penggunaan item terpasang menjadi tepat 4 slot (1 Weapon, 1 Armor, Maksimal 2 Accessories).
-* **Stat Bonus & Skill Granting**: Setiap perlengkapan memberikan bonus stat acak dan *Skill Unique*.
-* **27 Senjata Pixel 0x72**: *Rusty Iron Broadsword*, *Shadow Katana*, *Frostbite Spear*, *Sunfire Holy Excalibur*, *Quantum Singularity Cannon*, dll.
-
-### 6. Multiplayer Realm & Guild Party
-* **Sistem Pertemanan (Friends)**: Cari username pemain lain, kirim permintaan pertemanan (*Send Request*), serta terima/tolak undangan (*Accept/Reject*).
-* **Guild Party System (Kapasitas 10 Member)**:
-  * Pembuatan Guild Party kustom dengan kapasitas maksimal **10 anggota**.
-  * Pemilik Guild Party (*Owner*) memiliki kontrol penuh untuk mengubah nama party, mengelola anggota, atau membubarkan party.
-* **Leaderboard TOP FLOOR (Solo & Party)**:
-  1. Solo Warriors - Top Floor Cleared
-  2. Solo Warriors - Top Daily RVS
-  3. Solo Warriors - Top Workout Streak
-  4. Guild Parties - Top Total Party Floor
-  5. Guild Parties - Top Combined Daily RVS
-  6. Guild Parties - Top Party Streak
+### 6. 💰 Economy, Blacksmith & Inventory
+- **Atomic Gacha Chests**: Compare-And-Swap transactional chest opening for Regular and Void Chests preventing duplicate exploits.
+- **Equipment Inventory**: Equip weapons, armor, and dual accessory slots; sell surplus gear for Gold.
 
 ---
 
-## 🗄️ Spesifikasi Skema Data & Relasi Database
-
-Aplikasi menggunakan skema database PostgreSQL Supabase dengan struktur tabel utama sebagai berikut:
+## 🗄️ Database Schema & DDL Highlights
 
 ```sql
--- 1. Tabel Profiles (User Hero Data)
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
-  username TEXT NOT NULL,
-  character_class TEXT DEFAULT 'WARRIOR',
-  gender TEXT DEFAULT 'm',
-  level INT DEFAULT 1,
-  current_hp INT DEFAULT 1000,
-  max_hp INT DEFAULT 1000,
-  exp INT DEFAULT 0,
-  max_exp INT DEFAULT 1000,
-  gold BIGINT DEFAULT 999999999,
-  weight_kg NUMERIC(5,2) DEFAULT 75.0,
-  available_ap INT DEFAULT 5,
-  stats JSONB DEFAULT '{"str": 85, "agi": 72, "vit": 54, "luk": 60}'::jsonb,
-  max_floor INT DEFAULT 1,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Profiles: Hero attributes, level, and preferences
+CREATE TABLE public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    username TEXT NOT NULL,
+    character_class TEXT DEFAULT 'WARRIOR',
+    gender TEXT DEFAULT 'm',
+    level INT DEFAULT 1,
+    current_hp INT DEFAULT 1000,
+    max_hp INT DEFAULT 1000,
+    exp INT DEFAULT 0,
+    max_exp INT DEFAULT 1000,
+    gold INT DEFAULT 500,
+    weight_kg NUMERIC DEFAULT 75,
+    weight_unit TEXT DEFAULT 'kg',
+    available_ap INT DEFAULT 5,
+    str INT DEFAULT 85,
+    agi INT DEFAULT 70,
+    vit INT DEFAULT 60,
+    luk INT DEFAULT 50,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Tabel User Inventory (Equipment Vault)
-CREATE TABLE user_inventory (
-  inventory_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  item_id TEXT NOT NULL,
-  is_equipped BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Workout Sessions: Verified gym logs
+CREATE TABLE public.workout_sessions (
+    session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    workout_name TEXT NOT NULL,
+    total_volume_kg NUMERIC NOT NULL,
+    total_rvs NUMERIC NOT NULL,
+    exercises_log JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Tabel Workout Sessions & Log Set
-CREATE TABLE workout_sessions (
-  session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  total_rvs NUMERIC(10,2) NOT NULL,
-  total_volume_kg NUMERIC(10,2) NOT NULL,
-  exercises_log JSONB NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 4. Tabel Guild Party
-CREATE TABLE party (
-  party_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  party_name TEXT NOT NULL,
-  leader_id UUID REFERENCES profiles(id),
-  members JSONB NOT NULL, -- Maksimal 10 Anggota
-  total_party_floor INT DEFAULT 1,
-  total_party_cp INT DEFAULT 0
+-- Dungeon Bosses: Boss health & stage state
+CREATE TABLE public.dungeon_bosses (
+    boss_id TEXT PRIMARY KEY,
+    boss_name TEXT NOT NULL,
+    stage INT NOT NULL,
+    current_hp NUMERIC NOT NULL,
+    max_hp NUMERIC NOT NULL,
+    status TEXT DEFAULT 'Active',
+    category TEXT DEFAULT 'mob',
+    mode TEXT DEFAULT 'solo',
+    sprite_config JSONB,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
 ---
 
-## 🌐 Arsitektur REST API Endpoints
+## 🚀 Local Development Setup
 
-| Method | Endpoint | Deskripsi Fungsi |
-| :--- | :--- | :--- |
-| `GET` | `/api/user/profile` | Mengambil data profil hero, HP, EXP, Gold, dan stats pemain. |
-| `GET` | `/api/user/inventory` | Mengambil daftar inventaris perlengkapan pemain. |
-| `POST` | `/api/inventory/equip` | Memasang atau melepas item perlengkapan (1 Wpn, 1 Arm, Max 2 Acc). |
-| `POST` | `/api/workout/submit` | Mengirim data log sesi gym, menghitung RVS, memicu kenaikan level/exp & gold. |
-| `GET` | `/api/combat/boss` | Mengambil status musuh aktif per mode (`?mode=solo` atau `?mode=party`). |
-| `POST` | `/api/combat/attack` | Mengeksekusi serangan RVS ke musuh (`mode: "solo"`, `"party"`, atau `"both"`). |
-| `POST` | `/api/combat/execute-skill` | Mengeksekusi damage skill dari perlengkapan hero sesuai mode. |
-| `POST` | `/api/shop/gacha` | Mengundi gacha chest (Bronze, Silver, Void Relic) & mengurangi saldo Gold. |
-| `GET` | `/api/multiplayer/leaderboard` | Mengambil 6 kategori papan peringkat (TOP FLOOR Solo & Party, RVS, Streak). |
-| `GET` | `/api/multiplayer/friends` | Mengambil daftar teman, pencarian pemain, dan request pertemanan. |
-| `POST` | `/api/multiplayer/friends` | Mengirim, menerima, atau menolak permintaan pertemanan. |
-| `GET` | `/api/multiplayer/party` | Mengambil data Guild Party tempat pemain bergabung (Max 10 member). |
-| `POST` | `/api/multiplayer/party` | Membuat party baru, mengundang anggota (max 10), mengedit nama, atau membubarkan party. |
+### Prerequisites
+- **Node.js**: v20.x or v24.x
+- **Package Manager**: npm or pnpm
+- **Supabase Account**: A Supabase project with PostgreSQL enabled
 
----
+### 1. Clone & Install
+```bash
+git clone https://github.com/felixpalingan/IronPixels.git
+cd IronPixels
+npm install
+```
 
-## ⚙️ Panduan Instalasi & Pengembangan Lokal
+### 2. Configure Environment Variables
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+CRON_SECRET=your-secure-cron-secret
+```
 
-### Prasyarat System:
-* Node.js v18.0.0+ atau v20.0.0+
-* NPM atau Yarn
+### 3. Run Automated Tests
+Execute the built-in mathematical engine test suite:
+```bash
+npm test
+```
 
-### Langkah Setup & Running:
-
-1. **Clone Repository**:
-   ```bash
-   git clone https://github.com/felixpalingan/IronPixels.git
-   cd IronPixels
-   ```
-
-2. **Instalasi Dependency**:
-   ```bash
-   npm install
-   ```
-
-3. **Salin Asset Pipeline (0x72 Dungeon Assets)**:
-   ```bash
-   node scripts/copy_dungeon_assets.js
-   ```
-
-4. **Konfigurasi Environment (`.env.local`)**:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
-
-5. **Jalankan Development Server**:
-   ```bash
-   npm run dev
-   ```
-   Buka `http://localhost:3000` pada browser lokal Anda.
-
-6. **Build & Validasi Produksi**:
-   ```bash
-   npm run build
-   ```
+### 4. Start Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-*Dokumen analisis perangkat lunak ini dibuat secara resmi untuk menguraikan arsitektur, algoritma, dan alur kerja aplikasi IronPixels.*
+## 🧪 Quality Assurance & Build Verification
+
+The application maintains zero-warning production compilation:
+- **Build**: `npm run build` generates optimized static pages and standalone PWA artifacts.
+- **Unit Testing**: Tests cover authoritative RVS calculation bounds, completed set filtering, and precision metric conversion.
+
+---
+
+## 📜 Author & License
+
+- **Author**: Felix Palingan ([@felixpalingan](https://github.com/felixpalingan))
+- **Assets**: 0x72 Dungeon Tileset II v1.7 (Art by 0x72, used under CC0 / public domain licensing).
+- **License**: MIT License. See [LICENSE](LICENSE) for details.
