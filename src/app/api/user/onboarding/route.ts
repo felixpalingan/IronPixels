@@ -36,6 +36,13 @@ export async function POST(request: Request) {
       initialHp = 950;
     }
 
+    const starterBonusHp =
+      (EQUIPMENT_DICTIONARY[0]?.bonus_hp || 50) +
+      (EQUIPMENT_DICTIONARY[1]?.bonus_hp || 150) +
+      (EQUIPMENT_DICTIONARY[2]?.bonus_hp || 100);
+
+    const initialTotalHp = initialHp + starterBonusHp;
+
     const profileData = {
       id: userId,
       user_id: userId,
@@ -45,7 +52,7 @@ export async function POST(request: Request) {
       weight_kg: selectedWeight,
       gold: 500,
       level: 1,
-      current_hp: initialHp,
+      current_hp: initialTotalHp,
       max_hp: initialHp,
       exp: 0,
       max_exp: 1000,

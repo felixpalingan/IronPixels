@@ -4,7 +4,7 @@ import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
 export async function POST(request: Request) {
   try {
-    const { inventory_id, item_id, item_type, is_equipped } = await request.json();
+    const { inventory_id, item_id, item_type, is_equipped, new_current_hp } = await request.json();
 
     if (!inventory_id || !item_id) {
       return NextResponse.json(
@@ -72,6 +72,52 @@ export async function POST(request: Request) {
         .update({ is_equipped: Boolean(is_equipped) })
         .eq("inventory_id", inventory_id)
         .eq("user_id", userId);
+
+      // Handle proportional current_hp update
+      if (new_current_hp !== undefined && !isNaN(Number(new_current_hp))) {
+        const hpToSet = Math.max(0, Math.floor(Number(new_current_hp)));
+        await supabase
+          .from("profiles")
+          .update({ current_hp: hpToSet, updated_at: new Date().toISOString() })
+          .or(`id.eq.${userId},user_id.eq.${userId}`);
+      } else {
+        // Fallback: Calculate proportional HP on server if not provided by client
+        const { data: profileList } = await supabase
+          .from("profiles")
+          .select("current_hp, max_hp")
+          .or(`id.eq.${userId},user_id.eq.${userId}`)
+          .limit(1);
+
+        if (profileList && profileList.length > 0) {
+          const profile = profileList[0];
+          const baseMaxHp = Number(profile.max_hp) || 1000;
+          const currentHp = Number(profile.current_hp ?? baseMaxHp);
+
+          const { data: allItems } = await supabase
+            .from("user_inventory")
+            .select("item_id, is_equipped")
+            .eq("user_id", userId);
+
+          let newBonusHp = 0;
+          if (allItems) {
+            allItems.filter((r) => r.is_equipped).forEach((r) => {
+              const cfg = EQUIPMENT_DICTIONARY.find((i) => i.item_id === r.item_id);
+              if (cfg?.bonus_hp) newBonusHp += cfg.bonus_hp;
+            });
+          }
+
+          const newTotalMax = baseMaxHp + newBonusHp;
+          if (currentHp > 0) {
+            // Keep at same percentage or cap
+            const hpRatio = Math.min(1, currentHp / Math.max(1, baseMaxHp));
+            const calculatedHp = Math.min(newTotalMax, Math.round(hpRatio * newTotalMax));
+            await supabase
+              .from("profiles")
+              .update({ current_hp: calculatedHp, updated_at: new Date().toISOString() })
+              .or(`id.eq.${userId},user_id.eq.${userId}`);
+          }
+        }
+      }
     } catch (e) {
     }
 

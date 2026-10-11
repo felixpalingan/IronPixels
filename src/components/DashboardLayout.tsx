@@ -220,18 +220,41 @@ export function DashboardLayout() {
 
   const totalMaxHp = baseMaxHp + bonusStats.hp;
 
+  useEffect(() => {
+    if (profile && profile.current_hp !== undefined && profile.max_hp) {
+      const raw = Number(profile.current_hp);
+      const base = Number(profile.max_hp);
+      if (raw >= base && raw > 0 && raw < totalMaxHp) {
+        const updated = { ...profile, current_hp: totalMaxHp };
+        setProfile(updated);
+        localStorage.setItem("ironpixels_profile", JSON.stringify(updated));
+        fetch("/api/user/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ current_hp: totalMaxHp }),
+        }).catch(() => {});
+      }
+    }
+  }, [totalMaxHp, baseMaxHp]);
+
+  const rawCurrentHp =
+    profile?.current_hp !== undefined && profile?.current_hp !== null
+      ? Number(profile.current_hp)
+      : totalMaxHp;
+
+  // If hero was at full health (e.g. 1000/1000 base), scale it so they are also at 100% of totalMaxHp
+  const effectiveCurrentHp =
+    rawCurrentHp >= baseMaxHp && rawCurrentHp > 0
+      ? totalMaxHp
+      : Math.min(totalMaxHp, Math.max(0, rawCurrentHp));
+
   const userData = {
     user_id: profile?.user_id || "",
     username: profile?.username || "Felix",
     character_class: profile?.character_class || "WARRIOR",
     gender: profile?.gender || "m",
     level: profile?.level || 1,
-    current_hp: Math.min(
-      totalMaxHp,
-      profile?.current_hp !== undefined && profile?.current_hp !== null
-        ? Number(profile.current_hp)
-        : 1000
-    ),
+    current_hp: effectiveCurrentHp,
     max_hp: totalMaxHp,
     exp: profile?.exp || 0,
     max_exp: profile?.max_exp || 1000,
@@ -502,6 +525,20 @@ export function DashboardLayout() {
   const handleToggleEquip = async (inventoryId: string, currentEquippedState: boolean, itemType: ItemType) => {
     const nextEquippedState = !currentEquippedState;
 
+    // Helper to calculate total equipped bonus HP from active 4 slots
+    const getEquippedBonusHp = (records: InventoryRecord[]) => {
+      const w = records.find((rec) => rec.is_equipped && rec.item?.type === "weapon");
+      const a = records.find((rec) => rec.is_equipped && rec.item?.type === "armor");
+      const accs = records.filter((rec) => rec.is_equipped && rec.item?.type === "accessory").slice(0, 2);
+      const active = [w, a, ...accs].filter(Boolean) as InventoryRecord[];
+      return active.reduce((sum, rec) => sum + (rec.item?.bonus_hp || 0), 0);
+    };
+
+    const oldBonusHp = getEquippedBonusHp(userInventory);
+    const oldTotalMaxHp = baseMaxHp + oldBonusHp;
+
+    let updatedInventory: InventoryRecord[] = [];
+
     setUserInventory((prev) => {
       let updated: InventoryRecord[];
 
@@ -529,9 +566,32 @@ export function DashboardLayout() {
         updated = prev.map((rec) => (rec.inventory_id === inventoryId ? { ...rec, is_equipped: false } : rec));
       }
 
+      updatedInventory = updated;
       localStorage.setItem("ironpixels_inventory", JSON.stringify(updated));
       return updated;
     });
+
+    const newBonusHp = getEquippedBonusHp(updatedInventory);
+    const newTotalMaxHp = baseMaxHp + newBonusHp;
+
+    // Scale current HP proportionally by percentage (80% stays 80%, 100% stays 100%)
+    const currentHp = userData.current_hp;
+    let newCurrentHp = currentHp;
+
+    if (oldTotalMaxHp > 0 && newTotalMaxHp !== oldTotalMaxHp) {
+      if (currentHp <= 0) {
+        newCurrentHp = 0; // dead hero stays dead
+      } else {
+        const hpPercent = Math.max(0, Math.min(1, currentHp / oldTotalMaxHp));
+        newCurrentHp = Math.min(newTotalMaxHp, Math.max(1, Math.round(hpPercent * newTotalMaxHp)));
+      }
+
+      if (profile) {
+        const updatedProf = { ...profile, current_hp: newCurrentHp };
+        setProfile(updatedProf);
+        localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+      }
+    }
 
     const targetRec = userInventory.find((r) => r.inventory_id === inventoryId);
     if (targetRec) {
@@ -544,6 +604,7 @@ export function DashboardLayout() {
             item_id: targetRec.item_id,
             item_type: itemType,
             is_equipped: nextEquippedState,
+            new_current_hp: newCurrentHp,
           }),
         });
       } catch (err) {}

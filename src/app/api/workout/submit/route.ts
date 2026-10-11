@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateWorkoutSessionTotals } from "@/lib/workoutCalculations";
+import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
 export async function POST(request: Request) {
   try {
@@ -95,11 +96,27 @@ export async function POST(request: Request) {
           newAp += 5;
         }
 
-        const maxHp = p.max_hp || 1000;
-        const wasDefeated = Number(p.current_hp ?? 1000) <= 0;
+        const { data: equippedRows } = await supabase
+          .from("user_inventory")
+          .select("item_id")
+          .eq("user_id", userId)
+          .eq("is_equipped", true);
+
+        let gearBonusHp = 0;
+        if (equippedRows && equippedRows.length > 0) {
+          for (const eq of equippedRows) {
+            const itemConfig = EQUIPMENT_DICTIONARY.find((i) => i.item_id === eq.item_id);
+            if (itemConfig?.bonus_hp) {
+              gearBonusHp += itemConfig.bonus_hp;
+            }
+          }
+        }
+
+        const effectiveMaxHp = (p.max_hp || 1000) + gearBonusHp;
+        const wasDefeated = Number(p.current_hp ?? effectiveMaxHp) <= 0;
         const newHp = wasDefeated
-          ? maxHp
-          : Math.min(maxHp, (p.current_hp || 1000) + healAmount);
+          ? effectiveMaxHp
+          : Math.min(effectiveMaxHp, (Number(p.current_hp) || effectiveMaxHp) + healAmount);
         const newGold = (p.gold || 0) + earnedGold;
         const newDailyRvs = Number(p.daily_rvs || 0) + serverRvs;
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
 export async function POST(request: Request) {
   try {
@@ -37,14 +38,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const maxHp = Number(profile.max_hp) || 1000;
+    const { data: equippedRows } = await supabase
+      .from("user_inventory")
+      .select("item_id")
+      .eq("user_id", userId)
+      .eq("is_equipped", true);
+
+    let gearBonusHp = 0;
+    if (equippedRows && equippedRows.length > 0) {
+      for (const eq of equippedRows) {
+        const itemConfig = EQUIPMENT_DICTIONARY.find((i) => i.item_id === eq.item_id);
+        if (itemConfig?.bonus_hp) {
+          gearBonusHp += itemConfig.bonus_hp;
+        }
+      }
+    }
+
+    const effectiveMaxHp = (Number(profile.max_hp) || 1000) + gearBonusHp;
     const newGold = currentGold - REVIVE_COST;
 
     // 2. Atomic update to restore HP and deduct gold
     const { data: updatedList, error: updateErr } = await supabase
       .from("profiles")
       .update({
-        current_hp: maxHp,
+        current_hp: effectiveMaxHp,
         gold: newGold,
         updated_at: new Date().toISOString(),
       })
