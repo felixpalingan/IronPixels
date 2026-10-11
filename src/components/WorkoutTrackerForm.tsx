@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2 } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2, History } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat } from "@/lib/exercisesData";
@@ -263,6 +263,62 @@ export function WorkoutTrackerForm({
     };
 
     fetchRoutines();
+  }, []);
+
+  // Map of exercise name/key to array of past sets: { weight_kg: number, reps: number }[]
+  const [previousLogsMap, setPreviousLogsMap] = useState<Record<string, Array<{ weight_kg: number; reps: number }>>>({});
+
+  // Parse latest sets per exercise from workout sessions
+  const parsePreviousLogs = (sessions: any[]) => {
+    if (!Array.isArray(sessions) || sessions.length === 0) return {};
+    const map: Record<string, Array<{ weight_kg: number; reps: number }>> = {};
+
+    for (const session of sessions) {
+      const logs = session.exercises_log;
+      if (Array.isArray(logs)) {
+        for (const item of logs) {
+          const rawName = item.exercise_name || item.name;
+          if (!rawName) continue;
+          const normalizedKey = String(rawName).toLowerCase().trim();
+          if (!map[normalizedKey] && Array.isArray(item.sets) && item.sets.length > 0) {
+            map[normalizedKey] = item.sets.map((s: any) => ({
+              weight_kg: Number(s.weight_kg ?? s.weight ?? 0),
+              reps: Number(s.reps ?? 0),
+            }));
+          }
+        }
+      }
+    }
+    return map;
+  };
+
+  useEffect(() => {
+    try {
+      const localHistory = localStorage.getItem("ironpixels_workout_history");
+      if (localHistory) {
+        const parsed = JSON.parse(localHistory);
+        const map = parsePreviousLogs(parsed);
+        setPreviousLogsMap(map);
+      }
+    } catch (e) {}
+
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch("/api/workout/history");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.sessions)) {
+            const map = parsePreviousLogs(data.sessions);
+            setPreviousLogsMap(map);
+            try {
+              localStorage.setItem("ironpixels_workout_history", JSON.stringify(data.sessions));
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+    };
+
+    fetchHistory();
   }, []);
 
   const handleStartFromRoutine = (routine: any) => {
@@ -978,6 +1034,12 @@ export function WorkoutTrackerForm({
                     );
 
                     const isDone = Boolean(set.completed);
+                    const exKey = ex.name.toLowerCase().trim();
+                    const defKey = ex.definitionId ? ex.definitionId.toLowerCase().trim() : "";
+                    const prevSets = previousLogsMap[exKey] || (defKey ? previousLogsMap[defKey] : undefined);
+                    const prevSet = prevSets && prevSets.length > 0
+                      ? (prevSets[setIdx] || prevSets[prevSets.length - 1])
+                      : null;
 
                     return (
                       <div
@@ -1002,7 +1064,13 @@ export function WorkoutTrackerForm({
                             className={`w-full bg-black border px-2 py-1 text-center font-bold outline-none text-xs ${
                               isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
                             }`}
-                            placeholder={isAgilityEx ? "0 (BW)" : "0"}
+                            placeholder={
+                              prevSet && prevSet.weight_kg > 0
+                                ? String(prevSet.weight_kg)
+                                : isAgilityEx
+                                ? "0 (BW)"
+                                : "0"
+                            }
                           />
                         </div>
 
@@ -1016,7 +1084,11 @@ export function WorkoutTrackerForm({
                             className={`w-full bg-black border px-2 py-1 text-center font-bold outline-none text-xs ${
                               isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
                             }`}
-                            placeholder="0"
+                            placeholder={
+                              prevSet && prevSet.reps > 0
+                                ? String(prevSet.reps)
+                                : "0"
+                            }
                           />
                         </div>
 
@@ -1050,6 +1122,35 @@ export function WorkoutTrackerForm({
                             </button>
                           )}
                         </div>
+
+                        {prevSet && (
+                          <div className="col-span-12 flex items-center justify-between px-2 py-1 text-[9px] bg-zinc-950/80 border-t border-zinc-900/80 text-zinc-400 font-mono">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-zinc-500 font-semibold flex items-center gap-1">
+                                <History className="w-2.5 h-2.5 text-zinc-400" />
+                                <span>LAST:</span>
+                              </span>
+                              <span className="text-zinc-300 font-bold">
+                                {prevSet.weight_kg}kg × {prevSet.reps} reps
+                              </span>
+                            </div>
+                            {!isDone && (!set.weight || !set.reps) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  soundEngine.play("select");
+                                  soundEngine.triggerHaptic(40);
+                                  handleUpdateSet(ex.id, setIdx, "weight", prevSet.weight_kg);
+                                  handleUpdateSet(ex.id, setIdx, "reps", prevSet.reps);
+                                }}
+                                className="text-[#00ff41] hover:text-[#5cff87] hover:underline cursor-pointer flex items-center gap-1 font-bold text-[8.5px] uppercase tracking-wider"
+                                title="Copy previous weight and reps to this set"
+                              >
+                                <span>⚡ AUTOFILL</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
