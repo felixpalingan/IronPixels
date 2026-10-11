@@ -62,6 +62,7 @@ export const metadata: Metadata = {
     description: "Level up your gym workouts with retro 16-bit RPG mechanics.",
     creator: "@felixpalingan",
     images: ["/icon.png"],
+  },
   verification: {
     google: "u4LJw861Sd1D-bEjorhvvNzYhsOaDRd8unleA61RqHg",
   },
