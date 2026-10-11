@@ -5,6 +5,7 @@ import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Spark
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat } from "@/lib/exercisesData";
+import { calculateSetRvs as calculateSetRvsPure } from "@/lib/workoutCalculations";
 import { soundEngine } from "@/lib/soundEffects";
 
 interface ExerciseSet {
@@ -290,21 +291,20 @@ export function WorkoutTrackerForm({
   const calculateSetRvs = (
     weight: number,
     reps: number,
-    multiplier: number,
+    multiplier: number = 1.0,
     category: string = "Chest",
     equipment: string = "Barbell"
   ) => {
-    if (reps <= 0) return 0;
-    const scalingStat = getExerciseScalingStat({ category, equipment });
-    const isAgilityEx = scalingStat === "AGI";
-
-    const actualWeight = isAgilityEx && weight <= 0 ? userWeightKg : Math.max(1, weight);
-    const bodyweightRatio = actualWeight / Math.max(40, userWeightKg);
-
-    const relevantStat = isAgilityEx ? (heroStats?.agi || 70) : (heroStats?.str || 85);
-    const statMultiplier = relevantStat / 50;
-
-    return Math.round(actualWeight * reps * bodyweightRatio * 0.1 * multiplier * statMultiplier);
+    return calculateSetRvsPure({
+      weight,
+      reps,
+      multiplier,
+      category,
+      equipment,
+      userWeightKg,
+      userStr: heroStats?.str || 85,
+      userAgi: heroStats?.agi || 70,
+    });
   };
 
   const calculateTotalVolume = () => {
@@ -419,12 +419,16 @@ export function WorkoutTrackerForm({
     const totalRvs = calculateTotalRvs();
 
     const exercisesLog = loggedExercises.map((ex) => ({
+      exercise_id: ex.definitionId || ex.id,
       exercise_name: ex.name,
       category: ex.category,
+      equipment: ex.equipment,
+      rvs_multiplier: ex.rvsMultiplier,
       sets: ex.sets.map((s) => ({
         set_number: s.set_number,
         weight_kg: s.weight,
         reps: s.reps,
+        completed: s.completed ?? true,
       })),
     }));
 

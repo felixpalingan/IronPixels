@@ -1,34 +1,69 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { calculateWorkoutSessionTotals } from "@/lib/workoutCalculations";
 
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { date, duration_minutes, total_rvs, total_volume_kg, exercises_log } = body;
-
     const userId = user.id;
+    const body = await request.json();
+    const { date, duration_minutes, exercises_log } = body;
 
-    if (!total_rvs || total_rvs <= 0) {
+    if (!Array.isArray(exercises_log) || exercises_log.length === 0) {
       return NextResponse.json(
-        { error: "Invalid workout payload. Total RVS must be greater than 0." },
+        { error: "Invalid workout payload. exercises_log must be a non-empty array." },
         { status: 400 }
       );
     }
 
+    // Retrieve user's current character profile stats from DB
+    const { data: profileList } = await supabase
+      .from("profiles")
+      .select("*")
+      .or(`id.eq.${userId},user_id.eq.${userId}`);
+
+    const existingProfile = profileList && profileList.length > 0 ? profileList[0] : null;
+
+    const userWeightKg = Number(existingProfile?.weight_kg) || 75;
+    const userStr = Number(existingProfile?.str ?? existingProfile?.stats?.str) || 85;
+    const userAgi = Number(existingProfile?.agi ?? existingProfile?.stats?.agi) || 70;
+
+    // Server-side authoritative recalculation of volume and RVS
+    const recalculated = calculateWorkoutSessionTotals({
+      exercisesLog: exercises_log,
+      userWeightKg,
+      userStr,
+      userAgi,
+    });
+
+    const serverRvs = recalculated.totalRvs;
+    const serverVolume = recalculated.totalVolumeKg;
+
+    if (serverRvs <= 0) {
+      return NextResponse.json(
+        { error: "No completed workout sets found. RVS must be greater than 0." },
+        { status: 400 }
+      );
+    }
+
+    const safeDuration = Math.min(360, Math.max(1, Number(duration_minutes) || 45));
+    const safeDate = date || new Date().toISOString().split("T")[0];
+
     const sessionRecord = {
       user_id: userId,
-      date: date || new Date().toISOString().split("T")[0],
-      duration_minutes: duration_minutes || 45,
-      total_rvs: total_rvs || 0,
-      total_volume_kg: total_volume_kg || 0,
-      exercises_log: exercises_log || [],
+      date: safeDate,
+      duration_minutes: safeDuration,
+      total_rvs: serverRvs,
+      total_volume_kg: serverVolume,
+      exercises_log: recalculated.sanitizedExercisesLog,
       status: "completed",
     };
 
@@ -40,17 +75,12 @@ export async function POST(request: Request) {
         await supabase.from("Workout_Sessions").insert(sessionRecord);
       }
 
-      const { data: profileList } = await supabase
-        .from("profiles")
-        .select("*")
-        .or(`id.eq.${userId},user_id.eq.${userId}`);
+      if (existingProfile) {
+        const p = existingProfile;
+        const earnedGold = Math.round(serverVolume / 10);
+        const healAmount = Math.round(serverRvs * 1.5);
 
-      if (profileList && profileList.length > 0) {
-        const p = profileList[0];
-        const earnedGold = Math.round((total_volume_kg || 0) / 10);
-        const healAmount = Math.round(total_rvs * 1.5);
-
-        let newExp = (p.exp || 0) + total_rvs;
+        let newExp = (p.exp || 0) + serverRvs;
         let newLevel = p.level || 1;
         let newMaxExp = p.max_exp || 1000;
         let newAp = p.available_ap || 0;
@@ -65,7 +95,7 @@ export async function POST(request: Request) {
         const maxHp = p.max_hp || 1000;
         const newHp = Math.min(maxHp, (p.current_hp || 1000) + healAmount);
         const newGold = (p.gold || 0) + earnedGold;
-        const newDailyRvs = Number(p.daily_rvs || 0) + total_rvs;
+        const newDailyRvs = Number(p.daily_rvs || 0) + serverRvs;
 
         const updatePayload = {
           current_hp: newHp,
@@ -88,6 +118,7 @@ export async function POST(request: Request) {
           updatedProfile = profUpdate[0];
         }
 
+        // Deal dungeon boss damage based on server-calculated RVS
         try {
           const { data: memberRec } = await supabase
             .from("Party_Members")
@@ -106,28 +137,37 @@ export async function POST(request: Request) {
 
             if (bRecs && bRecs.length > 0) {
               const b = bRecs[0];
-              const dmg = Math.round(total_rvs || 0);
+              const dmg = Math.round(serverRvs);
               if (dmg > 0) {
-                const newHp = Math.max(0, Number(b.current_hp) - dmg);
+                const newBossHp = Math.max(0, Number(b.current_hp) - dmg);
                 await supabase
                   .from("dungeon_bosses")
                   .update({
-                    current_hp: newHp,
+                    current_hp: newBossHp,
                     updated_at: new Date().toISOString(),
                   })
                   .eq("boss_id", bossKey);
               }
             }
           }
-        } catch (e) {}
+        } catch (bossErr) {
+          console.error("Failed to update boss HP:", bossErr);
+        }
       }
-    } catch (e) {
+    } catch (dbErr) {
+      console.error("Database workout submission error:", dbErr);
     }
 
     return NextResponse.json({
       success: true,
       session: sessionRecord,
       profile: updatedProfile,
+      server_calculated: {
+        total_rvs: serverRvs,
+        total_volume_kg: serverVolume,
+        earned_gold: Math.round(serverVolume / 10),
+        healed_hp: Math.round(serverRvs * 1.5),
+      },
     });
   } catch (err: any) {
     return NextResponse.json(
