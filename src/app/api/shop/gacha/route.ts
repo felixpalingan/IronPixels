@@ -4,16 +4,6 @@ import { EQUIPMENT_DICTIONARY, ItemRarity, EquipmentItem } from "@/lib/equipment
 
 export async function POST(request: Request) {
   try {
-    const { chest_type } = await request.json();
-
-    const CHEST_PRICES: Record<string, number> = {
-      bronze: 500,
-      silver: 2500,
-      void: 10000,
-    };
-
-    const price = CHEST_PRICES[chest_type] ?? 500;
-
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
 
@@ -22,11 +12,27 @@ export async function POST(request: Request) {
     }
 
     const userId = authData.user.id;
-    let userGold = 0;
+    const body = await request.json().catch(() => ({}));
+    const { chest_type } = body;
 
+    const CHEST_PRICES: Record<string, number> = {
+      bronze: 500,
+      silver: 2500,
+      void: 10000,
+    };
+
+    const price = CHEST_PRICES[chest_type];
+    if (price === undefined) {
+      return NextResponse.json(
+        { error: "Invalid chest type. Available chests: bronze, silver, void." },
+        { status: 400 }
+      );
+    }
+
+    // 1. Fetch current profile
     const { data: profileList, error: profErr } = await supabase
       .from("profiles")
-      .select("gold")
+      .select("id, user_id, gold")
       .or(`id.eq.${userId},user_id.eq.${userId}`);
 
     if (profErr || !profileList || profileList.length === 0) {
@@ -36,15 +42,51 @@ export async function POST(request: Request) {
       );
     }
 
-    userGold = Number(profileList[0].gold ?? 0);
+    const profile = profileList[0];
+    const currentGold = Number(profile.gold ?? 0);
 
-    if (userGold < price) {
+    if (currentGold < price) {
       return NextResponse.json(
-        { error: `INSUFFICIENT GOLD. Chest costs ${price} Gold, but you only have ${userGold} Gold.` },
+        {
+          error: `INSUFFICIENT GOLD. Chest costs ${price} Gold, but you only have ${currentGold} Gold.`,
+        },
         { status: 400 }
       );
     }
 
+    const targetProfileId = profile.id;
+    const newGoldBalance = currentGold - price;
+
+    // 2. Atomic Optimistic Concurrency Control (CAS):
+    // Only deduct if gold in DB matches currentGold and is >= price
+    const { data: updateData, error: updateErr } = await supabase
+      .from("profiles")
+      .update({
+        gold: newGoldBalance,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", targetProfileId)
+      .eq("gold", currentGold)
+      .gte("gold", price)
+      .select("gold");
+
+    if (updateErr) {
+      return NextResponse.json(
+        { error: `Database error during gold deduction: ${updateErr.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (!updateData || updateData.length === 0) {
+      return NextResponse.json(
+        {
+          error: "TRANSACTION CONFLICT. Your gold was updated concurrently by another request. Please try again.",
+        },
+        { status: 409 }
+      );
+    }
+
+    // 3. Roll random gacha drop
     const rand = Math.random() * 100;
     let targetRarity: ItemRarity = "common";
 
@@ -70,44 +112,42 @@ export async function POST(request: Request) {
         ? pool[Math.floor(Math.random() * pool.length)]
         : EQUIPMENT_DICTIONARY[Math.floor(Math.random() * EQUIPMENT_DICTIONARY.length)];
 
-    const newGoldBalance = Math.max(0, userGold - price);
+    // 4. Insert item into user_inventory
+    const { data: invInsertData, error: invErr } = await supabase
+      .from("user_inventory")
+      .insert({
+        user_id: userId,
+        item_id: selectedItem.item_id,
+        is_equipped: false,
+      })
+      .select("inventory_id")
+      .single();
 
-    let dbErrorMsg: string | null = null;
-    let insertedInventoryId: string = `inv-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
-    try {
+    if (invErr || !invInsertData) {
+      // Compensating transaction: refund gold so user is never cheated
+      console.error("Gacha inventory delivery failed, refunding gold:", invErr);
       await supabase
         .from("profiles")
-        .update({ gold: newGoldBalance })
-        .or(`id.eq.${userId},user_id.eq.${userId}`);
-
-      const { data: invInsertData, error: invErr } = await supabase
-        .from("user_inventory")
-        .insert({
-          user_id: userId,
-          item_id: selectedItem.item_id,
-          is_equipped: false,
+        .update({
+          gold: currentGold,
+          updated_at: new Date().toISOString(),
         })
-        .select("inventory_id")
-        .single();
+        .eq("id", targetProfileId);
 
-      if (invErr) {
-        dbErrorMsg = invErr.message;
-      } else if (invInsertData?.inventory_id) {
-        insertedInventoryId = invInsertData.inventory_id;
-      }
-    } catch (e: any) {
-      dbErrorMsg = e.message || "Failed to commit to Supabase";
+      return NextResponse.json(
+        { error: "Failed to store item in inventory. Gold has been refunded." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
       item: selectedItem,
-      inventory_id: insertedInventoryId,
+      inventory_id: invInsertData.inventory_id,
       new_gold: newGoldBalance,
-      db_status: dbErrorMsg ? "offline_fallback" : "synced",
+      db_status: "synced",
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Gacha request failed." }, { status: 500 });
   }
 }

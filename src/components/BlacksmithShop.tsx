@@ -133,6 +133,14 @@ export function BlacksmithShop({
       });
 
       const data = await res.json();
+
+      if (!res.ok) {
+        setIsOpening(false);
+        setActiveChest(null);
+        alert(data.error || "Gacha transaction failed. Please check your gold balance.");
+        return;
+      }
+
       const finalItem: EquipmentItem = data.item || fallbackWinner;
 
       // Generate reel strip containing the EXACT final server item at winnerIndex (28)
@@ -158,7 +166,7 @@ export function BlacksmithShop({
 
       const newInvRecord: InventoryRecord = {
         inventory_id: data.inventory_id || `inv-${Date.now()}`,
-        user_id: "user-1",
+        user_id: data.user_id || "active-user",
         item_id: finalItem.item_id,
         is_equipped: false,
         item: finalItem,
@@ -175,25 +183,10 @@ export function BlacksmithShop({
         setOpeningPhase("revealed");
         setIsOpening(false);
       }, 4300);
-    } catch (err) {
-      const strip = generateReelStrip(fallbackWinner);
-      setReelStrip(strip);
-
-      const winnerIndex = 28;
-      const itemWidth = 112;
-      const calculatedTargetX = winnerIndex * itemWidth + 50 - 170;
-      setTargetX(calculatedTargetX);
-
-      setOpeningPhase("rolling");
-
-      setTimeout(() => {
-        setDrawnResult({
-          item: fallbackWinner,
-          inventory_id: `inv-${Date.now()}`,
-        });
-        setOpeningPhase("revealed");
-        setIsOpening(false);
-      }, 4300);
+    } catch (err: any) {
+      setIsOpening(false);
+      setActiveChest(null);
+      alert(err.message || "Failed to reach server. Please try again.");
     }
   };
 
