@@ -37,6 +37,7 @@ interface WorkoutTrackerFormProps {
   onFinishSession?: (summary: {
     totalRvs: number;
     totalVolume: number;
+    durationMinutes?: number;
     exercisesLog: Array<{
       exercise_name: string;
       category?: string;
@@ -67,7 +68,7 @@ export function WorkoutTrackerForm({
   const [newRoutineSplit, setNewRoutineSplit] = useState<string>("Push");
   const [routineNotice, setRoutineNotice] = useState<string | null>(null);
 
-  // Rest Timer states
+  // Rest Timer states (Background-resilient timestamp model)
   const [defaultRestTimerSecs, setDefaultRestTimerSecs] = useState<number>(() => {
     try {
       const saved = localStorage.getItem("ironpixels_default_rest_timer");
@@ -76,24 +77,107 @@ export function WorkoutTrackerForm({
       return 90;
     }
   });
-  const [restTimerSecs, setRestTimerSecs] = useState<number>(0);
-  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
 
-  useEffect(() => {
-    let interval: any = null;
-    if (isTimerActive && restTimerSecs > 0) {
-      interval = setInterval(() => {
-        setRestTimerSecs((prev) => prev - 1);
-      }, 1000);
-    } else if (restTimerSecs === 0 && isTimerActive) {
-      setIsTimerActive(false);
-      soundEngine.play("timer");
-      soundEngine.triggerHaptic([100, 50, 100, 50, 150]);
-      setRoutineNotice("REST TIMER FINISHED! GET READY FOR YOUR NEXT SET! 🏋️");
-      setTimeout(() => setRoutineNotice(null), 5000);
+  const [targetEndTime, setTargetEndTime] = useState<number | null>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_rest_timer_target");
+      if (saved) {
+        const target = Number(saved);
+        if (target > Date.now()) return target;
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
-    return () => clearInterval(interval);
-  }, [isTimerActive, restTimerSecs]);
+  });
+
+  const [restTimerSecs, setRestTimerSecs] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_rest_timer_target");
+      if (saved) {
+        const target = Number(saved);
+        const diff = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+        if (diff > 0) return diff;
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  const [isTimerActive, setIsTimerActive] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_rest_timer_target");
+      if (saved) {
+        return Number(saved) > Date.now();
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  // Real Session duration tracking
+  const [sessionStartTime, setSessionStartTime] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_session_start_time");
+      if (saved) return Number(saved);
+      const now = Date.now();
+      localStorage.setItem("ironpixels_session_start_time", now.toString());
+      return now;
+    } catch (e) {
+      return Date.now();
+    }
+  });
+
+  const [elapsedSessionSecs, setElapsedSessionSecs] = useState<number>(() => {
+    return Math.max(0, Math.floor((Date.now() - sessionStartTime) / 1000));
+  });
+
+  // Track session elapsed time
+  useEffect(() => {
+    const sessionInterval = setInterval(() => {
+      setElapsedSessionSecs(Math.max(0, Math.floor((Date.now() - sessionStartTime) / 1000)));
+    }, 1000);
+    return () => clearInterval(sessionInterval);
+  }, [sessionStartTime]);
+
+  // Background-resilient Rest Timer effect
+  useEffect(() => {
+    if (!isTimerActive || !targetEndTime) return;
+
+    const updateTimer = () => {
+      const remainingSecs = Math.max(0, Math.ceil((targetEndTime - Date.now()) / 1000));
+      setRestTimerSecs(remainingSecs);
+
+      if (remainingSecs <= 0) {
+        setIsTimerActive(false);
+        setTargetEndTime(null);
+        try {
+          localStorage.removeItem("ironpixels_rest_timer_target");
+        } catch (e) {}
+        soundEngine.play("timer");
+        soundEngine.triggerHaptic([100, 50, 100, 50, 150]);
+        setRoutineNotice("REST TIMER FINISHED! GET READY FOR YOUR NEXT SET! 🏋️");
+        setTimeout(() => setRoutineNotice(null), 5000);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 500);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        updateTimer();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isTimerActive, targetEndTime]);
 
   const handleSetDefaultRestTimer = (secs: number) => {
     soundEngine.play("select");
@@ -107,8 +191,41 @@ export function WorkoutTrackerForm({
   const handleStartRestTimer = (secs: number) => {
     soundEngine.play("select");
     soundEngine.triggerHaptic(50);
+    const target = Date.now() + secs * 1000;
+    setTargetEndTime(target);
     setRestTimerSecs(secs);
     setIsTimerActive(true);
+    try {
+      localStorage.setItem("ironpixels_rest_timer_target", target.toString());
+    } catch (e) {}
+  };
+
+  const handleAdjustTimer = (deltaSecs: number) => {
+    soundEngine.play("select");
+    soundEngine.triggerHaptic(40);
+    const currentTarget = targetEndTime || Date.now() + restTimerSecs * 1000;
+    const newTarget = Math.max(Date.now(), currentTarget + deltaSecs * 1000);
+    const newSecs = Math.max(0, Math.ceil((newTarget - Date.now()) / 1000));
+    setTargetEndTime(newTarget);
+    setRestTimerSecs(newSecs);
+    setIsTimerActive(newSecs > 0);
+    try {
+      if (newSecs > 0) {
+        localStorage.setItem("ironpixels_rest_timer_target", newTarget.toString());
+      } else {
+        localStorage.removeItem("ironpixels_rest_timer_target");
+      }
+    } catch (e) {}
+  };
+
+  const handleCancelTimer = () => {
+    soundEngine.play("select");
+    setIsTimerActive(false);
+    setTargetEndTime(null);
+    setRestTimerSecs(0);
+    try {
+      localStorage.removeItem("ironpixels_rest_timer_target");
+    } catch (e) {}
   };
 
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
@@ -476,14 +593,30 @@ export function WorkoutTrackerForm({
       })),
     }));
 
+    const realDurationMinutes = Math.max(
+      1,
+      Math.round((Date.now() - sessionStartTime) / (1000 * 60))
+    );
+
     if (onFinishSession) {
       onFinishSession({
         totalRvs,
         totalVolume,
+        durationMinutes: realDurationMinutes,
         exercisesLog,
       });
     }
 
+    try {
+      const nextStart = Date.now();
+      setSessionStartTime(nextStart);
+      localStorage.setItem("ironpixels_session_start_time", nextStart.toString());
+      localStorage.removeItem("ironpixels_rest_timer_target");
+    } catch (e) {}
+
+    setIsTimerActive(false);
+    setTargetEndTime(null);
+    setRestTimerSecs(0);
     setLoggedExercises([]);
   };
 
@@ -626,14 +759,14 @@ export function WorkoutTrackerForm({
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => setRestTimerSecs((prev) => Math.max(0, prev - 30))}
+                    onClick={() => handleAdjustTimer(-30)}
                     className="px-2 py-1 border border-zinc-700 bg-black text-zinc-300 hover:text-white font-bold cursor-pointer"
                   >
                     -30s
                   </button>
                   <button
                     type="button"
-                    onClick={() => setRestTimerSecs((prev) => prev + 30)}
+                    onClick={() => handleAdjustTimer(30)}
                     className="px-2 py-1 border border-amber-400/80 bg-amber-950/40 text-amber-300 font-bold cursor-pointer"
                   >
                     +30s
@@ -642,7 +775,7 @@ export function WorkoutTrackerForm({
 
                 <button
                   type="button"
-                  onClick={() => setIsTimerActive(false)}
+                  onClick={handleCancelTimer}
                   className="px-2.5 py-1 border border-red-900 bg-red-950/40 text-red-400 font-bold uppercase cursor-pointer"
                 >
                   SKIP / CANCEL TIMER
@@ -723,17 +856,26 @@ export function WorkoutTrackerForm({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-center text-xs">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
           <div className="p-2 border border-pixel-border/60 bg-black/60">
-            <div className="text-[9px] text-zinc-400 uppercase font-bold">TOTAL VOLUME</div>
-            <div className="font-headline font-extrabold text-sm text-white">
+            <div className="text-[9px] text-zinc-400 uppercase font-bold">TOTAL VOL</div>
+            <div className="font-headline font-extrabold text-xs sm:text-sm text-white">
               {formatNumber(calculateTotalVolume())} KG
             </div>
           </div>
           <div className="p-2 border border-pixel-border/60 bg-black/60">
-            <div className="text-[9px] text-zinc-400 uppercase font-bold">EXERCISES LOGGED</div>
-            <div className="font-headline font-extrabold text-sm text-[#00ff41]">
-              {loggedExercises.length} EXERCISES
+            <div className="text-[9px] text-zinc-400 uppercase font-bold flex items-center justify-center gap-1">
+              <Timer className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
+              <span>TIME</span>
+            </div>
+            <div className="font-headline font-extrabold text-xs sm:text-sm text-amber-300 font-mono">
+              {Math.floor(elapsedSessionSecs / 60)}m {elapsedSessionSecs % 60}s
+            </div>
+          </div>
+          <div className="p-2 border border-pixel-border/60 bg-black/60">
+            <div className="text-[9px] text-zinc-400 uppercase font-bold">EXERCISES</div>
+            <div className="font-headline font-extrabold text-xs sm:text-sm text-[#00ff41]">
+              {loggedExercises.length} LOGGED
             </div>
           </div>
         </div>

@@ -393,6 +393,7 @@ export function DashboardLayout() {
   const handleFinishWorkout = (summary: {
     totalRvs: number;
     totalVolume: number;
+    durationMinutes?: number;
     exercisesLog: Array<{
       exercise_name: string;
       category?: string;
@@ -419,11 +420,13 @@ export function DashboardLayout() {
     const earnedGold = Math.round(summary.totalVolume / 10);
     setUserGold((prev) => prev + earnedGold);
 
+    const realDuration = summary.durationMinutes || 45;
+
     try {
       const newSessionRecord = {
         session_id: `ws-${Date.now()}`,
         date: todayStr,
-        duration_minutes: 45,
+        duration_minutes: realDuration,
         total_rvs: summary.totalRvs,
         total_volume_kg: summary.totalVolume,
         exercises_log: summary.exercisesLog || [],
@@ -451,7 +454,7 @@ export function DashboardLayout() {
         body: JSON.stringify({
           user_id: userData.user_id,
           date: todayStr,
-          duration_minutes: 45,
+          duration_minutes: realDuration,
           total_rvs: summary.totalRvs,
           total_volume_kg: summary.totalVolume,
           exercises_log: summary.exercisesLog || [],
