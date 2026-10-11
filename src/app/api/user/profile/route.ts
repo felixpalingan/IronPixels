@@ -33,20 +33,75 @@ export async function GET() {
       );
     }
 
+    // Authoritative once-per-day boss penalty check stored in Supabase profiles.last_penalty_date
+    let bossAttackEvent: { damageDealt: number; bossName: string } | null = null;
+    let effectiveCurrentHp =
+      profile.current_hp !== undefined && profile.current_hp !== null ? Number(profile.current_hp) : 1000;
+
+    const todayDateStr = new Date().toISOString().split("T")[0];
+    const lastPenaltyDateStr = profile.last_penalty_date
+      ? String(profile.last_penalty_date).split("T")[0]
+      : null;
+
+    if (lastPenaltyDateStr !== todayDateStr) {
+      // Check if user account was created today (new operatives get day 1 grace period)
+      const profileCreatedAtStr = profile.created_at
+        ? String(profile.created_at).split("T")[0]
+        : null;
+      const isNewAccountToday = profileCreatedAtStr === todayDateStr;
+
+      // Check if user logged workout yesterday or today
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayDateStr = yesterday.toISOString().split("T")[0];
+
+      const { data: recentSessions } = await supabase
+        .from("workout_sessions")
+        .select("session_id")
+        .eq("user_id", userId)
+        .gte("date", yesterdayDateStr)
+        .limit(1);
+
+      const hasRecentWorkout = Boolean(recentSessions && recentSessions.length > 0);
+
+      // Only trigger if not a new account and no workout yesterday/today
+      if (!isNewAccountToday && !hasRecentWorkout) {
+        const BOSS_PENALTY_DMG = 250;
+        effectiveCurrentHp = Math.max(0, effectiveCurrentHp - BOSS_PENALTY_DMG);
+        bossAttackEvent = {
+          damageDealt: BOSS_PENALTY_DMG,
+          bossName: "Demon Lord Ignis",
+        };
+      }
+
+      // Mark today as checked in DB so it can NEVER trigger again today
+      await supabase
+        .from("profiles")
+        .update({
+          last_penalty_date: todayDateStr,
+          current_hp: effectiveCurrentHp,
+          updated_at: new Date().toISOString(),
+        })
+        .or(`id.eq.${userId},user_id.eq.${userId}`);
+    }
+
     return NextResponse.json({
       user_id: profile.id || profile.user_id || userId,
       username: profile.username || authUsername,
       character_class: profile.character_class || "WARRIOR",
       gender: profile.gender || "m",
       level: profile.level || 1,
-      current_hp: profile.current_hp !== undefined && profile.current_hp !== null ? Number(profile.current_hp) : 1000,
+      current_hp: effectiveCurrentHp,
       max_hp: profile.max_hp || 1000,
       exp: profile.exp || 0,
       max_exp: profile.max_exp || 1000,
       gold: profile.gold ?? 500,
       weight_kg: Number(profile.weight_kg) || 75,
       weight_unit: profile.weight_unit || "kg",
+      max_floor: profile.max_floor || 1,
+      workout_streak: profile.workout_streak || 1,
       available_ap: profile.available_ap ?? 5,
+      boss_attack: bossAttackEvent,
       stats: {
         str: profile.str ?? (profile.stats?.str || 85),
         agi: profile.agi ?? (profile.stats?.agi || 70),
@@ -76,15 +131,50 @@ export async function PATCH(request: Request) {
     const userId = user.id;
     const body = await request.json().catch(() => ({}));
 
-    // Handle weight_unit preference update
-    if (body?.weight_unit !== undefined) {
-      const unit = body.weight_unit === "lbs" ? "lbs" : "kg";
+    // Handle full operative profile update (username, weight_kg, gender, weight_unit)
+    if (
+      body?.username !== undefined ||
+      body?.weight_kg !== undefined ||
+      body?.gender !== undefined ||
+      (body?.weight_unit !== undefined && body?.stat_key === undefined && body?.current_hp === undefined)
+    ) {
+      const updates: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (body.username !== undefined) {
+        const trimmed = String(body.username).trim();
+        if (trimmed.length < 2 || trimmed.length > 25) {
+          return NextResponse.json(
+            { error: "Username must be between 2 and 25 characters." },
+            { status: 400 }
+          );
+        }
+        updates.username = trimmed;
+      }
+
+      if (body.weight_kg !== undefined) {
+        const w = Number(body.weight_kg);
+        if (isNaN(w) || w < 20 || w > 350) {
+          return NextResponse.json(
+            { error: "Weight must be between 20 kg and 350 kg." },
+            { status: 400 }
+          );
+        }
+        updates.weight_kg = Math.round(w * 10) / 10;
+      }
+
+      if (body.gender !== undefined) {
+        updates.gender = body.gender === "f" ? "f" : "m";
+      }
+
+      if (body.weight_unit !== undefined) {
+        updates.weight_unit = body.weight_unit === "lbs" ? "lbs" : "kg";
+      }
+
       const { data: updatedList, error: updateErr } = await supabase
         .from("profiles")
-        .update({
-          weight_unit: unit,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updates)
         .or(`id.eq.${userId},user_id.eq.${userId}`)
         .select("*");
 
@@ -92,10 +182,20 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: updateErr.message }, { status: 500 });
       }
 
+      const updated = updatedList && updatedList.length > 0 ? updatedList[0] : null;
+
+      if (updates.username) {
+        try {
+          await supabase.auth.updateUser({
+            data: { username: updates.username },
+          });
+        } catch (e) {}
+      }
+
       return NextResponse.json({
         success: true,
-        weight_unit: unit,
-        message: `Weight unit updated to ${unit.toUpperCase()}`,
+        message: "Operative profile updated successfully.",
+        profile: updated,
       });
     }
 

@@ -149,66 +149,92 @@ export async function POST(request: Request) {
       }
     }
 
-    const { data: dbBosses } = await supabase
+    // 1. Resolve current floor
+    let currentFloor = 1;
+    if (mode === "party" && resolvedPartyId) {
+      const { data: partyRec } = await supabase
+        .from("Party")
+        .select("total_party_floor")
+        .eq("party_id", resolvedPartyId)
+        .single();
+      currentFloor = partyRec?.total_party_floor || 1;
+    } else {
+      const { data: profRec } = await supabase
+        .from("profiles")
+        .select("max_floor")
+        .or(`id.eq.${currentUserId},user_id.eq.${currentUserId}`)
+        .single();
+      currentFloor = profRec?.max_floor || 1;
+    }
+
+    // 2. Fetch canonical current enemy from dungeon_bosses
+    const { data: stageRows } = await supabase
       .from("dungeon_bosses")
       .select("*")
-      .eq("boss_id", bossKey)
+      .eq("stage", currentFloor)
       .limit(1);
 
-    let currentEnemy: any;
-    if (!dbBosses || dbBosses.length === 0) {
-      const initE = buildFloorEnemy(1, mode);
-      currentEnemy = {
-        boss_id: bossKey,
-        boss_name: initE.display_name,
-        stage: 1,
-        current_hp: initE.current_hp,
-        max_hp: initE.max_hp,
-        status: "Active",
-        category: initE.category,
-        mode,
-        sprite_config: initE.sprite_config,
-      };
-
-      try {
-        await supabase.from("dungeon_bosses").insert({
-          ...currentEnemy,
-          updated_at: new Date().toISOString(),
-        });
-      } catch (e) {}
-    } else {
-      currentEnemy = dbBosses[0];
-    }
+    const currentEnemy = stageRows?.[0] || buildFloorEnemy(currentFloor, mode);
+    const maxHp = Number(mode === "party" ? currentEnemy.max_hp * 2 : currentEnemy.max_hp);
 
     // Security bounds: cap single attack damage to prevent arbitrary client payload manipulation
     const MAX_SINGLE_HIT_DAMAGE = 50000;
     const dmg = Math.min(MAX_SINGLE_HIT_DAMAGE, Math.max(1, Math.round(Number(rvs_damage) || 0)));
-    const newHp = Math.max(0, Number(currentEnemy.current_hp) - dmg);
+    const prevHp =
+      body.current_hp !== undefined && !isNaN(Number(body.current_hp))
+        ? Math.min(maxHp, Math.max(0, Number(body.current_hp)))
+        : maxHp;
+    const newHp = Math.max(0, prevHp - dmg);
     const isDefeated = newHp === 0;
 
     if (isDefeated) {
-      const nextFloor = currentEnemy.stage + 1;
-      const nextEnemy = buildFloorEnemy(nextFloor, mode);
+      const nextFloor = currentFloor + 1;
+      const isBossFloor = currentFloor % 5 === 0;
+      const clearedCategory = currentEnemy.category || (isBossFloor ? "boss" : "mob");
+      const rewards = getRewardsForFloor(currentFloor, clearedCategory, mode);
 
-      const nextRecord = {
-        boss_name: nextEnemy.display_name,
-        stage: nextFloor,
-        current_hp: nextEnemy.current_hp,
-        max_hp: nextEnemy.max_hp,
-        status: "Active",
-        category: nextEnemy.category,
-        sprite_config: nextEnemy.sprite_config,
-        updated_at: new Date().toISOString(),
-      };
+      // Fetch user profile for reward distribution
+      const { data: profRows } = await supabase
+        .from("profiles")
+        .select("gold, exp, max_exp, level, available_ap")
+        .or(`id.eq.${currentUserId},user_id.eq.${currentUserId}`)
+        .limit(1);
 
-      try {
-        await supabase
-          .from("dungeon_bosses")
-          .update(nextRecord)
-          .eq("boss_id", bossKey);
-      } catch (e) {}
+      const userProf = profRows?.[0];
+      const currentGold = Number(userProf?.gold ?? 500);
+      const currentExp = Number(userProf?.exp ?? 0);
+      let currentMaxExp = Number(userProf?.max_exp ?? 1000);
+      let currentLevel = Number(userProf?.level ?? 1);
+      let currentAp = Number(userProf?.available_ap ?? 0);
+      let leveledUp = false;
 
-      if (mode === "party" && resolvedPartyId) {
+      const newGold = currentGold + rewards.gold;
+      let newExp = currentExp + rewards.exp;
+      while (newExp >= currentMaxExp) {
+        newExp -= currentMaxExp;
+        currentLevel += 1;
+        currentMaxExp = Math.round(currentMaxExp * 1.5);
+        currentAp += 5;
+        leveledUp = true;
+      }
+
+      // Update solo profile
+      if (mode === "solo") {
+        try {
+          await supabase
+            .from("profiles")
+            .update({
+              max_floor: nextFloor,
+              gold: newGold,
+              exp: newExp,
+              max_exp: currentMaxExp,
+              level: currentLevel,
+              available_ap: currentAp,
+              updated_at: new Date().toISOString(),
+            })
+            .or(`id.eq.${currentUserId},user_id.eq.${currentUserId}`);
+        } catch (e) {}
+      } else if (mode === "party" && resolvedPartyId) {
         try {
           await supabase
             .from("Party")
@@ -217,22 +243,127 @@ export async function POST(request: Request) {
               updated_at: new Date().toISOString(),
             })
             .eq("party_id", resolvedPartyId);
-        } catch (e) {}
-      } else if (mode === "solo") {
-        try {
+
+          // Update current attacker's gold and exp
           await supabase
             .from("profiles")
-            .update({ max_floor: nextFloor })
+            .update({
+              gold: newGold,
+              exp: newExp,
+              max_exp: currentMaxExp,
+              level: currentLevel,
+              available_ap: currentAp,
+              updated_at: new Date().toISOString(),
+            })
             .or(`id.eq.${currentUserId},user_id.eq.${currentUserId}`);
+
+          // Also distribute to all other party members
+          const { data: partyMembers } = await supabase
+            .from("Party_Members")
+            .select("user_id")
+            .eq("party_id", resolvedPartyId);
+
+          if (partyMembers && partyMembers.length > 0) {
+            const others = partyMembers.filter((m) => m.user_id !== currentUserId);
+            for (const m of others) {
+              const { data: mProfRows } = await supabase
+                .from("profiles")
+                .select("gold, exp, max_exp, level, available_ap")
+                .or(`id.eq.${m.user_id},user_id.eq.${m.user_id}`)
+                .limit(1);
+
+              if (mProfRows && mProfRows.length > 0) {
+                const mp = mProfRows[0];
+                let mExp = (mp.exp || 0) + rewards.exp;
+                let mLevel = mp.level || 1;
+                let mMaxExp = mp.max_exp || 1000;
+                let mAp = mp.available_ap || 0;
+                while (mExp >= mMaxExp) {
+                  mExp -= mMaxExp;
+                  mLevel += 1;
+                  mMaxExp = Math.round(mMaxExp * 1.5);
+                  mAp += 5;
+                }
+
+                await supabase
+                  .from("profiles")
+                  .update({
+                    gold: (mp.gold || 0) + rewards.gold,
+                    exp: mExp,
+                    max_exp: mMaxExp,
+                    level: mLevel,
+                    available_ap: mAp,
+                  })
+                  .or(`id.eq.${m.user_id},user_id.eq.${m.user_id}`);
+              }
+            }
+          }
         } catch (e) {}
       }
 
+      // Authoritative item loot drop on boss floor or 25% chance on mob floor
+      let droppedItemRecord: any = null;
+      const shouldDropLoot = isBossFloor || Math.random() < 0.25;
+
+      if (shouldDropLoot) {
+        const lootPool = isBossFloor
+          ? EQUIPMENT_DICTIONARY.filter(
+              (i) => i.rarity === "rare" || i.rarity === "epic" || i.rarity === "legendary" || i.rarity === "mythic"
+            )
+          : EQUIPMENT_DICTIONARY;
+
+        const rewardItem = lootPool[Math.floor(Math.random() * lootPool.length)] || EQUIPMENT_DICTIONARY[0];
+
+        try {
+          const { data: insertedInv } = await supabase
+            .from("user_inventory")
+            .insert({
+              user_id: currentUserId,
+              item_id: rewardItem.item_id,
+              is_equipped: false,
+            })
+            .select("inventory_id, user_id, item_id, is_equipped")
+            .single();
+
+          if (insertedInv) {
+            droppedItemRecord = {
+              inventory_id: insertedInv.inventory_id,
+              user_id: currentUserId,
+              item_id: rewardItem.item_id,
+              is_equipped: false,
+              item: rewardItem,
+            };
+          }
+        } catch (e) {
+          console.error("Failed to insert dropped loot item:", e);
+        }
+      }
+
+      const { data: nextStageRows } = await supabase
+        .from("dungeon_bosses")
+        .select("*")
+        .eq("stage", nextFloor)
+        .limit(1);
+
+      const nextEnemy = nextStageRows?.[0]
+        ? {
+            display_name: nextStageRows[0].boss_name,
+            floor: nextStageRows[0].stage,
+            current_hp: Number(mode === "party" ? nextStageRows[0].max_hp * 2 : nextStageRows[0].max_hp),
+            max_hp: Number(mode === "party" ? nextStageRows[0].max_hp * 2 : nextStageRows[0].max_hp),
+            category: nextStageRows[0].category,
+            sprite_config: nextStageRows[0].sprite_config,
+          }
+        : buildFloorEnemy(nextFloor, mode);
+
       return NextResponse.json({
         success: true,
-        boss_id: bossKey,
-        boss_name: nextEnemy.display_name,
-        boss_type: nextEnemy.sprite_config.spriteKey,
+        boss_id: (nextEnemy as any).enemy_id || (nextEnemy as any).boss_id || `floor-${nextFloor}`,
+        boss_name: (nextEnemy as any).display_name || (nextEnemy as any).boss_name,
+        boss_type: nextEnemy.sprite_config?.spriteKey || "imp",
         stage: nextFloor,
+        cleared_floor: currentFloor,
+        was_boss: isBossFloor,
         rvs_damage_dealt: dmg,
         current_hp: nextEnemy.current_hp,
         max_hp: nextEnemy.max_hp,
@@ -242,25 +373,30 @@ export async function POST(request: Request) {
         sprite_config: nextEnemy.sprite_config,
         mode,
         attacker_username: attackerUsername,
+        rewards: {
+          gold: rewards.gold,
+          exp: rewards.exp,
+          leveled_up: leveledUp,
+          new_level: currentLevel,
+          dropped_item: droppedItemRecord,
+        },
+        user_stats: {
+          gold: newGold,
+          exp: newExp,
+          max_exp: currentMaxExp,
+          level: currentLevel,
+          available_ap: currentAp,
+          max_floor: nextFloor,
+        },
       });
     }
 
-    try {
-      await supabase
-        .from("dungeon_bosses")
-        .update({
-          current_hp: newHp,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("boss_id", bossKey);
-    } catch (e) {}
-
     return NextResponse.json({
       success: true,
-      boss_id: bossKey,
-      boss_name: currentEnemy.boss_name,
-      boss_type: currentEnemy.sprite_config?.spriteKey || "goblin",
-      stage: currentEnemy.stage,
+      boss_id: currentEnemy.boss_id || (currentEnemy as any).enemy_id || `floor-${currentFloor}`,
+      boss_name: currentEnemy.boss_name || (currentEnemy as any).display_name,
+      boss_type: currentEnemy.sprite_config?.spriteKey || "imp",
+      stage: currentFloor,
       rvs_damage_dealt: dmg,
       current_hp: newHp,
       max_hp: Number(currentEnemy.max_hp),

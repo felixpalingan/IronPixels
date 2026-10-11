@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     try {
       const { error: wsErr } = await supabase.from("workout_sessions").insert(sessionRecord);
       if (wsErr) {
-        await supabase.from("Workout_Sessions").insert(sessionRecord);
+        console.error("Error inserting workout session:", wsErr);
       }
 
       if (existingProfile) {
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
           updatedProfile = profUpdate[0];
         }
 
-        // Deal dungeon boss damage based on server-calculated RVS
+        // Contribute workout RVS to Party stats if member of a party
         try {
           const { data: memberRec } = await supabase
             .from("Party_Members")
@@ -151,30 +151,24 @@ export async function POST(request: Request) {
 
           if (memberRec && memberRec.length > 0) {
             const pId = memberRec[0].party_id;
-            const bossKey = `party_${pId}`;
-            const { data: bRecs } = await supabase
-              .from("dungeon_bosses")
-              .select("*")
-              .eq("boss_id", bossKey)
-              .limit(1);
+            const { data: partyRec } = await supabase
+              .from("Party")
+              .select("total_party_rvs")
+              .eq("party_id", pId)
+              .single();
 
-            if (bRecs && bRecs.length > 0) {
-              const b = bRecs[0];
-              const dmg = Math.round(serverRvs);
-              if (dmg > 0) {
-                const newBossHp = Math.max(0, Number(b.current_hp) - dmg);
-                await supabase
-                  .from("dungeon_bosses")
-                  .update({
-                    current_hp: newBossHp,
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq("boss_id", bossKey);
-              }
+            if (partyRec) {
+              await supabase
+                .from("Party")
+                .update({
+                  total_party_rvs: (partyRec.total_party_rvs || 0) + serverRvs,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("party_id", pId);
             }
           }
-        } catch (bossErr) {
-          console.error("Failed to update boss HP:", bossErr);
+        } catch (partyErr) {
+          console.error("Failed to update party RVS:", partyErr);
         }
       }
     } catch (dbErr) {

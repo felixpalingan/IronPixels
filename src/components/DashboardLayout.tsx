@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield, Users, Sparkles, Skull } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield, Users, Sparkles, Skull, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
+import { soundEngine } from "@/lib/soundEffects";
 import { PixelAvatar } from "@/components/PixelAvatar";
 import { StatRadarChart } from "@/components/StatRadarChart";
 import { EquippedGearGrid } from "@/components/EquippedGearGrid";
@@ -33,6 +34,9 @@ interface UserProfileData {
   max_exp: number;
   gold: number;
   weight_kg: number;
+  weight_unit?: "kg" | "lbs";
+  max_floor?: number;
+  workout_streak?: number;
   available_ap?: number;
   stats: {
     str: number;
@@ -60,6 +64,15 @@ export function DashboardLayout() {
   } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isTombstoneDismissed, setIsTombstoneDismissed] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.getIsMuted());
+
+  const handleToggleSound = () => {
+    const nextMuted = soundEngine.toggleMute();
+    setIsMuted(nextMuted);
+    if (!nextMuted) {
+      soundEngine.play("select");
+    }
+  };
 
   const INITIAL_INVENTORY: InventoryRecord[] = [];
 
@@ -70,7 +83,6 @@ export function DashboardLayout() {
 
   const todayStr = new Date().toISOString().split("T")[0];
   const todayRvsKey = `ironpixels_daily_rvs_${todayStr}`;
-  const bossCheckKey = `ironpixels_boss_check_${todayStr}`;
 
   useEffect(() => {
     try {
@@ -127,6 +139,9 @@ export function DashboardLayout() {
           localStorage.setItem("ironpixels_profile", JSON.stringify(dataProf));
           setUserGold(dataProf.gold ?? 500);
           if (dataProf.available_ap !== undefined) setAvailableAp(dataProf.available_ap);
+          if (dataProf.boss_attack) {
+            setBossAttackModal(dataProf.boss_attack);
+          }
         }
 
         const resInv = await fetch("/api/user/inventory");
@@ -150,41 +165,10 @@ export function DashboardLayout() {
           if (Array.isArray(dataPartyLead)) setTopParties(dataPartyLead.slice(0, 3));
         }
       } catch (err) {}
-
-      try {
-        const hasCheckedToday = localStorage.getItem(bossCheckKey);
-        if (!hasCheckedToday) {
-          const yesterdayDate = new Date();
-          yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-          const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
-          const yesterdayRvs = localStorage.getItem(`ironpixels_daily_rvs_${yesterdayStr}`);
-
-          if (!yesterdayRvs || Number(yesterdayRvs) === 0) {
-            const BOSS_PENALTY_DMG = 250;
-            setBossAttackModal({
-              damageDealt: BOSS_PENALTY_DMG,
-              bossName: "Demon Lord Ignis",
-            });
-
-            if (currentProf) {
-              const newHp = Math.max(0, (currentProf.current_hp ?? 1000) - BOSS_PENALTY_DMG);
-              const updatedProf = { ...currentProf, current_hp: newHp };
-              setProfile(updatedProf);
-              localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
-              fetch("/api/user/profile", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ current_hp: newHp }),
-              }).catch(() => {});
-            }
-          }
-          localStorage.setItem(bossCheckKey, "true");
-        }
-      } catch (e) {}
     }
 
     fetchData();
-  }, [todayRvsKey, bossCheckKey]);
+  }, [todayRvsKey]);
 
   const baseStats = profile?.stats || { str: 85, agi: 72, vit: 54, luk: 60 };
   const baseMaxHp = profile?.max_hp || 1000;
@@ -260,6 +244,9 @@ export function DashboardLayout() {
     max_exp: profile?.max_exp || 1000,
     gold: userGold,
     weight_kg: profile?.weight_kg || 75,
+    weight_unit: profile?.weight_unit || "kg",
+    max_floor: profile?.max_floor || 1,
+    workout_streak: profile?.workout_streak || 1,
     stats: totalStats,
     equipped_gear: activeFourSlotEquipped.map((rec) => ({
       slot: rec.item.type,
@@ -672,12 +659,26 @@ export function DashboardLayout() {
             </span>
           </div>
 
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-1.5 border border-pixel-border bg-surface hover:border-pixel-green transition-colors text-pixel-green"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleToggleSound}
+              title={isMuted ? "Unmute Sound Effects" : "Mute Sound Effects"}
+              className={`p-1.5 border transition-all cursor-pointer flex items-center justify-center ${
+                isMuted
+                  ? "border-red-500/80 bg-red-950/40 text-red-400 hover:border-red-400"
+                  : "border-pixel-border bg-surface hover:border-pixel-green text-pixel-green shadow-neon"
+              }`}
+            >
+              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            </button>
+
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-1.5 border border-pixel-border bg-surface hover:border-pixel-green transition-colors text-pixel-green cursor-pointer"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
         {isHeroDead ? (
@@ -726,6 +727,17 @@ export function DashboardLayout() {
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
             userData={userData}
+            isMuted={isMuted}
+            onToggleMute={handleToggleSound}
+            onProfileUpdated={(updatedProfile) => {
+              setProfile((prev) => (prev ? { ...prev, ...updatedProfile } : updatedProfile));
+              if (profile) {
+                localStorage.setItem(
+                  "ironpixels_profile",
+                  JSON.stringify({ ...profile, ...updatedProfile })
+                );
+              }
+            }}
           />
 
           <AnimatePresence>
@@ -1159,6 +1171,26 @@ export function DashboardLayout() {
                     }
                     isHeroDead={isHeroDead}
                     onAddItemToInventory={handleAddItemToInventory}
+                    onRewardsReceived={(rewards) => {
+                      setUserGold(rewards.gold);
+                      setProfile((prev) => {
+                        if (!prev) return null;
+                        const updated = {
+                          ...prev,
+                          gold: rewards.gold,
+                          exp: rewards.exp,
+                          level: rewards.level || prev.level,
+                          max_exp: rewards.max_exp || prev.max_exp,
+                          available_ap: rewards.available_ap !== undefined ? rewards.available_ap : prev.available_ap,
+                          max_floor: rewards.max_floor || prev.max_floor,
+                        };
+                        localStorage.setItem("ironpixels_profile", JSON.stringify(updated));
+                        return updated;
+                      });
+                      if (rewards.available_ap !== undefined) {
+                        setAvailableAp(rewards.available_ap);
+                      }
+                    }}
                     onConsumeSessionDamage={() => setLastSessionDamage(0)}
                     onNavigateToMultiplayer={() => setActiveTab("multiplayer")}
                     onOpenReviveModal={() => setIsTombstoneDismissed(false)}

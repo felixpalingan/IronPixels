@@ -60,7 +60,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
       const workoutDates = new Set<string>();
 
       liveSessions.forEach((sess: any) => {
-        vol += Number(sess.total_volume || sess.volume) || 0;
+        vol += Number(sess.total_volume_kg || sess.total_volume || sess.volume) || 0;
         rvs += Number(sess.total_rvs || sess.rvs) || 0;
         const dateStr = (sess.created_at || sess.date || "").split("T")[0];
         if (dateStr) workoutDates.add(dateStr);
@@ -84,7 +84,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
       const dateStr = (sess.created_at || sess.date || "").split("T")[0];
       if (dateStr) {
         const currentVol = workoutDatesMap.get(dateStr) || 0;
-        workoutDatesMap.set(dateStr, currentVol + (Number(sess.total_volume || sess.volume) || 1));
+        workoutDatesMap.set(dateStr, currentVol + (Number(sess.total_volume_kg || sess.total_volume || sess.volume) || 1));
       }
     });
 

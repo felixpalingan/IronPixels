@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Flame, Swords, Zap, Gift, X, Skull, Crown, Shield } from "lucide-react";
+import { Flame, Swords, Zap, Gift, X, Crown, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { TacticalSkillBar } from "@/components/TacticalSkillBar";
@@ -54,6 +54,14 @@ interface CombatArenaProps {
   equippedWeaponIcon?: string;
   isHeroDead?: boolean;
   onAddItemToInventory?: (newItem: InventoryRecord) => void;
+  onRewardsReceived?: (rewards: {
+    gold: number;
+    exp: number;
+    max_exp?: number;
+    level?: number;
+    available_ap?: number;
+    max_floor?: number;
+  }) => void;
   onConsumeSessionDamage?: () => void;
   onNavigateToMultiplayer?: () => void;
   onOpenReviveModal?: () => void;
@@ -70,6 +78,7 @@ export function CombatArena({
   equippedWeaponIcon = "/assets/items/weapons/01.png",
   isHeroDead = false,
   onAddItemToInventory,
+  onRewardsReceived,
   onConsumeSessionDamage,
   onNavigateToMultiplayer,
   onOpenReviveModal,
@@ -153,7 +162,11 @@ export function CombatArena({
   const [victoryLoot, setVictoryLoot] = useState<{
     enemyName: string;
     floor: number;
-    droppedItem: EquipmentItem;
+    droppedItem?: EquipmentItem | null;
+    goldEarned?: number;
+    expEarned?: number;
+    leveledUp?: boolean;
+    newLevel?: number;
   } | null>(null);
 
   const currentEnemy = activeMode === "party" ? partyEnemy : soloEnemy;
@@ -285,8 +298,13 @@ export function CombatArena({
               "party"
             );
 
-            if (wasBoss) {
-              awardLoot(payload.boss_name || "Boss", wasFloor);
+            if (payload.dropped_item) {
+              if (onAddItemToInventory) onAddItemToInventory(payload.dropped_item);
+              setVictoryLoot({
+                enemyName: payload.boss_name || "Boss",
+                floor: wasFloor,
+                droppedItem: payload.dropped_item.item,
+              });
             }
 
             setTimeout(() => {
@@ -425,6 +443,7 @@ export function CombatArena({
         body: JSON.stringify({
           user_id: userId,
           boss_id: targetEnemy.enemy_id,
+          current_hp: targetEnemy.current_hp,
           rvs_damage: damage,
           mode: targetMode,
         }),
@@ -439,19 +458,52 @@ export function CombatArena({
 
           const wasFloor = targetEnemy.floor;
           const wasBoss = wasFloor % 5 === 0;
-          addLog(`${wasBoss ? "🏆 BOSS" : "⚔️"} ${targetEnemy.display_name} DEFEATED on Floor ${wasFloor} by ${who}!`, "#00ff41", targetMode);
+          const goldEarned = data.rewards?.gold ?? 0;
+          const expEarned = data.rewards?.exp ?? 0;
+          const droppedItemRecord = data.rewards?.dropped_item ?? null;
 
-          if (wasBoss) {
-            if (targetMode === activeMode) awardLoot(targetEnemy.display_name, wasFloor);
-            if (targetMode === "party") {
-              try {
-                await fetch("/api/combat/attack", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "distribute_party_loot", floor: wasFloor }),
-                });
-              } catch (e) {}
+          soundEngine.play(wasBoss ? "chest" : "level_up");
+          soundEngine.triggerHaptic([60, 40, 100]);
+
+          addLog(
+            `${wasBoss ? "🏆 BOSS" : "⚔️"} ${targetEnemy.display_name} DEFEATED on Floor ${wasFloor} by ${who}! +${formatNumber(goldEarned)} Gold, +${formatNumber(expEarned)} EXP!`,
+            "#00ff41",
+            targetMode
+          );
+
+          if (droppedItemRecord) {
+            addLog(
+              `🎁 RARE LOOT DROPPED: [${droppedItemRecord.item.rarity.toUpperCase()}] ${droppedItemRecord.item.item_name}!`,
+              "#a855f7",
+              targetMode
+            );
+            if (onAddItemToInventory) {
+              onAddItemToInventory(droppedItemRecord);
             }
+          }
+
+          if (data.rewards?.leveled_up) {
+            addLog(
+              `⭐ LEVEL UP! Reached Level ${data.rewards.new_level}! (+5 AP Available)`,
+              "#facc15",
+              targetMode
+            );
+          }
+
+          if (targetMode === activeMode && (wasBoss || droppedItemRecord)) {
+            setVictoryLoot({
+              enemyName: targetEnemy.display_name,
+              floor: wasFloor,
+              droppedItem: droppedItemRecord?.item || null,
+              goldEarned,
+              expEarned,
+              leveledUp: data.rewards?.leveled_up,
+              newLevel: data.rewards?.new_level,
+            });
+          }
+
+          if (data.user_stats && onRewardsReceived) {
+            onRewardsReceived(data.user_stats);
           }
 
           const nextEnemyData: EnemyData = {
@@ -514,6 +566,7 @@ export function CombatArena({
               stage: data.stage,
               boss_name: data.boss_name || targetEnemy.display_name,
               sprite_config: data.sprite_config,
+              dropped_item: data.rewards?.dropped_item || null,
             },
           });
         }
@@ -523,12 +576,7 @@ export function CombatArena({
     }
   };
 
-  const handleInstantKill = () => {
-    if (currentEnemy.current_hp <= 0) return;
-    const dmg = Math.max(999999, currentEnemy.current_hp);
-    executeAttack(dmg, "INSTANT KILL", "attack03", activeMode);
-    addLog(`⚡ INSTANT KILL! Dealt ${formatNumber(dmg)} damage!`, "#FF0055", activeMode);
-  };
+
 
   useEffect(() => {
     if (sessionDamage > 0 && !hasExecutedRef.current) {
@@ -603,21 +651,59 @@ export function CombatArena({
                 <Gift className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="font-headline font-extrabold text-2xl text-purple-400 uppercase tracking-wider">BOSS DEFEATED LOOT!</h3>
-                <p className="text-xs text-gray-300 mt-1">YOU VANQUISHED {victoryLoot.enemyName.toUpperCase()} ON FLOOR {victoryLoot.floor}!</p>
+                <h3 className="font-headline font-extrabold text-2xl text-purple-400 uppercase tracking-wider">
+                  {victoryLoot.floor % 5 === 0 ? "BOSS DEFEATED LOOT!" : "FLOOR CLEAR REWARDS!"}
+                </h3>
+                <p className="text-xs text-gray-300 mt-1">
+                  YOU VANQUISHED {victoryLoot.enemyName.toUpperCase()} ON FLOOR {victoryLoot.floor}!
+                </p>
               </div>
-              <div className="bg-black/80 border border-purple-800 p-4 space-y-3">
-                <div className="text-[10px] text-purple-400 font-bold tracking-widest uppercase">1 FREE VOID CHEST REWARD</div>
-                <div className="w-16 h-16 bg-black border-2 border-purple-500 mx-auto p-1 shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center">
-                  <img src={victoryLoot.droppedItem.image_url} alt={victoryLoot.droppedItem.item_name} className="w-12 h-12 object-contain pixelated" />
+
+              {(victoryLoot.goldEarned || victoryLoot.expEarned) && (
+                <div className="grid grid-cols-2 gap-2 bg-black/60 p-2.5 border border-zinc-800 text-xs font-bold font-mono">
+                  <div className="text-amber-400 flex items-center justify-center gap-1">
+                    <span>🪙 +{formatNumber(victoryLoot.goldEarned || 0)} GOLD</span>
+                  </div>
+                  <div className="text-[#00ff41] flex items-center justify-center gap-1">
+                    <span>⚡ +{formatNumber(victoryLoot.expEarned || 0)} EXP</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-headline font-extrabold text-sm text-white uppercase">{victoryLoot.droppedItem.item_name}</div>
-                  <div className="text-[10px] font-bold text-purple-400 uppercase mt-0.5">{victoryLoot.droppedItem.rarity} {victoryLoot.droppedItem.type}</div>
+              )}
+
+              {victoryLoot.leveledUp && (
+                <div className="p-2 border border-amber-400/80 bg-amber-950/40 text-amber-300 text-xs font-bold animate-pulse font-mono">
+                  ⭐ LEVEL UP! REACHED LEVEL {victoryLoot.newLevel}! (+5 AP)
                 </div>
-              </div>
-              <button onClick={() => setVictoryLoot(null)} className="w-full h-12 bg-purple-600 hover:bg-purple-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.6)] cursor-pointer">
-                SAVE ITEM TO INVENTORY
+              )}
+
+              {victoryLoot.droppedItem && (
+                <div className="bg-black/80 border border-purple-800 p-4 space-y-3">
+                  <div className="text-[10px] text-purple-400 font-bold tracking-widest uppercase">
+                    1 FREE VOID CHEST REWARD
+                  </div>
+                  <div className="w-16 h-16 bg-black border-2 border-purple-500 mx-auto p-1 shadow-[0_0_15px_rgba(168,85,247,0.4)] flex items-center justify-center">
+                    <img
+                      src={victoryLoot.droppedItem.image_url}
+                      alt={victoryLoot.droppedItem.item_name}
+                      className="w-12 h-12 object-contain pixelated"
+                    />
+                  </div>
+                  <div>
+                    <div className="font-headline font-extrabold text-sm text-white uppercase">
+                      {victoryLoot.droppedItem.item_name}
+                    </div>
+                    <div className="text-[10px] font-bold text-purple-400 uppercase mt-0.5">
+                      {victoryLoot.droppedItem.rarity} {victoryLoot.droppedItem.type}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setVictoryLoot(null)}
+                className="w-full h-12 bg-purple-600 hover:bg-purple-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(168,85,247,0.6)] cursor-pointer"
+              >
+                CLAIM & CONTINUE DUNGEON
               </button>
             </div>
           </motion.div>
@@ -699,13 +785,6 @@ export function CombatArena({
           <span>BASE COMBAT POWER:</span>
           <span className="text-[#00ff41] text-sm">{formatNumber(baseCombatPower)} DMG</span>
         </div>
-        <button
-          onClick={handleInstantKill}
-          className="px-2.5 py-1 border border-red-500/80 bg-red-950/60 hover:bg-red-600 text-red-300 hover:text-white text-[10px] font-headline font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer shadow-red-glow"
-        >
-          <Skull className="w-3.5 h-3.5 text-red-400" />
-          <span>INSTANT KILL</span>
-        </button>
       </div>
 
       <div className="border border-pixel-border bg-surface p-4 space-y-3 relative">

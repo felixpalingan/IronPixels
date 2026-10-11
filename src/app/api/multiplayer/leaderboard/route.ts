@@ -40,15 +40,41 @@ export async function GET(request: Request) {
       try {
         const { data: dbParties } = await supabase.from("Party").select("*");
         if (dbParties && dbParties.length > 0) {
+          const leaderIds = dbParties.map((p: any) => p.leader_id).filter(Boolean);
+          const partyIds = dbParties.map((p: any) => p.party_id);
+
+          const [{ data: leaderProfiles }, { data: allMembers }] = await Promise.all([
+            leaderIds.length > 0
+              ? supabase
+                  .from("profiles")
+                  .select("id, user_id, username")
+                  .or(`id.in.(${leaderIds.join(",")}),user_id.in.(${leaderIds.join(",")})`)
+              : Promise.resolve({ data: [] }),
+            partyIds.length > 0
+              ? supabase.from("Party_Members").select("party_id")
+              : Promise.resolve({ data: [] }),
+          ]);
+
+          const leaderNameMap: Record<string, string> = {};
+          (leaderProfiles || []).forEach((prof: any) => {
+            if (prof.id) leaderNameMap[prof.id] = prof.username;
+            if (prof.user_id) leaderNameMap[prof.user_id] = prof.username;
+          });
+
+          const memberCountMap: Record<string, number> = {};
+          (allMembers || []).forEach((m: any) => {
+            memberCountMap[m.party_id] = (memberCountMap[m.party_id] || 0) + 1;
+          });
+
           partyList = dbParties.map((p: any) => ({
             party_id: p.party_id,
             party_name: p.party_name || "Guild Squad",
-            leader_name: p.leader_name || "Leader",
-            member_count: 2,
-            total_party_floor: p.total_party_floor || 15,
-            total_party_cp: p.total_party_cp || 16650,
-            total_party_rvs: p.total_party_rvs || 1350,
-            party_streak: p.party_streak || 10,
+            leader_name: leaderNameMap[p.leader_id] || "Leader",
+            member_count: memberCountMap[p.party_id] || 1,
+            total_party_floor: p.total_party_floor || 1,
+            total_party_cp: p.total_party_cp || 0,
+            total_party_rvs: p.total_party_rvs || 0,
+            party_streak: p.party_streak || 1,
             leader_weapon: "/assets/items/weapons/01.png",
           }));
         }

@@ -20,9 +20,9 @@ export async function GET(request: Request) {
     const userId = user.id;
 
     let bossKey = `solo_${userId}`;
+    let activePartyId: string | null = partyIdParam;
 
     if (mode === "party") {
-      let activePartyId = partyIdParam;
       if (!activePartyId) {
         const { data: memberRec } = await supabase
           .from("Party_Members")
@@ -52,74 +52,66 @@ export async function GET(request: Request) {
       }
     }
 
-    const { data: dbBosses } = await supabase
+    // 1. Determine current floor from query param, party floor, or profile max_floor
+    let currentFloor: number = targetFloor || 1;
+    if (!targetFloor) {
+      if (mode === "party" && activePartyId) {
+        const { data: partyRec } = await supabase
+          .from("Party")
+          .select("total_party_floor")
+          .eq("party_id", activePartyId)
+          .single();
+        currentFloor = partyRec?.total_party_floor || 1;
+      } else {
+        const { data: profRec } = await supabase
+          .from("profiles")
+          .select("max_floor")
+          .or(`id.eq.${userId},user_id.eq.${userId}`)
+          .single();
+        currentFloor = profRec?.max_floor || 1;
+      }
+    }
+
+    // 2. Fetch canonical stage from dungeon_bosses table
+    const { data: stageRows } = await supabase
       .from("dungeon_bosses")
       .select("*")
-      .eq("boss_id", bossKey)
+      .eq("stage", currentFloor)
       .limit(1);
 
-    if (!dbBosses || dbBosses.length === 0) {
-      const initialEnemy = buildFloorEnemy(targetFloor || 1, mode);
-      const insertRecord = {
-        boss_id: bossKey,
-        boss_name: initialEnemy.display_name,
-        stage: initialEnemy.floor,
-        current_hp: initialEnemy.current_hp,
-        max_hp: initialEnemy.max_hp,
-        status: "Active",
-        category: initialEnemy.category,
-        mode,
-        sprite_config: initialEnemy.sprite_config,
-        updated_at: new Date().toISOString(),
-      };
-
-      try {
-        await supabase.from("dungeon_bosses").insert(insertRecord);
-      } catch (e) {}
-
+    if (stageRows && stageRows.length > 0) {
+      const stageData = stageRows[0];
+      const maxHp = Number(mode === "party" ? stageData.max_hp * 2 : stageData.max_hp);
       return NextResponse.json({
-        ...insertRecord,
-        boss_type: initialEnemy.sprite_config.spriteKey,
+        boss_id: stageData.boss_id,
+        boss_name: stageData.boss_name,
+        stage: stageData.stage,
+        current_hp: maxHp,
+        max_hp: maxHp,
+        status: "Active",
+        category: stageData.category || "mob",
+        sprite_config: stageData.sprite_config,
+        boss_type: stageData.sprite_config?.spriteKey || "imp",
+        mode,
       });
     }
 
-    let existingBoss = dbBosses[0];
-
-    if (targetFloor && targetFloor > existingBoss.stage) {
-      const advancedEnemy = buildFloorEnemy(targetFloor, mode);
-      const updateRecord = {
-        boss_name: advancedEnemy.display_name,
-        stage: advancedEnemy.floor,
-        current_hp: advancedEnemy.current_hp,
-        max_hp: advancedEnemy.max_hp,
-        status: "Active",
-        category: advancedEnemy.category,
-        sprite_config: advancedEnemy.sprite_config,
-        updated_at: new Date().toISOString(),
-      };
-
-      try {
-        await supabase
-          .from("dungeon_bosses")
-          .update(updateRecord)
-          .eq("boss_id", bossKey);
-      } catch (e) {}
-
-      existingBoss = { ...existingBoss, ...updateRecord };
-    }
-
+    // Fallback for endless stages beyond 20
+    const fallbackEnemy = buildFloorEnemy(currentFloor, mode);
     return NextResponse.json({
-      boss_id: existingBoss.boss_id,
-      boss_name: existingBoss.boss_name,
-      stage: existingBoss.stage,
-      current_hp: Number(existingBoss.current_hp),
-      max_hp: Number(existingBoss.max_hp),
-      status: existingBoss.status || "Active",
-      category: existingBoss.category || "mob",
-      sprite_config: existingBoss.sprite_config,
-      boss_type: existingBoss.sprite_config?.spriteKey || "goblin",
+      boss_id: fallbackEnemy.enemy_id,
+      boss_name: fallbackEnemy.display_name,
+      stage: fallbackEnemy.floor,
+      current_hp: fallbackEnemy.current_hp,
+      max_hp: fallbackEnemy.max_hp,
+      status: fallbackEnemy.status,
+      category: fallbackEnemy.category,
+      sprite_config: fallbackEnemy.sprite_config,
+      boss_type: fallbackEnemy.sprite_config.spriteKey,
       mode,
     });
+
+
   } catch (err: any) {
     const fallback = buildFloorEnemy(1, mode);
     return NextResponse.json({

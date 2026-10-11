@@ -6,11 +6,54 @@ export type SoundEffectType = "attack" | "chest" | "timer" | "select" | "level_u
 class SoundEngine {
   private audioCache: Map<string, HTMLAudioElement> = new Map();
   private isMuted: boolean = false;
+  private isHapticsEnabled: boolean = true;
 
   constructor() {
     if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("ironpixels_sound_muted");
+        this.isMuted = saved === "true";
+        const savedHaptics = localStorage.getItem("ironpixels_haptics_enabled");
+        this.isHapticsEnabled = savedHaptics !== "false";
+      } catch (e) {}
       this.preload();
     }
+  }
+
+  public getIsMuted(): boolean {
+    return this.isMuted;
+  }
+
+  public setMuted(muted: boolean): boolean {
+    this.isMuted = muted;
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ironpixels_sound_muted", muted ? "true" : "false");
+      } catch (e) {}
+    }
+    return this.isMuted;
+  }
+
+  public toggleMute(): boolean {
+    return this.setMuted(!this.isMuted);
+  }
+
+  public getIsHapticsEnabled(): boolean {
+    return this.isHapticsEnabled;
+  }
+
+  public setHapticsEnabled(enabled: boolean): boolean {
+    this.isHapticsEnabled = enabled;
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ironpixels_haptics_enabled", enabled ? "true" : "false");
+      } catch (e) {}
+    }
+    return this.isHapticsEnabled;
+  }
+
+  public toggleHaptics(): boolean {
+    return this.setHapticsEnabled(!this.isHapticsEnabled);
   }
 
   private preload() {
@@ -48,6 +91,7 @@ class SoundEngine {
   }
 
   public triggerHaptic(pattern: number | number[] = [50, 30, 50]) {
+    if (!this.isHapticsEnabled) return;
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(pattern);

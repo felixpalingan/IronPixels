@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Coins, X, HeartPulse, Check, Triangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
@@ -83,6 +83,29 @@ export function BlacksmithShop({
   const [targetX, setTargetX] = useState<number>(0);
   const [isOpening, setIsOpening] = useState<boolean>(false);
   const [potionNotice, setPotionNotice] = useState<string | null>(null);
+  const reelViewportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (openingPhase === "rolling") {
+      // Allow DOM mount to measure real container dimensions
+      const timer = setTimeout(() => {
+        const viewportWidth = reelViewportRef.current?.clientWidth || 396;
+        const cardWidth = 96; // w-24
+        const gap = 8; // gap-2
+        const paddingLeft = 8; // px-2
+        const winnerIndex = 28;
+        // Exact center of the winning card relative to reel left
+        const winnerCardCenter = paddingLeft + winnerIndex * (cardWidth + gap) + cardWidth / 2;
+        // Minor organic jitter (-12px to +12px) strictly within the 96px card
+        const jitter = (Math.random() - 0.5) * 24;
+        const calculatedTargetX = winnerCardCenter - viewportWidth / 2 + jitter;
+        setTargetX(calculatedTargetX);
+      }, 20);
+      return () => clearTimeout(timer);
+    } else if (!openingPhase) {
+      setTargetX(0);
+    }
+  }, [openingPhase]);
 
   const generateReelStrip = (winnerItem: EquipmentItem): EquipmentItem[] => {
     const strip: EquipmentItem[] = [];
@@ -146,12 +169,6 @@ export function BlacksmithShop({
       // Generate reel strip containing the EXACT final server item at winnerIndex (28)
       const strip = generateReelStrip(finalItem);
       setReelStrip(strip);
-
-      const winnerIndex = 28;
-      const itemWidth = 112;
-      const offsetInWinner = Math.floor(Math.random() * 50) + 30;
-      const calculatedTargetX = winnerIndex * itemWidth + offsetInWinner - 170;
-      setTargetX(calculatedTargetX);
 
       // Start rolling animation
       soundEngine.play("chest");
@@ -357,7 +374,10 @@ export function BlacksmithShop({
 
               {openingPhase === "rolling" && (
                 <div className="space-y-4 py-4">
-                  <div className="relative w-full h-28 bg-black border-2 border-pixel-border overflow-hidden flex items-center shadow-inner">
+                  <div
+                    ref={reelViewportRef}
+                    className="relative w-full h-28 bg-black border-2 border-pixel-border overflow-hidden flex items-center shadow-inner"
+                  >
                     <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-pixel-green z-20 shadow-neon" />
                     <Triangle className="w-4 h-4 text-pixel-green fill-pixel-green absolute left-1/2 -top-2 -translate-x-1/2 rotate-180 z-30" />
 

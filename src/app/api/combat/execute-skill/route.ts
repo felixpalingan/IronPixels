@@ -35,14 +35,7 @@ export async function POST(request: Request) {
 
     const totalSkillDamage = Math.round(base_damage * damage_multiplier);
 
-    try {
-      await supabase
-        .from("user_skills")
-        .update({ last_used_at: new Date().toISOString() })
-        .eq("skill_id", skill_id)
-        .or(`user_id.eq.${userId}`);
-    } catch (e) {
-    }
+
 
     return NextResponse.json({
       success: true,

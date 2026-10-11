@@ -12,24 +12,15 @@ export async function GET() {
 
     const userId = user.id;
 
-    let { data: sessions, error } = await supabase
+    const { data: sessions, error } = await supabase
       .from("workout_sessions")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(30);
 
-    if (error || !sessions || sessions.length === 0) {
-      const { data: legacySessions } = await supabase
-        .from("Workout_Sessions")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(30);
-
-      if (legacySessions && legacySessions.length > 0) {
-        sessions = legacySessions;
-      }
+    if (error) {
+      console.error("Error fetching workout history:", error);
     }
 
     return NextResponse.json({ sessions: sessions || [] });

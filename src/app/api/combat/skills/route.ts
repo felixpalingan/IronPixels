@@ -37,31 +37,7 @@ export async function GET() {
 
     const userId = user.id;
 
-    try {
-      const { data: skills } = await supabase
-        .from("user_skills")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (skills && skills.length > 0) {
-        const formattedSkills = skills.map((sk) => {
-          const remainingSeconds = getSkillRemainingSeconds(userId, sk.skill_id);
-          return {
-            skill_id: sk.skill_id,
-            user_id: sk.user_id,
-            skill_name: sk.skill_name,
-            damage_multiplier: Number(sk.damage_multiplier),
-            cooldown_minutes: sk.cooldown_minutes,
-            remaining_seconds: remainingSeconds,
-            is_ready: remainingSeconds === 0,
-          };
-        });
-        return NextResponse.json(formattedSkills);
-      }
-    } catch (e) {
-    }
-
-    const fallbackSkills = DEFAULT_SKILLS.map((sk) => {
+    const activeSkills = DEFAULT_SKILLS.map((sk) => {
       const remainingSeconds = getSkillRemainingSeconds(userId, sk.skill_id);
       return {
         ...sk,
@@ -71,7 +47,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json(fallbackSkills);
+    return NextResponse.json(activeSkills);
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Failed to fetch skills." },
