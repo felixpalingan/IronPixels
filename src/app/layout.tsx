@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     icon: "/icon.png",
     apple: "/icon.png",
   },
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -60,7 +63,6 @@ export const metadata: Metadata = {
     card: "summary",
     title: "IronPixels - Gamified Fitness RPG",
     description: "Level up your gym workouts with retro 16-bit RPG mechanics.",
-    creator: "@felixpalingan",
     images: ["/icon.png"],
   },
   verification: {
