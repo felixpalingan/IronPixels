@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Dumbbell, Calendar, Flame, ChevronDown, ChevronUp, History, Sparkles, Award, Trash2 } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 import { soundEngine } from "@/lib/soundEffects";
+import { WeightUnit, kgToLbs, toDisplayWeight } from "@/lib/unitConversion";
 
 export interface ExerciseSetLog {
   set_number: number;
@@ -37,6 +38,15 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
   const [sessionToDelete, setSessionToDelete] = useState<WorkoutSessionLog | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
+
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_weight_unit");
+      return saved === "lbs" ? "lbs" : "kg";
+    } catch (e) {
+      return "kg";
+    }
+  });
 
   useEffect(() => {
     const localLogs = localStorage.getItem("ironpixels_workout_history");
@@ -117,9 +127,16 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
         </div>
 
         <div className="border border-pixel-border bg-surface p-3 text-center space-y-1 shadow-neon">
-          <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">VOLUME LIFTED</div>
+          <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
+            VOLUME LIFTED ({weightUnit.toUpperCase()})
+          </div>
           <div className="font-headline font-black text-lg text-[#00ff41]">
-            {formatNumber(totalLifetimeVolume)} KG
+            {formatNumber(
+              weightUnit === "lbs"
+                ? kgToLbs(totalLifetimeVolume)
+                : totalLifetimeVolume
+            )}{" "}
+            {weightUnit.toUpperCase()}
           </div>
         </div>
 
@@ -140,9 +157,49 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
             </span>
           </div>
 
-          <span className="text-[10px] text-zinc-400 font-bold">
-            {totalSessions} RECORDS
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-pixel-border bg-black p-0.5 shadow-neon">
+              <button
+                type="button"
+                onClick={() => {
+                  soundEngine.play("select");
+                  setWeightUnit("kg");
+                  try {
+                    localStorage.setItem("ironpixels_weight_unit", "kg");
+                  } catch (e) {}
+                }}
+                className={`px-1.5 py-0.5 text-[8.5px] font-bold uppercase transition-all cursor-pointer ${
+                  weightUnit === "kg"
+                    ? "bg-[#00ff41] text-black shadow-neon"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                title="View in Kilograms (KG)"
+              >
+                KG
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  soundEngine.play("select");
+                  setWeightUnit("lbs");
+                  try {
+                    localStorage.setItem("ironpixels_weight_unit", "lbs");
+                  } catch (e) {}
+                }}
+                className={`px-1.5 py-0.5 text-[8.5px] font-bold uppercase transition-all cursor-pointer ${
+                  weightUnit === "lbs"
+                    ? "bg-[#00ff41] text-black shadow-neon"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                title="View in Pounds (LBS)"
+              >
+                LBS
+              </button>
+            </div>
+            <span className="text-[10px] text-zinc-400 font-bold">
+              {totalSessions} RECORDS
+            </span>
+          </div>
         </div>
 
         {deleteNotice && (
@@ -196,7 +253,12 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
 
                         <div className="text-[10px] text-zinc-400 flex items-center gap-2 mt-0.5 font-bold">
                           <span className="text-[#00ff41]">
-                            {formatNumber(session.total_volume_kg)} KG VOLUME
+                            {formatNumber(
+                              weightUnit === "lbs"
+                                ? kgToLbs(session.total_volume_kg)
+                                : session.total_volume_kg
+                            )}{" "}
+                            {weightUnit.toUpperCase()} VOLUME
                           </span>
                           <span>•</span>
                           <span className="text-amber-400">
@@ -251,7 +313,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                                 key={setIdx}
                                 className="px-2 py-0.5 border border-pixel-border/60 bg-surface text-[9px] text-zinc-300 font-mono"
                               >
-                                Set {set.set_number}: {set.weight_kg} kg x {set.reps} reps
+                                Set {set.set_number}: {toDisplayWeight(set.weight_kg, weightUnit)} {weightUnit} x {set.reps} reps
                               </span>
                             ))}
                           </div>

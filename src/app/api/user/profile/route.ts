@@ -57,6 +57,7 @@ export async function GET() {
       max_exp: profile.max_exp || 1000,
       gold: profile.gold ?? 500,
       weight_kg: Number(profile.weight_kg) || 75,
+      weight_unit: profile.weight_unit || "kg",
       available_ap: profile.available_ap ?? 5,
       stats: {
         str: profile.str ?? (profile.stats?.str || 85),
@@ -86,6 +87,30 @@ export async function PATCH(request: Request) {
 
     const userId = user.id;
     const body = await request.json().catch(() => ({}));
+
+    // Handle weight_unit preference update
+    if (body?.weight_unit !== undefined) {
+      const unit = body.weight_unit === "lbs" ? "lbs" : "kg";
+      const { data: updatedList, error: updateErr } = await supabase
+        .from("profiles")
+        .update({
+          weight_unit: unit,
+          updated_at: new Date().toISOString(),
+        })
+        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .select("*");
+
+      if (updateErr) {
+        return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        weight_unit: unit,
+        message: `Weight unit updated to ${unit.toUpperCase()}`,
+      });
+    }
+
     const { stat_key, amount = 1 } = body;
 
     const validStats = ["str", "agi", "vit", "luk"] as const;

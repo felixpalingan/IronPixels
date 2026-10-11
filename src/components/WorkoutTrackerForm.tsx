@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat } from "@/lib/exercisesData";
 import { calculateSetRvs as calculateSetRvsPure } from "@/lib/workoutCalculations";
 import { soundEngine } from "@/lib/soundEffects";
+import { WeightUnit, kgToLbs, lbsToKg, toDisplayWeight, toCanonicalKg } from "@/lib/unitConversion";
 
 interface ExerciseSet {
   set_number: number;
@@ -67,6 +68,45 @@ export function WorkoutTrackerForm({
   const [newRoutineName, setNewRoutineName] = useState<string>("");
   const [newRoutineSplit, setNewRoutineSplit] = useState<string>("Push");
   const [routineNotice, setRoutineNotice] = useState<string | null>(null);
+
+  // Weight Unit preference state (KG / LBS)
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_weight_unit");
+      return saved === "lbs" ? "lbs" : "kg";
+    } catch (e) {
+      return "kg";
+    }
+  });
+
+  const handleToggleWeightUnit = (newUnit: WeightUnit) => {
+    if (newUnit === weightUnit) return;
+    soundEngine.play("select");
+    soundEngine.triggerHaptic(40);
+
+    // Dynamically convert existing entered set weights to new unit
+    setLoggedExercises((prev) =>
+      prev.map((ex) => {
+        const convertedSets = ex.sets.map((s) => {
+          if (s.weight === 0) return s;
+          const newWeight = newUnit === "lbs" ? kgToLbs(s.weight) : lbsToKg(s.weight);
+          return { ...s, weight: newWeight };
+        });
+        return { ...ex, sets: convertedSets };
+      })
+    );
+
+    setWeightUnit(newUnit);
+    try {
+      localStorage.setItem("ironpixels_weight_unit", newUnit);
+    } catch (e) {}
+
+    fetch("/api/user/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weight_unit: newUnit }),
+    }).catch(() => {});
+  };
 
   // Rest Timer states (Background-resilient timestamp model)
   const [defaultRestTimerSecs, setDefaultRestTimerSecs] = useState<number>(() => {
@@ -468,8 +508,9 @@ export function WorkoutTrackerForm({
     category: string = "Chest",
     equipment: string = "Barbell"
   ) => {
+    const canonicalWeight = toCanonicalKg(weight, weightUnit);
     return calculateSetRvsPure({
-      weight,
+      weight: canonicalWeight,
       reps,
       multiplier,
       category,
@@ -484,7 +525,7 @@ export function WorkoutTrackerForm({
     return loggedExercises.reduce((total, ex) => {
       const exVol = ex.sets
         .filter((s) => s.completed)
-        .reduce((sum, s) => sum + s.weight * s.reps, 0);
+        .reduce((sum, s) => sum + toCanonicalKg(s.weight, weightUnit) * s.reps, 0);
       return total + exVol;
     }, 0);
   };
@@ -620,7 +661,12 @@ export function WorkoutTrackerForm({
     }
 
     const totalVolume = validExercises.reduce(
-      (total, ex) => total + ex.completedSets.reduce((sum, s) => sum + s.weight * s.reps, 0),
+      (total, ex) =>
+        total +
+        ex.completedSets.reduce(
+          (sum, s) => sum + toCanonicalKg(s.weight, weightUnit) * s.reps,
+          0
+        ),
       0
     );
 
@@ -643,7 +689,7 @@ export function WorkoutTrackerForm({
       rvs_multiplier: ex.rvsMultiplier,
       sets: ex.completedSets.map((s, idx) => ({
         set_number: idx + 1,
-        weight_kg: s.weight,
+        weight_kg: toCanonicalKg(s.weight, weightUnit),
         reps: s.reps,
         completed: true,
       })),
@@ -744,10 +790,39 @@ export function WorkoutTrackerForm({
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="text-[9px] text-zinc-400 uppercase font-bold">LIVE RVS POWER</div>
-            <div className="font-headline font-black text-lg text-[#00ff41] animate-pulse">
-              +{formatNumber(calculateTotalRvs())} RVS
+          <div className="flex items-center gap-3">
+            <div className="flex items-center border border-pixel-border bg-black p-0.5 shadow-neon">
+              <button
+                type="button"
+                onClick={() => handleToggleWeightUnit("kg")}
+                className={`px-2 py-0.5 text-[9px] font-bold uppercase transition-all cursor-pointer ${
+                  weightUnit === "kg"
+                    ? "bg-[#00ff41] text-black shadow-neon"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                title="Switch weight unit to Kilograms (KG)"
+              >
+                KG
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleWeightUnit("lbs")}
+                className={`px-2 py-0.5 text-[9px] font-bold uppercase transition-all cursor-pointer ${
+                  weightUnit === "lbs"
+                    ? "bg-[#00ff41] text-black shadow-neon"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                title="Switch weight unit to Pounds (LBS)"
+              >
+                LBS
+              </button>
+            </div>
+
+            <div className="text-right">
+              <div className="text-[9px] text-zinc-400 uppercase font-bold">LIVE RVS POWER</div>
+              <div className="font-headline font-black text-lg text-[#00ff41] animate-pulse">
+                +{formatNumber(calculateTotalRvs())} RVS
+              </div>
             </div>
           </div>
         </div>
@@ -914,9 +989,16 @@ export function WorkoutTrackerForm({
 
         <div className="grid grid-cols-3 gap-2 text-center text-xs">
           <div className="p-2 border border-pixel-border/60 bg-black/60">
-            <div className="text-[9px] text-zinc-400 uppercase font-bold">TOTAL VOL</div>
+            <div className="text-[9px] text-zinc-400 uppercase font-bold">
+              TOTAL VOL ({weightUnit.toUpperCase()})
+            </div>
             <div className="font-headline font-extrabold text-xs sm:text-sm text-white">
-              {formatNumber(calculateTotalVolume())} KG
+              {formatNumber(
+                weightUnit === "lbs"
+                  ? kgToLbs(calculateTotalVolume())
+                  : calculateTotalVolume()
+              )}{" "}
+              {weightUnit.toUpperCase()}
             </div>
           </div>
           <div className="p-2 border border-pixel-border/60 bg-black/60">
@@ -1018,7 +1100,7 @@ export function WorkoutTrackerForm({
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1.5 text-[9px] text-zinc-400 font-bold uppercase text-center border-b border-pixel-border/30 pb-1.5">
                     <span className="col-span-1">SET</span>
-                    <span className="col-span-3">KG (WEIGHT)</span>
+                    <span className="col-span-3">{weightUnit.toUpperCase()} (WEIGHT)</span>
                     <span className="col-span-3">REPS</span>
                     <span className="col-span-2">RVS</span>
                     <span className="col-span-3">STATUS / LOG</span>
@@ -1066,7 +1148,7 @@ export function WorkoutTrackerForm({
                             }`}
                             placeholder={
                               prevSet && prevSet.weight_kg > 0
-                                ? String(prevSet.weight_kg)
+                                ? String(toDisplayWeight(prevSet.weight_kg, weightUnit))
                                 : isAgilityEx
                                 ? "0 (BW)"
                                 : "0"
@@ -1131,7 +1213,7 @@ export function WorkoutTrackerForm({
                                 <span>LAST:</span>
                               </span>
                               <span className="text-zinc-300 font-bold">
-                                {prevSet.weight_kg}kg × {prevSet.reps} reps
+                                {toDisplayWeight(prevSet.weight_kg, weightUnit)} {weightUnit.toUpperCase()} × {prevSet.reps} reps
                               </span>
                             </div>
                             {!isDone && (!set.weight || !set.reps) && (
@@ -1140,7 +1222,7 @@ export function WorkoutTrackerForm({
                                 onClick={() => {
                                   soundEngine.play("select");
                                   soundEngine.triggerHaptic(40);
-                                  handleUpdateSet(ex.id, setIdx, "weight", prevSet.weight_kg);
+                                  handleUpdateSet(ex.id, setIdx, "weight", toDisplayWeight(prevSet.weight_kg, weightUnit));
                                   handleUpdateSet(ex.id, setIdx, "reps", prevSet.reps);
                                 }}
                                 className="text-[#00ff41] hover:text-[#5cff87] hover:underline cursor-pointer flex items-center gap-1 font-bold text-[8.5px] uppercase tracking-wider"
