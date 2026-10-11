@@ -1,7 +1,27 @@
-node_modules
-.next
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# Environment files
 .env.local
 .env*.local
-build
-dist
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Raw local assets & agent workspace scratch
+agent.txt
+skills-lock.json
+.agents/
+Helton Yan's Pixel Combat - Single Files/
