@@ -180,7 +180,9 @@ export async function POST(request: Request) {
       currentEnemy = dbBosses[0];
     }
 
-    const dmg = Math.round(rvs_damage);
+    // Security bounds: cap single attack damage to prevent arbitrary client payload manipulation
+    const MAX_SINGLE_HIT_DAMAGE = 50000;
+    const dmg = Math.min(MAX_SINGLE_HIT_DAMAGE, Math.max(1, Math.round(Number(rvs_damage) || 0)));
     const newHp = Math.max(0, Number(currentEnemy.current_hp) - dmg);
     const isDefeated = newHp === 0;
 
