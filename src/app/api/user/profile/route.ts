@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -66,6 +68,129 @@ export async function GET() {
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Failed to fetch profile." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = user.id;
+    const body = await request.json().catch(() => ({}));
+    const { stat_key, amount = 1 } = body;
+
+    const validStats = ["str", "agi", "vit", "luk"] as const;
+    type ValidStat = (typeof validStats)[number];
+
+    if (!validStats.includes(stat_key as ValidStat)) {
+      return NextResponse.json(
+        { error: `Invalid stat_key. Must be one of: ${validStats.join(", ")}` },
+        { status: 400 }
+      );
+    }
+
+    const upgradeAmount = Math.max(1, Math.floor(Number(amount) || 1));
+
+    // 1. Fetch current profile from database
+    const { data: profileList, error: fetchErr } = await supabase
+      .from("profiles")
+      .select("*")
+      .or(`id.eq.${userId},user_id.eq.${userId}`);
+
+    if (fetchErr || !profileList || profileList.length === 0) {
+      return NextResponse.json({ error: "Profile not found." }, { status: 404 });
+    }
+
+    const profile = profileList[0];
+    const currentAp = Number(profile.available_ap ?? 0);
+
+    if (currentAp < upgradeAmount) {
+      return NextResponse.json(
+        { error: `INSUFFICIENT AP. Required: ${upgradeAmount}, Available: ${currentAp}` },
+        { status: 400 }
+      );
+    }
+
+    const newAp = currentAp - upgradeAmount;
+    const currentStatVal = Number(profile[stat_key] ?? (profile.stats?.[stat_key] || 0));
+    const newStatVal = currentStatVal + upgradeAmount;
+
+    const currentStatsObj = profile.stats || {
+      str: Number(profile.str || 85),
+      agi: Number(profile.agi || 70),
+      vit: Number(profile.vit || 60),
+      luk: Number(profile.luk || 50),
+    };
+
+    const newStatsObj = {
+      ...currentStatsObj,
+      [stat_key]: newStatVal,
+    };
+
+    // 2. Atomic CAS update on available_ap
+    const { data: updatedList, error: updateErr } = await supabase
+      .from("profiles")
+      .update({
+        available_ap: newAp,
+        [stat_key]: newStatVal,
+        stats: newStatsObj,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profile.id)
+      .eq("available_ap", currentAp)
+      .gte("available_ap", upgradeAmount)
+      .select("*");
+
+    if (updateErr) {
+      return NextResponse.json(
+        { error: `Failed to upgrade stat: ${updateErr.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (!updatedList || updatedList.length === 0) {
+      return NextResponse.json(
+        { error: "TRANSACTION CONFLICT. AP was modified by another action. Please try again." },
+        { status: 409 }
+      );
+    }
+
+    const updated = updatedList[0];
+    return NextResponse.json({
+      success: true,
+      profile: {
+        user_id: updated.id || updated.user_id || userId,
+        username: updated.username,
+        character_class: updated.character_class || "WARRIOR",
+        gender: updated.gender || "m",
+        level: updated.level || 1,
+        current_hp: updated.current_hp || 1000,
+        max_hp: updated.max_hp || 1000,
+        exp: updated.exp || 0,
+        max_exp: updated.max_exp || 1000,
+        gold: updated.gold ?? 500,
+        weight_kg: Number(updated.weight_kg) || 75,
+        available_ap: updated.available_ap ?? 0,
+        stats: {
+          str: updated.str ?? (updated.stats?.str || 85),
+          agi: updated.agi ?? (updated.stats?.agi || 70),
+          vit: updated.vit ?? (updated.stats?.vit || 60),
+          luk: updated.luk ?? (updated.stats?.luk || 50),
+        },
+      },
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: err.message || "Failed to upgrade stat." },
       { status: 500 }
     );
   }

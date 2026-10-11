@@ -264,10 +264,13 @@ export function DashboardLayout() {
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
   const isCriticalHp = hpPercent < 20;
 
-  const handleUpgradeStat = (statKey: "str" | "agi" | "vit" | "luk") => {
+  const handleUpgradeStat = async (statKey: "str" | "agi" | "vit" | "luk") => {
     if (availableAp <= 0) return;
 
+    const prevAp = availableAp;
+    const prevProfile = profile;
     const nextAp = availableAp - 1;
+
     setAvailableAp(nextAp);
     try {
       localStorage.setItem("ironpixels_available_ap", nextAp.toString());
@@ -284,21 +287,55 @@ export function DashboardLayout() {
         stats: updatedStats,
       };
       setProfile(updatedProf);
-      localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
-
       try {
-        const supabase = createClient();
-        supabase
-          .from("profiles")
-          .update({
-            available_ap: nextAp,
-            [statKey]: updatedStats[statKey],
-            stats: updatedStats,
-            updated_at: new Date().toISOString(),
-          })
-          .or(`id.eq.${userData.user_id},user_id.eq.${userData.user_id}`)
-          .then(() => {});
+        localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
       } catch (e) {}
+    }
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stat_key: statKey, amount: 1 }),
+      });
+
+      if (!res.ok) {
+        setAvailableAp(prevAp);
+        if (prevProfile) {
+          setProfile(prevProfile);
+          try {
+            localStorage.setItem("ironpixels_profile", JSON.stringify(prevProfile));
+            localStorage.setItem("ironpixels_available_ap", prevAp.toString());
+          } catch (e) {}
+        }
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || "Failed to allocate stat point.");
+        return;
+      }
+
+      const data = await res.json();
+      if (data && data.profile) {
+        setProfile(data.profile);
+        if (data.profile.available_ap !== undefined) {
+          setAvailableAp(data.profile.available_ap);
+        }
+        try {
+          localStorage.setItem("ironpixels_profile", JSON.stringify(data.profile));
+          localStorage.setItem(
+            "ironpixels_available_ap",
+            (data.profile.available_ap ?? 0).toString()
+          );
+        } catch (e) {}
+      }
+    } catch (err) {
+      setAvailableAp(prevAp);
+      if (prevProfile) {
+        setProfile(prevProfile);
+        try {
+          localStorage.setItem("ironpixels_profile", JSON.stringify(prevProfile));
+          localStorage.setItem("ironpixels_available_ap", prevAp.toString());
+        } catch (e) {}
+      }
     }
   };
 
