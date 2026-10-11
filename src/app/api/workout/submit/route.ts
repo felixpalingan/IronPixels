@@ -57,7 +57,10 @@ export async function POST(request: Request) {
     const safeDuration = Math.min(360, Math.max(1, Number(duration_minutes) || 45));
     const safeDate = date || new Date().toISOString().split("T")[0];
 
+    const sessionId = body?.session_id || `ws-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     const sessionRecord = {
+      session_id: sessionId,
       user_id: userId,
       date: safeDate,
       duration_minutes: safeDuration,

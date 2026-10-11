@@ -421,16 +421,16 @@ export function DashboardLayout() {
     setUserGold((prev) => prev + earnedGold);
 
     const realDuration = summary.durationMinutes || 45;
+    const newSessionRecord = {
+      session_id: `ws-${Date.now()}`,
+      date: todayStr,
+      duration_minutes: realDuration,
+      total_rvs: summary.totalRvs,
+      total_volume_kg: summary.totalVolume,
+      exercises_log: summary.exercisesLog || [],
+    };
 
     try {
-      const newSessionRecord = {
-        session_id: `ws-${Date.now()}`,
-        date: todayStr,
-        duration_minutes: realDuration,
-        total_rvs: summary.totalRvs,
-        total_volume_kg: summary.totalVolume,
-        exercises_log: summary.exercisesLog || [],
-      };
       const existingHistory = JSON.parse(localStorage.getItem("ironpixels_workout_history") || "[]");
       const updatedHistory = [newSessionRecord, ...existingHistory];
       localStorage.setItem("ironpixels_workout_history", JSON.stringify(updatedHistory));
@@ -452,6 +452,7 @@ export function DashboardLayout() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          session_id: newSessionRecord.session_id,
           user_id: userData.user_id,
           date: todayStr,
           duration_minutes: realDuration,
