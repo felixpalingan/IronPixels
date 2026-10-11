@@ -236,8 +236,15 @@ The application maintains zero-warning production compilation:
 
 ---
 
-## 📜 Author & License
+## 📜 Documentation & Governance
 
-- **Author**: Felix Palingan ([@felixpalingan](https://github.com/felixpalingan))
-- **Assets**: 0x72 Dungeon Tileset II v1.7 (Art by 0x72, used under CC0 / public domain licensing).
-- **License**: MIT License. See [LICENSE](LICENSE) for details.
+- **License**: MIT License. See [LICENSE](LICENSE) for full legal text.
+- **Contributing Guidelines**: Review our standards and PR process in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Security Policy**: Learn about responsible disclosure pathways in [SECURITY.md](SECURITY.md).
+
+---
+
+## 👤 Author & Acknowledgments
+
+- **Creator & Lead Developer**: Felix Palingan ([@felixpalingan](https://github.com/felixpalingan)) &copy; 2026.
+- **Art Assets**: [0x72 Dungeon Tileset II v1.7](https://0x72.itch.io/dungeontileset-ii) (Created by 0x72, used under CC0 / Public Domain licensing).
