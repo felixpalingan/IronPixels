@@ -54,7 +54,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    let isOnboarded = request.cookies.get("ironpixels_onboarded")?.value === "true";
+    const cookieValue = request.cookies.get("ironpixels_onboarded")?.value;
+    let isOnboarded = cookieValue === user.id;
 
     if (!isOnboarded) {
       const { data: profileList } = await supabase
@@ -65,10 +66,22 @@ export async function middleware(request: NextRequest) {
 
       const profile = profileList && profileList.length > 0 ? profileList[0] : null;
       isOnboarded = Boolean(profile && profile.weight_kg && profile.character_class);
+
+      if (isOnboarded) {
+        response.cookies.set("ironpixels_onboarded", user.id, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 365,
+          sameSite: "lax",
+        });
+      } else if (cookieValue) {
+        response.cookies.delete("ironpixels_onboarded");
+      }
     }
 
     if (!isOnboarded && path !== "/onboarding") {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      const redirect = NextResponse.redirect(new URL("/onboarding", request.url));
+      redirect.cookies.delete("ironpixels_onboarded");
+      return redirect;
     }
 
     if (isOnboarded && (isPublicRoute || path === "/onboarding")) {

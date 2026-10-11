@@ -63,10 +63,20 @@ export async function POST(request: Request) {
       .upsert(profileData, { onConflict: "id" });
 
     if (upsertErr) {
-      await supabase
+      const { data: updatedRows, error: updateErr } = await supabase
         .from("profiles")
         .update(profileData)
-        .or(`id.eq.${userId},user_id.eq.${userId}`);
+        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .select("id");
+
+      if (updateErr || !updatedRows || updatedRows.length === 0) {
+        return NextResponse.json(
+          {
+            error: `FAILED TO SAVE PROFILE: ${upsertErr.message}${updateErr ? ` / ${updateErr.message}` : ""}`,
+          },
+          { status: 500 }
+        );
+      }
     }
 
     try {

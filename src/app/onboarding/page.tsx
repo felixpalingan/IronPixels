@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StatRadarChart } from "@/components/StatRadarChart";
 import { HeroSprite } from "@/components/HeroSprite";
 import { createClient } from "@/lib/supabase/client";
+import { markOnboarded } from "@/lib/clientSession";
 
 type CharacterClass = "WARRIOR" | "HERO" | "MAGE";
 type CharacterGender = "m" | "f";
@@ -111,6 +112,11 @@ export default function OnboardingPage() {
       const { data: authData } = await supabase.auth.getUser();
       const activeUser = authData?.user;
 
+      if (!activeUser) {
+        window.location.href = "/login";
+        return;
+      }
+
       const res = await fetch("/api/user/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -130,7 +136,7 @@ export default function OnboardingPage() {
         setLoading(false);
       } else {
         const savedProf = data.user || data.profile || {
-          username: "Felix",
+          username: activeUser.user_metadata?.username || activeUser.email?.split("@")[0],
           character_class: selectedClass,
           gender: selectedGender,
           weight_kg: val,
@@ -138,7 +144,7 @@ export default function OnboardingPage() {
         savedProf.gender = selectedGender;
         savedProf.character_class = selectedClass;
         localStorage.setItem("ironpixels_profile", JSON.stringify(savedProf));
-        document.cookie = "ironpixels_onboarded=true; path=/; max-age=31536000";
+        markOnboarded(activeUser.id);
         window.location.href = "/";
       }
     } catch (err) {

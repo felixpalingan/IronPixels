@@ -5,6 +5,7 @@ import Link from "next/link";
 import { User, Key, Mail, Eye, EyeOff, CornerDownRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { clearClientSession } from "@/lib/clientSession";
 
 export default function RegisterPage() {
   const [username, setUsername] = useState("");
@@ -30,6 +31,7 @@ export default function RegisterPage() {
     setErrorMsg("");
 
     try {
+      clearClientSession();
       const supabase = createClient();
       const { data, error } = await supabase.auth.signUp({
         email,

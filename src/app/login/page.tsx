@@ -5,6 +5,7 @@ import Link from "next/link";
 import { User, Key, Eye, EyeOff, CornerDownRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { clearClientSession } from "@/lib/clientSession";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -25,6 +26,7 @@ export default function LoginPage() {
     setErrorMsg("");
 
     try {
+      clearClientSession();
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -35,7 +37,7 @@ export default function LoginPage() {
         setErrorMsg(error.message.toUpperCase());
         setLoading(false);
       } else if (data.user) {
-        document.cookie = "ironpixels_onboarded=true; path=/; max-age=31536000";
+        // Middleware verifies the profile in the DB and redirects to /onboarding if missing.
         window.location.href = "/";
       }
     } catch (err: any) {

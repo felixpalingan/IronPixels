@@ -112,6 +112,14 @@ export function DashboardLayout() {
     async function fetchData() {
       try {
         const resProf = await fetch("/api/user/profile");
+        if (resProf.status === 404) {
+          Object.keys(localStorage)
+            .filter((key) => key.startsWith("ironpixels_"))
+            .forEach((key) => localStorage.removeItem(key));
+          document.cookie = "ironpixels_onboarded=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          window.location.href = "/onboarding";
+          return;
+        }
         if (resProf.ok) {
           const dataProf = await resProf.json();
           setProfile(dataProf);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LogOut, X, Shield, User, Scale, Swords } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { clearClientSession } from "@/lib/clientSession";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -24,10 +25,10 @@ export function SettingsModal({ isOpen, onClose, userData }: SettingsModalProps)
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      document.cookie = "ironpixels_onboarded=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      clearClientSession();
       window.location.href = "/login";
     } catch (err) {
-      document.cookie = "ironpixels_onboarded=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      clearClientSession();
       window.location.href = "/login";
     }
   };
