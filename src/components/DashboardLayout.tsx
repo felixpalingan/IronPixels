@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield, Users, Sparkles } from "lucide-react";
+import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield, Users, Sparkles, Skull } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { PixelAvatar } from "@/components/PixelAvatar";
@@ -18,6 +18,7 @@ import { InventoryGrid } from "@/components/InventoryGrid";
 import { DailyQuestsWidget } from "@/components/DailyQuestsWidget";
 import { MultiplayerHub } from "@/components/MultiplayerHub";
 import { AnalyticsView } from "@/components/AnalyticsView";
+import { TombstoneModal } from "@/components/TombstoneModal";
 import { EQUIPMENT_DICTIONARY, InventoryRecord, ItemType } from "@/lib/equipment";
 
 interface UserProfileData {
@@ -58,6 +59,7 @@ export function DashboardLayout() {
     bossName: string;
   } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isTombstoneDismissed, setIsTombstoneDismissed] = useState<boolean>(false);
 
   const INITIAL_INVENTORY: InventoryRecord[] = [];
 
@@ -157,10 +159,15 @@ export function DashboardLayout() {
             });
 
             if (currentProf) {
-              const newHp = Math.max(50, currentProf.current_hp - BOSS_PENALTY_DMG);
+              const newHp = Math.max(0, (currentProf.current_hp ?? 1000) - BOSS_PENALTY_DMG);
               const updatedProf = { ...currentProf, current_hp: newHp };
               setProfile(updatedProf);
               localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+              fetch("/api/user/profile", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ current_hp: newHp }),
+              }).catch(() => {});
             }
           }
           localStorage.setItem(bossCheckKey, "true");
@@ -211,7 +218,12 @@ export function DashboardLayout() {
     character_class: profile?.character_class || "WARRIOR",
     gender: profile?.gender || "m",
     level: profile?.level || 1,
-    current_hp: Math.min(totalMaxHp, profile?.current_hp || 1000),
+    current_hp: Math.min(
+      totalMaxHp,
+      profile?.current_hp !== undefined && profile?.current_hp !== null
+        ? Number(profile.current_hp)
+        : 1000
+    ),
     max_hp: totalMaxHp,
     exp: profile?.exp || 0,
     max_exp: profile?.max_exp || 1000,
@@ -260,9 +272,10 @@ export function DashboardLayout() {
     }))
     .filter((s) => Boolean(s.name));
 
+  const isHeroDead = Number(userData.current_hp) <= 0;
   const hpPercent = Math.min(100, Math.max(0, (userData.current_hp / userData.max_hp) * 100));
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
-  const isCriticalHp = hpPercent < 20;
+  const isCriticalHp = !isHeroDead && hpPercent < 20;
 
   const handleUpgradeStat = async (statKey: "str" | "agi" | "vit" | "luk") => {
     if (availableAp <= 0) return;
@@ -598,16 +611,48 @@ export function DashboardLayout() {
           </button>
         </header>
 
-        {isCriticalHp && (
+        {isHeroDead ? (
+          <div className="bg-red-950/95 border-b-2 border-red-600 px-4 py-2.5 text-xs font-mono font-bold text-red-200 flex items-center justify-between z-40 shadow-red-glow">
+            <div className="flex items-center gap-2">
+              <Skull className="w-4 h-4 text-red-500 animate-pulse flex-shrink-0" />
+              <span className="truncate">HERO DEFEATED (0 HP). DUNGEON ATTACKS LOCKED UNTIL RESURRECTED!</span>
+            </div>
+            <button
+              onClick={() => setIsTombstoneDismissed(false)}
+              className="px-2 py-0.5 border border-red-500 bg-red-900/60 hover:bg-red-800 text-white text-[10px] uppercase font-headline font-black tracking-wider cursor-pointer shadow-red-glow flex-shrink-0"
+            >
+              REVIVE
+            </button>
+          </div>
+        ) : isCriticalHp ? (
           <div className="bg-red-950/90 border-b border-red-600 px-4 py-2 text-xs font-mono font-bold text-red-300 flex items-center justify-between z-40 animate-pulse">
             <div className="flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-red-400" />
               <span>CRITICAL STATUS: HERO EXHAUSTED ({hpPercent.toFixed(0)}% HP). COMPLETE A WORKOUT TO HEAL!</span>
             </div>
           </div>
-        )}
+        ) : null}
 
         <main className="p-4 flex-1 relative">
+          <TombstoneModal
+            isOpen={isHeroDead && !isTombstoneDismissed}
+            username={userData.username}
+            characterClass={userData.character_class}
+            userGold={userGold}
+            onReviveViaWorkout={() => {
+              setIsTombstoneDismissed(true);
+              setSubView("workout");
+            }}
+            onReviveSuccess={(updatedProfile) => {
+              setProfile(updatedProfile);
+              if (updatedProfile.gold !== undefined) {
+                setUserGold(Number(updatedProfile.gold));
+              }
+              localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProfile));
+              setIsTombstoneDismissed(false);
+            }}
+          />
+
           <SettingsModal
             isOpen={isSettingsOpen}
             onClose={() => setIsSettingsOpen(false)}
@@ -762,19 +807,34 @@ export function DashboardLayout() {
 
                       {/* HP METER BAR */}
                       <div className="space-y-1">
-                        <div className="flex justify-between text-[10px] font-bold">
+                        <div className="flex justify-between items-center text-[10px] font-bold">
                           <span className="text-health-red flex items-center gap-1">
-                            <HeartPulse className="w-3 h-3 animate-pulse" />
-                            HP HEALTH METER
+                            {isHeroDead ? (
+                              <Skull className="w-3 h-3 text-red-500 animate-pulse" />
+                            ) : (
+                              <HeartPulse className="w-3 h-3 animate-pulse" />
+                            )}
+                            {isHeroDead ? "HERO DEFEATED (0 HP)" : "HP HEALTH METER"}
                           </span>
-                          <span className="text-white">
-                            {formatNumber(userData.current_hp)} / {formatNumber(userData.max_hp)} ({Math.round((userData.current_hp / Math.max(1, userData.max_hp)) * 100)}%)
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {isHeroDead && (
+                              <button
+                                onClick={() => setIsTombstoneDismissed(false)}
+                                className="px-1.5 py-0.5 border border-red-500 bg-red-950/80 hover:bg-red-900 text-red-300 text-[9px] font-black uppercase tracking-wider animate-pulse flex items-center gap-1 cursor-pointer shadow-red-glow"
+                              >
+                                <Skull className="w-2.5 h-2.5" />
+                                <span>REVIVE</span>
+                              </button>
+                            )}
+                            <span className="text-white">
+                              {formatNumber(userData.current_hp)} / {formatNumber(userData.max_hp)} ({Math.round((userData.current_hp / Math.max(1, userData.max_hp)) * 100)}%)
+                            </span>
+                          </div>
                         </div>
                         <div className="w-full bg-black h-2.5 border border-pixel-border overflow-hidden p-0.5">
                           <div
                             className={`h-full transition-all duration-300 ${
-                              isCriticalHp
+                              isHeroDead || isCriticalHp
                                 ? "bg-health-red shadow-red-glow animate-pulse"
                                 : "bg-[#00ff41] shadow-neon"
                             }`}
@@ -1028,9 +1088,11 @@ export function DashboardLayout() {
                     equippedWeaponIcon={
                       userInventory.find((rec) => rec.is_equipped && rec.item.type === "weapon")?.item.image_url || "/assets/items/weapons/01.png"
                     }
+                    isHeroDead={isHeroDead}
                     onAddItemToInventory={handleAddItemToInventory}
                     onConsumeSessionDamage={() => setLastSessionDamage(0)}
                     onNavigateToMultiplayer={() => setActiveTab("multiplayer")}
+                    onOpenReviveModal={() => setIsTombstoneDismissed(false)}
                   />
                 )}
               </motion.div>

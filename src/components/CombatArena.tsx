@@ -52,9 +52,11 @@ interface CombatArenaProps {
   characterClass?: string;
   gender?: "m" | "f";
   equippedWeaponIcon?: string;
+  isHeroDead?: boolean;
   onAddItemToInventory?: (newItem: InventoryRecord) => void;
   onConsumeSessionDamage?: () => void;
   onNavigateToMultiplayer?: () => void;
+  onOpenReviveModal?: () => void;
 }
 
 export function CombatArena({
@@ -66,9 +68,11 @@ export function CombatArena({
   characterClass = "WARRIOR",
   gender = "m",
   equippedWeaponIcon = "/assets/items/weapons/01.png",
+  isHeroDead = false,
   onAddItemToInventory,
   onConsumeSessionDamage,
   onNavigateToMultiplayer,
+  onOpenReviveModal,
 }: CombatArenaProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<DamageParticle[]>([]);
@@ -315,6 +319,11 @@ export function CombatArena({
     attackType: "attack01" | "attack02" | "attack03" = "attack01",
     targetMode: "solo" | "party" = activeMode
   ) => {
+    if (isHeroDead) {
+      if (onOpenReviveModal) onOpenReviveModal();
+      return;
+    }
+
     const targetEnemy = targetMode === "party" ? partyEnemy : soloEnemy;
 
     if (targetEnemy.current_hp <= 0 && targetEnemy.status === "Defeated") {
@@ -688,7 +697,9 @@ export function CombatArena({
         playerStr={playerStr}
         mode={activeMode}
         equippedSkills={equippedSkills}
+        isHeroDead={isHeroDead}
         onSkillCast={handleSkillCast}
+        onOpenReviveModal={onOpenReviveModal}
       />
 
       <div className="border border-pixel-border bg-surface p-3 space-y-1.5 font-mono">

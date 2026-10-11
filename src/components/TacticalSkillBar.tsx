@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Zap } from "lucide-react";
+import { Sparkles, Zap, Skull } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 
 export interface SkillData {
@@ -22,12 +22,14 @@ interface TacticalSkillBarProps {
   playerStr?: number;
   mode?: "solo" | "party";
   equippedSkills?: Array<{ name: string; icon?: string; slotType?: "weapon" | "armor" | "accessory" }>;
+  isHeroDead?: boolean;
   onSkillCast?: (
     skillName: string,
     damageDealt: number,
     newBossHp: number,
     attackType: "attack01" | "attack02" | "attack03"
   ) => void;
+  onOpenReviveModal?: () => void;
 }
 
 export function TacticalSkillBar({
@@ -36,7 +38,9 @@ export function TacticalSkillBar({
   playerStr = 85,
   mode = "solo",
   equippedSkills = [],
+  isHeroDead = false,
   onSkillCast,
+  onOpenReviveModal,
 }: TacticalSkillBarProps) {
   const [skills, setSkills] = useState<SkillData[]>([]);
   const [executingSkillId, setExecutingSkillId] = useState<string | null>(null);
@@ -131,6 +135,10 @@ export function TacticalSkillBar({
   }, [mode]);
 
   const handleCast = async (skill: SkillData, index: number) => {
+    if (isHeroDead) {
+      if (onOpenReviveModal) onOpenReviveModal();
+      return;
+    }
     if (!skill.is_ready || executingSkillId) return;
 
     let slotKey = skill.slotType as string;
@@ -192,6 +200,21 @@ export function TacticalSkillBar({
 
   return (
     <div className="border border-pixel-border bg-surface p-3 space-y-2 font-mono">
+      {isHeroDead && (
+        <div
+          onClick={onOpenReviveModal}
+          className="p-2 border border-red-500 bg-red-950/70 text-red-300 text-xs font-bold flex items-center justify-between cursor-pointer hover:bg-red-900/60 transition-colors animate-pulse shadow-red-glow"
+        >
+          <div className="flex items-center gap-1.5">
+            <Skull className="w-4 h-4 text-red-500" />
+            <span className="uppercase tracking-wider">HERO DEFEATED — ATTACKS LOCKED</span>
+          </div>
+          <span className="text-[10px] text-white border border-red-500 bg-red-800 px-1.5 py-0.5 uppercase font-headline font-black">
+            REVIVE HERO
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between border-b border-pixel-border/50 pb-1.5 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
         <div className="flex items-center gap-1">
           <Zap className="w-3.5 h-3.5 text-[#00ff41]" />
@@ -207,10 +230,18 @@ export function TacticalSkillBar({
           return (
             <button
               key={skill.skill_id}
-              onClick={() => handleCast(skill, index)}
-              disabled={!skill.is_ready || Boolean(executingSkillId)}
+              onClick={() => {
+                if (isHeroDead) {
+                  if (onOpenReviveModal) onOpenReviveModal();
+                } else {
+                  handleCast(skill, index);
+                }
+              }}
+              disabled={(!skill.is_ready || Boolean(executingSkillId)) && !isHeroDead}
               className={`relative border p-2 flex flex-col items-center justify-between min-h-[96px] transition-all overflow-hidden ${
-                skill.is_ready
+                isHeroDead
+                  ? "border-red-900 bg-red-950/30 text-red-400/80 cursor-pointer hover:border-red-500"
+                  : skill.is_ready
                   ? "border-[#00ff41] bg-black hover:bg-[#00ff41]/10 text-white cursor-pointer shadow-neon hover:scale-102"
                   : "border-zinc-800 bg-black/60 text-zinc-600 cursor-not-allowed"
               }`}
@@ -220,7 +251,11 @@ export function TacticalSkillBar({
                   src={skill.icon_url}
                   alt={skill.skill_name}
                   className={`w-full h-full object-contain pixelated ${
-                    !skill.is_ready ? "grayscale opacity-40" : ""
+                    isHeroDead
+                      ? "grayscale opacity-30"
+                      : !skill.is_ready
+                      ? "grayscale opacity-40"
+                      : ""
                   }`}
                 />
 
@@ -239,7 +274,11 @@ export function TacticalSkillBar({
               </div>
 
               <div className="w-full">
-                {skill.is_ready ? (
+                {isHeroDead ? (
+                  <div className="bg-red-950/80 border border-red-700 text-red-400 text-[8px] font-extrabold uppercase py-0.5 text-center">
+                    DEFEATED
+                  </div>
+                ) : skill.is_ready ? (
                   <div className="bg-[#00ff41]/20 border border-[#00ff41]/60 text-[#00ff41] text-[8px] font-extrabold uppercase py-0.5 text-center shadow-neon">
                     READY
                   </div>

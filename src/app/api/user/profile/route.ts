@@ -51,7 +51,7 @@ export async function GET() {
       character_class: profile.character_class || "WARRIOR",
       gender: profile.gender || "m",
       level: profile.level || 1,
-      current_hp: profile.current_hp || 1000,
+      current_hp: profile.current_hp !== undefined && profile.current_hp !== null ? Number(profile.current_hp) : 1000,
       max_hp: profile.max_hp || 1000,
       exp: profile.exp || 0,
       max_exp: profile.max_exp || 1000,
@@ -108,6 +108,29 @@ export async function PATCH(request: Request) {
         success: true,
         weight_unit: unit,
         message: `Weight unit updated to ${unit.toUpperCase()}`,
+      });
+    }
+
+    // Handle current_hp update (e.g. boss penalty damage)
+    if (body?.current_hp !== undefined) {
+      const targetHp = Math.max(0, Math.floor(Number(body.current_hp)));
+      const { data: updatedList, error: updateErr } = await supabase
+        .from("profiles")
+        .update({
+          current_hp: targetHp,
+          updated_at: new Date().toISOString(),
+        })
+        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .select("*");
+
+      if (updateErr) {
+        return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        current_hp: targetHp,
+        message: `HP updated to ${targetHp}`,
       });
     }
 
@@ -198,7 +221,7 @@ export async function PATCH(request: Request) {
         character_class: updated.character_class || "WARRIOR",
         gender: updated.gender || "m",
         level: updated.level || 1,
-        current_hp: updated.current_hp || 1000,
+        current_hp: updated.current_hp !== undefined && updated.current_hp !== null ? Number(updated.current_hp) : 1000,
         max_hp: updated.max_hp || 1000,
         exp: updated.exp || 0,
         max_exp: updated.max_exp || 1000,

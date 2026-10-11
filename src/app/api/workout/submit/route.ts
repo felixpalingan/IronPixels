@@ -96,7 +96,10 @@ export async function POST(request: Request) {
         }
 
         const maxHp = p.max_hp || 1000;
-        const newHp = Math.min(maxHp, (p.current_hp || 1000) + healAmount);
+        const wasDefeated = Number(p.current_hp ?? 1000) <= 0;
+        const newHp = wasDefeated
+          ? maxHp
+          : Math.min(maxHp, (p.current_hp || 1000) + healAmount);
         const newGold = (p.gold || 0) + earnedGold;
         const newDailyRvs = Number(p.daily_rvs || 0) + serverRvs;
 
