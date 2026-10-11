@@ -31,12 +31,21 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
-  if (path.startsWith("/api")) {
+  if (
+    path.startsWith("/api") ||
+    path === "/sitemap.xml" ||
+    path === "/robots.txt" ||
+    path === "/manifest.webmanifest" ||
+    path.endsWith(".xml") ||
+    path.endsWith(".txt") ||
+    (path.startsWith("/google") && path.endsWith(".html"))
+  ) {
     return response;
   }
+
+  const { data: { user } } = await supabase.auth.getUser();
 
   const isPublicRoute = path === "/login" || path === "/register";
 
@@ -72,6 +81,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon.png|assets|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|assets|sitemap.xml|robots.txt|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|xml|txt|ico)$).*)",
   ],
 };
