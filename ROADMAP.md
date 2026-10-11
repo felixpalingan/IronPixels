@@ -1,95 +1,94 @@
-# 🗺️ IRONPIXELS — Project Roadmap & Feature Checklist
+# 🗺️ IRONPIXELS — Project Roadmap & Feature Status
 
 > **Dokumen Tracking Pengembang & Milestones Fitur IronPixels**  
-> Dokumen ini mencatat seluruh item pekerjaan, fitur sementara (mock/in-memory) yang perlu dipindahkan ke Supabase DB, mekanik game yang perlu ditambahkan, serta peningkatan pengalaman pengguna (*User Experience*).
+> Dokumen ini mencatat seluruh item pekerjaan, arsitektur sistem gamifikasi gym, status persistensi Supabase DB, mekanik RPG retro, dan peningkatan pengalaman pengguna (*User Experience*).
 
 ---
 
 ## 📊 Status Ringkasan Roadmap
 
-- [x] **Phase 1: Core Engine & Retro Pixel Visuals (COMPLETED)**
-- [x] **Phase 2: Infinite Dungeon Floor System & Dual Lobbies (COMPLETED)**
-- [x] **Phase 3.1: Persistensi Data Party, Friends & Leaderboard DB (COMPLETED)**
-- [ ] **Phase 3.2: Persistensi Profile Stat Allocation & Realtime Co-Op (IN PROGRESS)**
-- [ ] **Phase 4: Mekanik Game Lanjutan (Death Penalty, Routine Saver, Item Sell/Dismantle)**
-- [ ] **Phase 5: Analitik Latihan, Audio SFX Retro & Polish**
+- [x] **Phase 1: Keamanan & Integritas Data Server (COMPLETED)**
+- [x] **Phase 2: Persistensi Database & Akurasi Workout Log (COMPLETED)**
+- [x] **Phase 3: Peningkatan UX Gym Tracking Industri (COMPLETED)**
+- [x] **Phase 4: Mekanik Game RPG & Realtime Multiplayer Co-Op (COMPLETED)**
+- [x] **Phase 5: Maintenance, Dokumentasi & Verifikasi Kode (COMPLETED)**
 
 ---
 
-## 🔍 Hasil Audit End-to-End Alur Kode (Current Incomplete / Missing Features)
+## 🏛️ Arsitektur & Pencapaian Fitur per Fase
 
-Berikut adalah daftar **fitur yang masih bolong / butuh disempurnakan** berdasarkan analisis alur kode dari awal ke akhir (*End-to-End Audit*):
-
----
-
-### 🎯 1. Profile Stat Allocation DB Persistence (Stat Point Sync)
-* **Masalah / Alur Kode**: Saat pemain menaikkan stat `STR`, `AGI`, `VIT`, atau `LUK` di `DashboardLayout.tsx` (`handleUpgradeStat`), poin AP berkurang dan stat bertambah di `localStorage`, namun **belum ada API `POST/PATCH /api/user/profile`** untuk menyimpan perubahan `str`, `agi`, `vit`, `luk`, dan `available_ap` secara permanen ke tabel `profiles` Supabase.
-* **Solusi**: Tambahkan endpoint API update stat profil & sync otomatis ke Supabase.
-
----
-
-### 💀 2. Hukuman Kematian (Death Penalty & Revive System)
-* **Masalah / Alur Kode**: Ketika HP Hero berada di bawah 20% muncul indikator merah berkedip. Namun jika HP benar-benar menyentuh **0 HP** (akibat *daily boss penalty* saat bolos gym atau serangan boss), Hero belum memasuki status khusus **DEFEATED / UNCONSCIOUS**.
-* **Fitur Yang Diperlukan**:
-  - **Death Screen Modal**: Tampilan layar kematian dengan animasi retro tombstone.
-  - **50% Gold Penalty**: Pemotongan saldo Gold sebesar 50% saat karakter mati.
-  - **Streak Wipeout**: Pengurangan *workout streak* jika bolos latihan fisik secara beruntun.
-  - **Revive System**: Pilihan kebangkitan dengan meminum *Elixir of Life* dari Shop atau menyelesaikan 1 sesi latihan fisik (*Gym Workout Revive*).
+### 🛡️ Phase 1: Keamanan & Integritas Data Server
+* **1.1. Auth Verification & Anti-Exploit**:
+  - Validasi sesi Supabase Auth wajib di seluruh route API (`/api/combat/attack`, `/api/combat/boss`, `/api/inventory/equip`, `/api/shop/gacha`, dll.).
+  - Mengeliminasi fallback dummy UUID agar tidak ada manipulasi data antar user.
+* **1.2. Server-Authoritative RVS & Volume Calculations**:
+  - Modul autoritatif `src/lib/workoutCalculations.ts` untuk menghitung **Repetition Volume Score (RVS)** dan **Total Volume (kg)** langsung di server.
+  - Mencegah manipulasi client-side RVS damage saat pelaporan sesi gym.
+* **1.3. Atomic Gacha Transaction (CAS & Supabase RPC)**:
+  - Eksekusi transaksi peti void gacha dengan atomic Compare-And-Swap di database Supabase untuk mencegah duplikasi item atau saldo gold negatif akibat double-clicking.
 
 ---
 
-### 📋 3. Preset Routine Saver & 1-Click Workout Loader
-* **Masalah / Alur Kode**: Di `WorkoutTrackerForm.tsx`, pengguna harus memasukkan nama latihan, set, reps, dan beban satu per satu dari awal setiap kali gym.
-* **Fitur Yang Diperlukan**:
-  - **Tombol "Save as Preset Routine"**: Menyimpan kombinasi latihan favorit (contoh: *Push Day*, *Pull Day*, *Leg Day*).
-  - **Dropdown 1-Click Routine Loader**: Memuat otomatis daftar gerakan, target set, dan beban standar tanpa perlu input manual ulang.
+### 💾 Phase 2: Persistensi Database & Akurasi Workout
+* **2.1. CAS Profile Stat Allocation**:
+  - Endpoint `PATCH /api/user/profile` dengan optimistic UI updates dan server-side CAS validation untuk alokasi AP ke `STR`, `AGI`, `VIT`, `LUK`.
+* **2.2. Filter Completed Sets Only**:
+  - Form tracker workout hanya menghitung set latihan yang memiliki status `completed: true`.
+  - Peringatan dialog retro visual jika ada set yang belum dicentang selesai sebelum submit.
+* **2.3. Background-Resilient Timestamp Rest Timer**:
+  - Model rest timer berbasis `targetEndTime = Date.now() + durationMs`.
+  - Timer tetap berjalan akurat di latar belakang saat layar ponsel terkunci atau pengguna berpindah aplikasi gym lain via event listener `visibilitychange`.
+  - Pelacakan durasi riil sesi latihan dari awal hingga akhir.
 
 ---
 
-### 💰 4. Sistem Jual & Dismantle Item (Inventory Management)
-* **Masalah / Alur Kode**: Di `BlacksmithShop.tsx` dan `InventoryGrid.tsx`, pengguna bisa membuka gacha peti dan memasang gear, namun item duplikat berlebih tidak bisa diapa-apakan.
-* **Fitur Yang Diperlukan**:
-  - **Sell Item for Gold**: Menjual perlengkapan duplikat / Common / Rare yang tidak dipakai menjadi Gold.
-  - **Dismantle Item System**: Melebur item duplikat menjadi *Mana Shards / Crafting Dust* untuk material upgrade perlengkapan utama.
+### 🏋️ Phase 3: Peningkatan UX Gym Tracking (Standar Hevy / Strong)
+* **3.1. Previous Session Ghost Values & ⚡ AUTOFILL**:
+  - Placeholder input beban & reps otomatis menampilkan nilai dari sesi latihan terakhir (`LAST: 60kg × 10`).
+  - Tombol aksi `⚡ AUTOFILL` satu klik untuk menyalin beban dan reps sesi sebelumnya secara instan dengan efek suara retro.
+* **3.2. Manajemen Riwayat Latihan (Delete Session)**:
+  - Endpoint autoritatif `DELETE /api/workout/history` dengan RLS policy database `workout_sessions_delete_own`.
+  - Modal konfirmasi retro dengan rincian sesi (tanggal, volume, RVS damage) dan proteksi aksi ireversibel.
+* **3.3. Toggle Satuan Beban Dinamis (KG / LBS)**:
+  - Helper matematis presisi di `src/lib/unitConversion.ts` (`1 kg = 2.20462 lbs`).
+  - Switch selector neon `[ KG | LBS ]` pada form latihan dan daftar riwayat workout.
+  - Penyimpanan preferensi satuan di kolom `weight_unit` tabel `profiles` Supabase.
+  - Perhitungan authoritative RVS tetap mengacu pada basis canonical KG untuk menjaga keseimbangan game balance.
 
 ---
 
-### 📡 5. Supabase Realtime WebSockets (Party Raid Live Co-Op)
-* **Masalah / Alur Kode**: Di `CombatArena.tsx`, mode Party Raid menampilkan anggota party pada panggung, namun kalkulasi damage masih dipicu secara lokal di layar masing-masing.
-* **Fitur Yang Diperlukan**:
-  - **Realtime Damage Broadcast**: Integrasi `supabase.channel("party_raid")` agar saat Anggota A menembakkan skill, angka *damage* & efek visual langsung muncul secara *live real-time* di HP/layar Anggota B.
-  - **Live Boss HP Bar**: HP Bar monster Party Raid ter-update serentak secara instan di layar seluruh anggota party yang sedang online.
+### ⚔️ Phase 4: Mekanik Game RPG & Realtime Multiplayer
+* **4.1. Hukuman Kematian (Death Penalty & Dual Revive System)**:
+  - Layar nisan retro pixel `TombstoneModal` jika HP hero menyentuh `0 HP` akibat penalti harian bolos gym (*Demon Lord Ignis*) atau pertarungan dungeon.
+  - **Opsi 1 (Free & Core Loop Gamifikasi)**: Menyelesaikan 1 sesi gym mengangkat beban membangkitkan hero secara gratis dengan **100% Max HP**.
+  - **Opsi 2 (Instant Buy via 500 Gold)**: Endpoint `POST /api/user/revive` untuk membeli Revive Potion seketika.
+  - Kunci serangan dungeon dan slot skill saat hero dalam status defeated, disertai banner indikator peringatan.
+* **4.2. Supabase Realtime Co-Op Party Raid**:
+  - Channel Supabase Realtime WebSocket `party_raid:[party_id]` untuk pertarungan Guild Raid.
+  - Zero-latency broadcast serangan antar rekan party (`party_attack`).
+  - Floating damage particle dengan nama rekan penyerang di atas kanvas monster (`[USERNAME] SLASH -1,450`).
+  - Hit flash monster, efek suara serempak, live raid log, dan sinkronisasi health bar boss tanpa lag database.
+  - Indikator koneksi visual neon `🟢 REALTIME CO-OP SYNC ACTIVE`.
 
 ---
 
-### 📅 6. Kalender Latihan Bulanan & Grafik Tren RVS/Volume
-* **Masalah / Alur Kode**: `WorkoutHistoryList.tsx` menampilkan riwayat latihan dalam bentuk daftar kartu sederhana.
-* **Fitur Yang Diperlukan**:
-  - **Workout Calendar View**: Tampilan kalender bulanan dengan tanda warna/badge pada tanggal-tanggal di mana pengguna mencatatkan sesi gym.
-  - **RVS & Volume Progress Chart**: Visualisasi grafik garis (*Recharts*) untuk melihat pertumbuhan Total Volume Angkatan (kg) dan akumulasi RVS harian/mingguan.
-
----
-
-### 🔊 7. Audio Engine & Sound Effects (SFX) Retro 8-Bit
-* **Masalah / Alur Kode**: Seluruh interaksi tombol, serangan skill, dan gacha masih hening (*silent*).
-* **Fitur Yang Diperlukan**:
-  - **Chiptune BGM**: Musik latar RPG retro 8-bit untuk Dungeon & Hub dengan toggle mute/unmute.
-  - **8-Bit SFX**: Suara tebasan pedang, critical hit, terompet kemenangan floor boss, dan efek denting gacha.
-
----
-
-## 🛠️ Summary Checklist Fitur (Urutan Prioritas Pengerjaan)
+## 🛠️ Checklist Fitur Utama
 
 ```markdown
-- [ ] 1. Sync Profile Stat Allocation (STR/AGI/VIT/LUK) ke Supabase DB
-- [ ] 2. Hukuman Kematian (Death State HP=0, -50% Gold penalty, Revive)
-- [ ] 3. Preset Routine Saver & 1-Click Workout Loader
-- [ ] 4. Sell & Dismantle Duplicate Items di Inventory
-- [ ] 5. Supabase Realtime WebSockets untuk Party Raid Live Co-Op
-- [ ] 6. Kalender Latihan Bulanan & Grafik Tren Analitik
-- [ ] 7. Audio Engine (Chiptune BGM & 8-bit SFX)
+- [x] 1. Sync Profile Stat Allocation (STR/AGI/VIT/LUK) ke Supabase DB
+- [x] 2. Hukuman Kematian (Death State HP=0, Dual Revive: Gym Sweat vs 500 Gold)
+- [x] 3. Preset Routine Saver & 1-Click Workout Loader (/api/workout/routines)
+- [x] 4. Sell & Dismantle Duplicate Items di Inventory (/api/inventory/sell)
+- [x] 5. Supabase Realtime WebSockets untuk Party Raid Live Co-Op (party_raid:[party_id])
+- [x] 6. Kalender Latihan Bulanan & Heatmap GitHub-Style Analitik (AnalyticsView.tsx)
+- [x] 7. Audio Engine (Chiptune BGM, 8-bit SFX & Haptics di soundEffects.ts)
+- [x] 8. Server-Authoritative RVS & Volume Calculation (workoutCalculations.ts)
+- [x] 9. Background-Resilient Rest Timer (targetEndTime & visibilitychange)
+- [x] 10. Previous Session Ghost Values & ⚡ AUTOFILL (WorkoutTrackerForm.tsx)
+- [x] 11. Delete Workout Session dengan Retro Confirmation Modal & RLS Supabase
+- [x] 12. Toggle Satuan Beban KG / LBS dengan Persistensi Server (unitConversion.ts)
 ```
 
 ---
 
-*Dokumen ROADMAP.md ini diperbarui berdasarkan hasil audit alur kode end-to-end IronPixels.*
+*Dokumen ROADMAP.md ini diperbarui secara berkala sesuai dengan siklus rilis dan arsitektur kode aktif IronPixels.*
