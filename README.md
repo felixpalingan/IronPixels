@@ -246,5 +246,5 @@ The application maintains zero-warning production compilation:
 
 ## 👤 Author & Acknowledgments
 
-- **Creator & Lead Developer**: Felix Palingan ([@felixpalingan](https://github.com/felixpalingan)) &copy; 2026.
+- **Creator & Lead Developer**: Almakius Felix Bariq Hekopung ([@felixpalingan](https://github.com/felixpalingan)) &copy; 2026.
 - **Art Assets**: [0x72 Dungeon Tileset II v1.7](https://0x72.itch.io/dungeontileset-ii) (Created by 0x72, used under CC0 / Public Domain licensing).
