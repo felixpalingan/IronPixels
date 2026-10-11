@@ -19,7 +19,12 @@ export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const currentUserId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const currentUserId = user.id;
 
     if (query) {
       const { data: dbProfiles } = await supabase
@@ -151,7 +156,12 @@ export async function POST(request: Request) {
     const { action, target_user_id } = await request.json();
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const currentUserId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const currentUserId = user.id;
 
     if (!target_user_id) {
       return NextResponse.json({ error: "target_user_id is required" }, { status: 400 });

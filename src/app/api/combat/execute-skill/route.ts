@@ -2,16 +2,19 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { setSkillCooldown, getSkillRemainingSeconds } from "@/lib/skillState";
 
-const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
-
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = user.id;
+
     const body = await request.json();
     const { skill_id, cooldown_minutes = 3, damage_multiplier = 2.5, base_damage = 1500 } = body;
-    const userId = user?.id || body.user_id || DEFAULT_USER_ID;
 
     if (!skill_id) {
       return NextResponse.json(

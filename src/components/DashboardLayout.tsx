@@ -206,7 +206,7 @@ export function DashboardLayout() {
   const totalMaxHp = baseMaxHp + bonusStats.hp;
 
   const userData = {
-    user_id: profile?.user_id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+    user_id: profile?.user_id || "",
     username: profile?.username || "Felix",
     character_class: profile?.character_class || "WARRIOR",
     gender: profile?.gender || "m",
@@ -1025,6 +1025,7 @@ export function DashboardLayout() {
                 transition={{ duration: 0.25 }}
               >
                 <MultiplayerHub
+                  userId={userData.user_id}
                   userCp={totalCp}
                   userLevel={userData.level}
                   userClass={userData.character_class}

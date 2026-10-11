@@ -58,7 +58,7 @@ interface CombatArenaProps {
 }
 
 export function CombatArena({
-  userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  userId = "",
   sessionDamage = 0,
   dailyRvs = 0,
   equippedSkills = [],

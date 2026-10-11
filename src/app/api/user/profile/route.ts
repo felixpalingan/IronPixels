@@ -6,13 +6,21 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const userId = user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
-    const authUsername = user?.user_metadata?.username || user?.email?.split("@")[0] || "Warrior";
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const { data: profileList } = await supabase
+    const userId = user.id;
+    const authUsername = user.user_metadata?.username || user.email?.split("@")[0] || "Warrior";
+
+    const { data: profileList, error } = await supabase
       .from("profiles")
       .select("*")
       .or(`id.eq.${userId},user_id.eq.${userId}`);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     const profile = profileList && profileList.length > 0 ? profileList[0] : null;
 
@@ -56,20 +64,9 @@ export async function GET() {
       },
     });
   } catch (err: any) {
-    return NextResponse.json({
-      user_id: "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-      username: "Warrior",
-      character_class: "WARRIOR",
-      gender: "m",
-      level: 1,
-      current_hp: 1000,
-      max_hp: 1000,
-      exp: 0,
-      max_exp: 1000,
-      gold: 500,
-      weight_kg: 75,
-      available_ap: 5,
-      stats: { str: 85, agi: 70, vit: 60, luk: 50 },
-    });
+    return NextResponse.json(
+      { error: err.message || "Failed to fetch profile." },
+      { status: 500 }
+    );
   }
 }

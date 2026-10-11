@@ -6,10 +6,14 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const body = await request.json();
-    const { user_id, date, duration_minutes, total_rvs, total_volume_kg, exercises_log } = body;
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const userId = user?.id || user_id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+    const body = await request.json();
+    const { date, duration_minutes, total_rvs, total_volume_kg, exercises_log } = body;
+
+    const userId = user.id;
 
     if (!total_rvs || total_rvs <= 0) {
       return NextResponse.json(

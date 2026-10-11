@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
-const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
-
 function getSellPriceByRarity(rarity: string): number {
   switch (rarity?.toLowerCase()) {
     case "mythic":
@@ -33,18 +31,25 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
-    const userId = authData?.user?.id || DEFAULT_USER_ID;
 
-    const { data: invRecs } = await supabase
+    if (!authData?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = authData.user.id;
+
+    // Verify ownership: only find item if it belongs to current authenticated user
+    const { data: invRecs, error: invFetchErr } = await supabase
       .from("user_inventory")
       .select("*")
       .eq("inventory_id", inventory_id)
+      .eq("user_id", userId)
       .limit(1);
 
-    if (!invRecs || invRecs.length === 0) {
+    if (invFetchErr || !invRecs || invRecs.length === 0) {
       return NextResponse.json(
-        { error: "Item not found in inventory." },
-        { status: 444 }
+        { error: "Item not found in your inventory." },
+        { status: 404 }
       );
     }
 
@@ -54,11 +59,19 @@ export async function POST(request: Request) {
     const rarity = itemData?.rarity || "common";
     const goldGained = getSellPriceByRarity(rarity);
 
-    // Delete item from user_inventory
-    await supabase
+    // Delete item from user_inventory strictly for this user
+    const { error: deleteErr } = await supabase
       .from("user_inventory")
       .delete()
-      .eq("inventory_id", inventory_id);
+      .eq("inventory_id", inventory_id)
+      .eq("user_id", userId);
+
+    if (deleteErr) {
+      return NextResponse.json(
+        { error: "Failed to remove item from inventory." },
+        { status: 500 }
+      );
+    }
 
     // Update profile gold
     let newGoldTotal = 0;

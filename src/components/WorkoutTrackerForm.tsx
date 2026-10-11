@@ -45,7 +45,7 @@ interface WorkoutTrackerFormProps {
 }
 
 export function WorkoutTrackerForm({
-  userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  userId = "",
   userWeightKg = 75,
   heroStats = { str: 85, agi: 70, vit: 60, luk: 50 },
   onFinishSession,

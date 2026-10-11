@@ -10,7 +10,7 @@ interface AnalyticsViewProps {
   heroStats?: { level: number; str: number; agi: number; vit: number; luk: number };
 }
 
-export function AnalyticsView({ userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c", heroStats }: AnalyticsViewProps) {
+export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
   const [history, setHistory] = useState<any[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>("barbell-bench-press");
   const [streakCount, setStreakCount] = useState<number>(1);

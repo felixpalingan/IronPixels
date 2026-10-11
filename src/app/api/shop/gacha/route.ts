@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { EQUIPMENT_DICTIONARY, ItemRarity, EquipmentItem } from "@/lib/equipment";
 
-const DEFAULT_USER_ID = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
-
 export async function POST(request: Request) {
   try {
     const { chest_type } = await request.json();
@@ -19,19 +17,26 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
 
-    const userId = authData?.user?.id || DEFAULT_USER_ID;
-    let userGold = 500;
+    if (!authData?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    try {
-      const { data: profileList } = await supabase
-        .from("profiles")
-        .select("gold")
-        .or(`id.eq.${userId},user_id.eq.${userId}`);
+    const userId = authData.user.id;
+    let userGold = 0;
 
-      if (profileList && profileList.length > 0 && profileList[0].gold !== undefined) {
-        userGold = Number(profileList[0].gold);
-      }
-    } catch (e) {}
+    const { data: profileList, error: profErr } = await supabase
+      .from("profiles")
+      .select("gold")
+      .or(`id.eq.${userId},user_id.eq.${userId}`);
+
+    if (profErr || !profileList || profileList.length === 0) {
+      return NextResponse.json(
+        { error: "User profile not found. Please log in or complete onboarding." },
+        { status: 404 }
+      );
+    }
+
+    userGold = Number(profileList[0].gold ?? 0);
 
     if (userGold < price) {
       return NextResponse.json(

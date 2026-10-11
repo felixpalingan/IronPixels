@@ -31,7 +31,7 @@ interface TacticalSkillBarProps {
 }
 
 export function TacticalSkillBar({
-  userId = "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+  userId = "",
   dailyRvs = 0,
   playerStr = 85,
   mode = "solo",

@@ -10,6 +10,7 @@ import { PartyState } from "@/app/api/multiplayer/party/route";
 import { createClient } from "@/lib/supabase/client";
 
 interface MultiplayerHubProps {
+  userId?: string;
   userCp?: number;
   userLevel?: number;
   userClass?: string;
@@ -17,6 +18,7 @@ interface MultiplayerHubProps {
 }
 
 export function MultiplayerHub({
+  userId = "",
   userCp = 1250,
   userLevel = 1,
   userClass = "WARRIOR",
@@ -1035,7 +1037,7 @@ export function MultiplayerHub({
                         </h3>
                         {party.members.some(
                           (m) =>
-                            m.user_id === "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" &&
+                            userId && m.user_id === userId &&
                             (m.role === "leader" || m.role === "co_leader")
                         ) && (
                           <button
@@ -1129,7 +1131,7 @@ export function MultiplayerHub({
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {member.user_id !== "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c" && (
+                          {(!userId || member.user_id !== userId) && (
                             <div className="flex items-center gap-1">
                               {member.role === "co_leader" ? (
                                 <button

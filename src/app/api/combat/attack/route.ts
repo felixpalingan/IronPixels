@@ -5,12 +5,17 @@ import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { action, user_id, party_id, rvs_damage, mode = "solo", floor } = body;
-
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const currentUserId = user_id || user?.id || "e7b1a2c3-4d5e-6f7a-8b9c-0d1e2f3a4b5c";
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const currentUserId = user.id;
+
+    const body = await request.json();
+    const { action, party_id, rvs_damage, mode = "solo", floor } = body;
 
     // Fetch attacker username
     let attackerUsername = "Warrior";
