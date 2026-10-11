@@ -309,18 +309,22 @@ export function WorkoutTrackerForm({
 
   const calculateTotalVolume = () => {
     return loggedExercises.reduce((total, ex) => {
-      const exVol = ex.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
+      const exVol = ex.sets
+        .filter((s) => s.completed)
+        .reduce((sum, s) => sum + s.weight * s.reps, 0);
       return total + exVol;
     }, 0);
   };
 
   const calculateTotalRvs = () => {
     return loggedExercises.reduce((total, ex) => {
-      const exRvs = ex.sets.reduce(
-        (sum, s) =>
-          sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment),
-        0
-      );
+      const exRvs = ex.sets
+        .filter((s) => s.completed)
+        .reduce(
+          (sum, s) =>
+            sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment),
+          0
+        );
       return total + exRvs;
     }, 0);
   };
@@ -415,20 +419,60 @@ export function WorkoutTrackerForm({
 
   const handleFinish = () => {
     if (loggedExercises.length === 0) return;
-    const totalVolume = calculateTotalVolume();
-    const totalRvs = calculateTotalRvs();
 
-    const exercisesLog = loggedExercises.map((ex) => ({
+    // Filter only completed sets with valid repetitions
+    const validExercises = loggedExercises
+      .map((ex) => {
+        const completedSets = ex.sets.filter((s) => s.completed && s.reps > 0);
+        return {
+          ...ex,
+          completedSets,
+        };
+      })
+      .filter((ex) => ex.completedSets.length > 0);
+
+    if (validExercises.length === 0) {
+      alert("BELUM ADA SET SELESAI!\nCentang tombol 'LOG SET' (✓) pada set yang telah kamu lakukan sebelum menyelesaikan sesi.");
+      return;
+    }
+
+    const totalRawSets = loggedExercises.reduce((sum, ex) => sum + ex.sets.length, 0);
+    const totalDoneSets = validExercises.reduce((sum, ex) => sum + ex.completedSets.length, 0);
+
+    if (totalDoneSets < totalRawSets) {
+      const confirmFinish = window.confirm(
+        `Perhatian: Hanya ${totalDoneSets} dari ${totalRawSets} set yang dicentang selesai (DONE).\nSet yang belum dicentang tidak akan dihitung ke EXP dan Volume.\n\nLanjutkan selesaikan sesi?`
+      );
+      if (!confirmFinish) return;
+    }
+
+    const totalVolume = validExercises.reduce(
+      (total, ex) => total + ex.completedSets.reduce((sum, s) => sum + s.weight * s.reps, 0),
+      0
+    );
+
+    const totalRvs = validExercises.reduce(
+      (total, ex) =>
+        total +
+        ex.completedSets.reduce(
+          (sum, s) =>
+            sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment),
+          0
+        ),
+      0
+    );
+
+    const exercisesLog = validExercises.map((ex) => ({
       exercise_id: ex.definitionId || ex.id,
       exercise_name: ex.name,
       category: ex.category,
       equipment: ex.equipment,
       rvs_multiplier: ex.rvsMultiplier,
-      sets: ex.sets.map((s) => ({
-        set_number: s.set_number,
+      sets: ex.completedSets.map((s, idx) => ({
+        set_number: idx + 1,
         weight_kg: s.weight,
         reps: s.reps,
-        completed: s.completed ?? true,
+        completed: true,
       })),
     }));
 
@@ -712,8 +756,9 @@ export function WorkoutTrackerForm({
           </div>
         ) : (
           loggedExercises.map((ex, exIdx) => {
-            const exVolume = ex.sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
-            const exRvs = ex.sets.reduce(
+            const completedSets = ex.sets.filter((s) => s.completed);
+            const exVolume = completedSets.reduce((sum, s) => sum + s.weight * s.reps, 0);
+            const exRvs = completedSets.reduce(
               (sum, s) =>
                 sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment),
               0
@@ -878,6 +923,9 @@ export function WorkoutTrackerForm({
                   </button>
 
                   <div className="text-zinc-400 font-bold flex items-center gap-3">
+                    <span className="text-[9px] px-1.5 py-0.5 border border-pixel-border/80 bg-surface text-zinc-300">
+                      {completedSets.length}/{ex.sets.length} DONE
+                    </span>
                     <span>VOL: {formatNumber(exVolume)} KG</span>
                     <span className="text-[#00ff41]">RVS: +{formatNumber(exRvs)}</span>
                   </div>
