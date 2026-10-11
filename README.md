@@ -49,42 +49,42 @@ IronPixels is built on a high-throughput, modern web architecture optimized for 
 
 ```mermaid
 graph TD
-    Client[📱 Client PWA - Next.js 15 App Router]
+    Client["📱 Client PWA - Next.js 15 App Router"]
     
-    subgraph UI & Visual Engines
-        React[React 19 & Framer Motion 12]
-        Canvas[HTML5 Canvas 2D Particle Engine]
-        Audio[Web Audio API Chiptune SFX Engine]
+    subgraph UI_Engines["UI & Visual Engines"]
+        React["React 19 & Framer Motion 12"]
+        Canvas["HTML5 Canvas 2D Particle Engine"]
+        Audio["Web Audio API Chiptune SFX Engine"]
     end
     
-    subgraph Server-Authoritative API
-        AuthRoutes[/api/user/* & /api/workout/*]
-        CombatRoutes[/api/combat/attack & execute-skill]
-        ShopRoutes[/api/shop/gacha & /api/inventory/*]
-        CalcEngine[workoutCalculations.ts RVS Engine]
+    subgraph API_Layer["Server-Authoritative API"]
+        AuthRoutes["User & Workout Routes"]
+        CombatRoutes["Combat & Skill Endpoints"]
+        ShopRoutes["Gacha & Inventory Services"]
+        CalcEngine["workoutCalculations.ts RVS Engine"]
     end
 
-    subgraph Supabase Cloud
-        PG[(PostgreSQL Database + Row Level Security)]
-        Realtime[Supabase Realtime WebSockets Channel]
-        Auth[Supabase Auth SSR]
+    subgraph Supabase_Cloud["Supabase Cloud Platform"]
+        PG[("PostgreSQL Database + Row Level Security")]
+        Realtime["Supabase Realtime WebSockets Channel"]
+        Auth["Supabase Auth SSR"]
     end
 
     Client --> React
     React --> Canvas
     React --> Audio
-    Client -->|Authenticated REST Requests| AuthRoutes
-    Client -->|Combat Payloads| CombatRoutes
+    Client -->|"Authenticated REST Requests"| AuthRoutes
+    Client -->|"Combat Payloads"| CombatRoutes
     CombatRoutes --> CalcEngine
-    Client -->|Gacha & Equip| ShopRoutes
+    Client -->|"Gacha & Equip Actions"| ShopRoutes
 
     AuthRoutes --> PG
     CombatRoutes --> PG
     ShopRoutes --> PG
     AuthRoutes --> Auth
 
-    CombatRoutes -->|Broadcast party_attack| Realtime
-    Realtime -->|Live Screen Sync| Client
+    CombatRoutes -->|"Broadcast party_attack"| Realtime
+    Realtime -->|"Live Screen Sync"| Client
 ```
 
 ### Technology Stack & Rationale
