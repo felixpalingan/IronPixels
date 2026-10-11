@@ -77,8 +77,11 @@ export function CombatArena({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const particlesRef = useRef<DamageParticle[]>([]);
   const hasExecutedRef = useRef<boolean>(false);
+  const channelRef = useRef<any>(null);
 
   const [activeMode, setActiveMode] = useState<"solo" | "party">("solo");
+  const [partyId, setPartyId] = useState<string | null>(null);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
   const [partyMembers, setPartyMembers] = useState<Array<{
     user_id: string;
     username: string;
@@ -96,8 +99,9 @@ export function CombatArena({
         const res = await fetch("/api/multiplayer/party");
         if (res.ok) {
           const data = await res.json();
-          if (data && data.party && Array.isArray(data.party.members)) {
-            setPartyMembers(data.party.members);
+          if (data && data.party) {
+            if (data.party.party_id) setPartyId(data.party.party_id);
+            if (Array.isArray(data.party.members)) setPartyMembers(data.party.members);
           } else if (data && Array.isArray(data.members)) {
             setPartyMembers(data.members);
           } else {
@@ -237,8 +241,76 @@ export function CombatArena({
     fetchModeEnemy("party");
 
     const supabase = createClient();
+    const channelName = partyId ? `party_raid:${partyId}` : "party_combat_realtime_broadcast";
+
     const channel = supabase
-      .channel("party_combat_realtime_broadcast")
+      .channel(channelName)
+      .on(
+        "broadcast",
+        { event: "party_attack" },
+        ({ payload }) => {
+          if (!payload || payload.attacker_id === userId) return;
+
+          // Sound effect and haptics for party member's attack
+          soundEngine.play("attack");
+          soundEngine.triggerHaptic(40);
+
+          // Spawn floating damage on canvas with party member username
+          spawnDamageParticle(
+            payload.damage,
+            true,
+            `[${(payload.attacker_username || "RAIDER").toUpperCase()}] ${(payload.action_name || "ATTACK").toUpperCase()} -${formatNumber(payload.damage)}`
+          );
+
+          // Enemy hit flash
+          setEnemyState("hit");
+          setTimeout(() => setEnemyState("idle"), 500);
+
+          // Realtime log entry
+          addLog(
+            `⚔️ [${payload.attacker_username || "Raider"}] casted ${payload.action_name || "Skill"}! Dealt ${formatNumber(payload.damage)} damage to ${payload.boss_name || "Boss"}.`,
+            "#a855f7",
+            "party"
+          );
+
+          // Sync boss status
+          if (payload.is_defeated) {
+            setEnemyState("dead");
+            const wasFloor = payload.stage ? payload.stage - 1 : 1;
+            const wasBoss = wasFloor % 5 === 0;
+
+            addLog(
+              `${wasBoss ? "🏆 BOSS" : "⚔️"} ${payload.boss_name || "Monster"} DEFEATED by ${payload.attacker_username || "Raider"}! Advancing to Floor ${payload.stage}...`,
+              "#00ff41",
+              "party"
+            );
+
+            if (wasBoss) {
+              awardLoot(payload.boss_name || "Boss", wasFloor);
+            }
+
+            setTimeout(() => {
+              setPartyEnemy({
+                enemy_id: `party-floor-${payload.stage}`,
+                display_name: payload.sprite_config?.displayName || payload.boss_name || `Floor ${payload.stage} Raider`,
+                floor: payload.stage,
+                current_hp: Number(payload.new_boss_hp),
+                max_hp: Number(payload.max_boss_hp),
+                status: "Active",
+                category: payload.stage % 5 === 0 ? "boss" : "mob",
+                mode: "party",
+                sprite_config: payload.sprite_config || defaultSpriteConfig,
+              });
+              setEnemyState("idle");
+            }, wasBoss ? 2000 : 1200);
+          } else {
+            setPartyEnemy((prev) => ({
+              ...prev,
+              current_hp: Number(payload.new_boss_hp),
+            }));
+          }
+        }
+      )
       .on(
         "postgres_changes",
         {
@@ -253,7 +325,7 @@ export function CombatArena({
               if (prev.current_hp !== Number(updated.current_hp) || prev.floor !== updated.stage) {
                 const damageDealt = prev.current_hp - Number(updated.current_hp);
                 if (damageDealt > 0) {
-                  spawnDamageParticle(damageDealt, true, `PARTY ATTACK -${formatNumber(damageDealt)}`);
+                  spawnDamageParticle(damageDealt, true, `PARTY RAID -${formatNumber(damageDealt)}`);
                   setEnemyState("hit");
                   setTimeout(() => setEnemyState("idle"), 500);
                 }
@@ -274,12 +346,17 @@ export function CombatArena({
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        setIsRealtimeConnected(status === "SUBSCRIBED");
+      });
+
+    channelRef.current = channel;
 
     return () => {
       supabase.removeChannel(channel);
+      channelRef.current = null;
     };
-  }, [activeMode]);
+  }, [partyId, userId]);
 
   const awardLoot = (enemyName: string, floor: number) => {
     const pool = EQUIPMENT_DICTIONARY.filter(
@@ -418,6 +495,27 @@ export function CombatArena({
           if (targetMode === activeMode) {
             setTimeout(() => setEnemyState((s) => s === "dead" ? "dead" : "idle"), 600);
           }
+        }
+
+        // Broadcast to party members via Supabase Realtime channel
+        if (targetMode === "party" && channelRef.current) {
+          channelRef.current.send({
+            type: "broadcast",
+            event: "party_attack",
+            payload: {
+              attacker_id: userId,
+              attacker_username: who,
+              damage,
+              action_name: actionName,
+              attack_type: attackType,
+              new_boss_hp: data.current_hp,
+              max_boss_hp: data.max_hp,
+              is_defeated: data.is_defeated,
+              stage: data.stage,
+              boss_name: data.boss_name || targetEnemy.display_name,
+              sprite_config: data.sprite_config,
+            },
+          });
         }
       }
     } catch (err) {
@@ -580,6 +678,20 @@ export function CombatArena({
         </div>
       ) : (
         <>
+
+      {activeMode === "party" && partyMembers.length > 0 && (
+        <div className="flex items-center justify-between text-[10px] px-3 py-1.5 border border-purple-800/80 bg-purple-950/40 text-purple-300 font-mono shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isRealtimeConnected ? "bg-[#00ff41] shadow-neon animate-pulse" : "bg-amber-400"}`} />
+            <span className="font-extrabold uppercase tracking-wider">
+              {isRealtimeConnected ? "REALTIME CO-OP SYNC ACTIVE" : "CONNECTING TO PARTY SHRINE..."}
+            </span>
+          </div>
+          <span className="text-zinc-400 font-bold uppercase">
+            {partyMembers.length} RAIDERS &bull; {partyId ? `PARTY#${partyId.slice(0, 6)}` : "GLOBAL"}
+          </span>
+        </div>
+      )}
 
       <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between text-xs font-bold border-l-4 border-l-[#00ff41] shadow-neon">
         <div className="flex items-center gap-2">
