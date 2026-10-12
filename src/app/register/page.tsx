@@ -178,15 +178,22 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <div className="text-center font-mono text-xs">
-          <span className="text-zinc-500">ALREADY HAVE A WARRIOR PROFILE? </span>
-          <Link
-            href="/login"
-            className="text-[#00ff41] hover:underline font-bold inline-flex items-center gap-1"
-          >
-            LOGIN TERMINAL
-            <CornerDownRight className="w-3 h-3" />
-          </Link>
+        <div className="flex flex-col items-center gap-2 font-mono text-xs">
+          <div>
+            <span className="text-zinc-500">ALREADY HAVE A WARRIOR PROFILE? </span>
+            <Link
+              href="/login"
+              className="text-[#00ff41] hover:underline font-bold inline-flex items-center gap-1"
+            >
+              LOGIN TERMINAL
+              <CornerDownRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div>
+            <Link href="/about" className="text-zinc-500 hover:text-[#00ff41] transition-colors underline">
+              Tentang IronPixels &amp; Panduan Publik
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>

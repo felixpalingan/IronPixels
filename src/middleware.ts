@@ -47,13 +47,19 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const isPublicRoute = path === "/login" || path === "/register";
+  const isAuthOnlyRoute = path === "/login" || path === "/register";
+  const isPublicRoute = isAuthOnlyRoute || path === "/about";
 
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (user) {
+    // Allow public pages like /about to be viewed by authenticated users
+    if (path === "/about") {
+      return response;
+    }
+
     const cookieValue = request.cookies.get("ironpixels_onboarded")?.value;
     let isOnboarded = cookieValue === user.id;
 
@@ -84,7 +90,7 @@ export async function middleware(request: NextRequest) {
       return redirect;
     }
 
-    if (isOnboarded && (isPublicRoute || path === "/onboarding")) {
+    if (isOnboarded && (isAuthOnlyRoute || path === "/onboarding")) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }

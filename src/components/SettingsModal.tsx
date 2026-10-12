@@ -19,6 +19,7 @@ import {
   Smartphone,
   Sliders,
   Sparkles,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
@@ -635,6 +636,22 @@ export function SettingsModal({
                       {testAudioNotice}
                     </motion.div>
                   )}
+
+                  {/* Public Guide & About */}
+                  <div className="pt-2 border-t border-zinc-800">
+                    <a
+                      href="/about"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 px-3 border border-zinc-700 bg-zinc-900 hover:border-[#00ff41] text-zinc-200 hover:text-white text-xs font-mono font-bold uppercase flex items-center justify-between transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-[#00ff41]" />
+                        <span>TENTANG IRONPIXELS &amp; PANDUAN PUBLIK</span>
+                      </span>
+                      <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
+                    </a>
+                  </div>
                 </div>
               )}
 

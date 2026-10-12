@@ -157,11 +157,18 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-center font-mono text-xs text-zinc-400 space-x-1">
-          <span>New Operative?</span>
-          <Link href="/register" className="text-fuchsia-400 underline hover:text-fuchsia-300 font-bold">
-            Initialize Profile
-          </Link>
+        <div className="flex flex-col items-center gap-2 font-mono text-xs text-zinc-400">
+          <div>
+            <span>New Operative? </span>
+            <Link href="/register" className="text-fuchsia-400 underline hover:text-fuchsia-300 font-bold">
+              Initialize Profile
+            </Link>
+          </div>
+          <div>
+            <Link href="/about" className="text-zinc-500 hover:text-[#00ff41] transition-colors underline">
+              Tentang IronPixels &amp; Panduan Publik
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>
