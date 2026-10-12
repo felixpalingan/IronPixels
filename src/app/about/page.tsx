@@ -49,85 +49,122 @@ const SIM_EXERCISES: ExerciseOption[] = [
   { id: "bicep_curl", name: "Dumbbell Bicep Curl", category: "Arms", mult: 0.95, stat: "STR", tier: "Isolation (Arms)" },
 ];
 
+interface MobInfo {
+  floor: string;
+  name: string;
+  sprite: string;
+  anim: "idle_anim" | "anim";
+}
+
+interface DungeonTierInfo {
+  floorRange: string;
+  name: string;
+  boss: string;
+  bossSprite: string;
+  bossHp: string;
+  dailyDamage: string;
+  loot: string;
+  note: string;
+  mobs: MobInfo[];
+}
+
 const HERO_CLASSES = [
   {
-    id: "knight",
-    name: "Knight",
+    id: "warrior",
+    name: "Warrior",
+    title: "VANGUARD POWERLIFTER",
     icon: "/assets/dungeon/heroes/knight_m_idle_anim_f0.png",
-    stat: "Fokus STR & VIT",
-    favLift: "Barbell Squat & Bench Press",
-    role: "Pertahanan Tebal & Serangan Stabil",
-    desc: "Pilihan ideal untuk lifter yang menyukai angkatan barbel compound berat. Memiliki pertahanan kokoh terhadap serangan bos dan menghasilkan damage stabil di setiap set latihan.",
+    stat: "Fokus Pure STR & VIT (Powerlifting)",
+    favLift: "Barbell Bench Press, Back Squat, Deadlift",
+    role: "Pertahanan Kokoh & Damage Fisik Masif",
+    desc: "Spesialis angkatan barbel compound berat. Memiliki pertahanan tertinggi terhadap serangan monster dungeon dan menghasilkan damage serangan fisik paling stabil di setiap set latihan berat.",
   },
   {
-    id: "elf",
-    name: "Elf",
+    id: "hero",
+    name: "Hero",
+    title: "BALANCED ALL-ROUNDER",
     icon: "/assets/dungeon/heroes/elf_m_idle_anim_f0.png",
-    stat: "Fokus AGI & LUK",
-    favLift: "Pull-Up & Latihan Kalistenik",
-    role: "Serangan Cepat & Peluang Kritikal",
-    desc: "Memaksimalkan rasio kekuatan terhadap berat badan. Sangat cocok bagi penggemar pull-up dan bodyweight training dengan peluang critical strike yang lebih tinggi.",
+    stat: "Fokus Seimbang (STR, AGI, VIT, LUK)",
+    favLift: "Overhead Press, Dumbbell Lunges, RDL",
+    role: "Serangan Cepat & Peluang Critical Strike",
+    desc: "Karakter serba bisa dengan kelincahan dan mobilitas tinggi. Mengombinasikan kekuatan angkat beban dan kelincahan atletis untuk memberikan peluang critical strike yang lebih sering saat menghadapi musuh dungeon.",
   },
   {
-    id: "wizard",
-    name: "Wizard",
+    id: "mage",
+    name: "Mage",
+    title: "ARCANE ATHLETE",
     icon: "/assets/dungeon/heroes/wizzard_m_idle_anim_f0.png",
-    stat: "Fokus INT & Repetisi Tinggi",
-    favLift: "Overhead Press & Repetisi Tinggi",
-    role: "Damage Sihir & Serangan Area",
-    desc: "Mengubah latihan repetisi tinggi di zona hipertrofi menjadi serangan sihir beruntun. Efektif menembus pertahanan bos lantai dengan damage sihir konsisten.",
-  },
-  {
-    id: "dwarf",
-    name: "Dwarf",
-    icon: "/assets/dungeon/heroes/dwarf_m_idle_anim_f0.png",
-    stat: "Fokus Pure STR",
-    favLift: "Deadlift & Barbell Rows",
-    role: "Damage Fisik Maksimal",
-    desc: "Spesialis angkatan tarikan berat dari lantai. Memberikan lonjakan damage paling tinggi saat mengangkat beban berat mendekati batas kemampuan fisik.",
+    stat: "Fokus Stamina, Hipertrofi & Kardio",
+    favLift: "Pull-Up, Dips, Push-Up & Repetisi Tinggi",
+    role: "Damage Sihir Beruntun & Hipertrofi",
+    desc: "Spesialis latihan kalistenik, bodyweight, dan set repetisi tinggi di zona hipertrofi. Mengubah repetisi padat menjadi serangan sihir beruntun yang efektif menembus pertahanan armor bos lantai.",
   },
 ];
 
-const DUNGEON_TIERS = [
+const DUNGEON_TIERS: DungeonTierInfo[] = [
   {
     floorRange: "Lantai 1 - 5",
-    name: "Crypt of Novices",
-    boss: "Goblin Overseer & Imp Pack",
-    bossSprite: "goblin",
-    bossHp: "1,200 - 3,500 HP",
+    name: "Crypt of the Ogre",
+    boss: "Ogre King (Bos Lantai 5)",
+    bossSprite: "ogre",
+    bossHp: "12,000 HP",
     dailyDamage: "10 - 25 HP / hari",
-    loot: "Rusty Blades & Leather Armor",
-    note: "Area awal untuk membiasakan diri mencatat set latihan dan memahami ritme pertarungan dungeon.",
+    loot: "Rusty Blades, Leather Armor & Iron Shield",
+    note: "Zona permulaan untuk membangun konsistensi latihan gym. Kalahkan 4 mob pendamping di lantai 1–4 sebelum menghadapi tebasan gada Ogre King di lantai 5.",
+    mobs: [
+      { floor: "Lantai 1", name: "Imp", sprite: "imp", anim: "idle_anim" },
+      { floor: "Lantai 2", name: "Swampy", sprite: "swampy", anim: "anim" },
+      { floor: "Lantai 3", name: "Goblin", sprite: "goblin", anim: "idle_anim" },
+      { floor: "Lantai 4", name: "Skeleton", sprite: "skelet", anim: "idle_anim" },
+    ],
   },
   {
     floorRange: "Lantai 6 - 10",
-    name: "Shadow Catacombs",
-    boss: "Orc Warlord & Necromancer",
-    bossSprite: "orc_warrior",
-    bossHp: "4,500 - 12,000 HP",
+    name: "Catacombs of the Undead",
+    boss: "Undead Giant (Bos Lantai 10)",
+    bossSprite: "big_zombie",
+    bossHp: "30,000 HP",
     dailyDamage: "30 - 65 HP / hari",
-    loot: "Iron Plate & Heavy Halberd",
-    note: "Bos mulai memberi tantangan harian. Rutin latihan 3-4 kali seminggu akan menjaga darah heromu tetap penuh.",
+    loot: "Heavy Halberd, Chainmail & Ring of Endurance",
+    note: "Monster mulai memberikan serangan balasan yang lebih agresif. Disiplin latihan rutin 3–4 kali seminggu akan menjaga heromu selalu prima dan darahnya penuh.",
+    mobs: [
+      { floor: "Lantai 6", name: "Masked Orc", sprite: "masked_orc", anim: "idle_anim" },
+      { floor: "Lantai 7", name: "Poison Slug", sprite: "slug", anim: "anim" },
+      { floor: "Lantai 8", name: "Tiny Zombie", sprite: "tiny_zombie", anim: "idle_anim" },
+      { floor: "Lantai 9", name: "Muddy", sprite: "muddy", anim: "anim" },
+    ],
   },
   {
     floorRange: "Lantai 11 - 15",
     name: "Infernal Bastion",
-    boss: "Dungeon Ogre & Masked Berserker",
-    bossSprite: "ogre",
-    bossHp: "15,000 - 35,000 HP",
+    boss: "Demon Lord (Bos Lantai 15)",
+    bossSprite: "big_demon",
+    bossHp: "65,000 HP",
     dailyDamage: "75 - 120 HP / hari",
-    loot: "Mithril Armor & Dragon Slayer Axe",
-    note: "Tingkat kesulitan meningkat. Dibutuhkan progres beban bertahap atau kerja sama party agar bos lantai bisa ditaklukkan.",
+    loot: "Mithril Armor, Dragon Slayer Axe & Flame Relic",
+    note: "Tingkat kesulitan meningkat tajam dengan HP bos yang tebal. Diperlukan progres beban latihan atau kerja sama raid party agar bos lantai 15 bisa ditaklukkan.",
+    mobs: [
+      { floor: "Lantai 11", name: "Dark Necromancer", sprite: "necromancer", anim: "anim" },
+      { floor: "Lantai 12", name: "Pumpkin Dude", sprite: "pumpkin_dude", anim: "idle_anim" },
+      { floor: "Lantai 13", name: "Orc Warrior", sprite: "orc_warrior", anim: "idle_anim" },
+      { floor: "Lantai 14", name: "Wogol", sprite: "wogol", anim: "idle_anim" },
+    ],
   },
   {
     floorRange: "Lantai 16 - 20",
     name: "Abyssal Throne",
-    boss: "Abyssal Demon Overlord",
+    boss: "Abyssal Overlord (Bos Lantai 20)",
     bossSprite: "big_demon",
-    bossHp: "45,000 - 100,000+ HP",
+    bossHp: "125,000 HP",
     dailyDamage: "150 - 250 HP / hari",
-    loot: "Excalibur & Relic of the Ancients",
-    note: "Tantangan tertinggi dengan bos terkuat. Menghadiahi senjata legendaris dan equipment tingkat tertinggi.",
+    loot: "Excalibur, Mythic Relic & Abyssal Crown",
+    note: "Puncak tantangan tertinggi bagi lifter sejati. Hadapi kawanan monster kegelapan dan bos berkekuatan dahsyat untuk merebut gelar penguasa dungeon dan gear legendaris.",
+    mobs: [
+      { floor: "Lantai 16", name: "Chort Fiend", sprite: "chort", anim: "idle_anim" },
+      { floor: "Lantai 17", name: "Ice Zombie", sprite: "ice_zombie", anim: "anim" },
+      { floor: "Lantai 18", name: "Orc Shaman", sprite: "orc_shaman", anim: "idle_anim" },
+      { floor: "Lantai 19", name: "Shadow Lich", sprite: "necromancer", anim: "anim" },
+    ],
   },
 ];
 
@@ -369,7 +406,7 @@ export default function AboutPage() {
                   gender="m"
                   scale={1.8}
                   weaponIcon="/assets/items/weapons/01.png"
-                  showNameTag="LVL 45 KNIGHT"
+                  showNameTag="LVL 45 WARRIOR"
                   nameTagPosition="top"
                 />
                 <HeroSprite
@@ -378,7 +415,7 @@ export default function AboutPage() {
                   gender="f"
                   scale={1.6}
                   weaponIcon="/assets/items/weapons/03.png"
-                  showNameTag="LVL 42 ELF"
+                  showNameTag="LVL 42 HERO"
                   nameTagPosition="top"
                 />
                 <HeroSprite
@@ -726,10 +763,10 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-10">
             <h2 className="font-headline font-black text-3xl sm:text-4xl uppercase text-white">
-              PILIHAN KELAS HERO &amp; LANTAI DUNGEON
+              KELAS HERO &amp; SHOWCASE MONSTER DUNGEON
             </h2>
             <p className="font-body text-zinc-300 text-base">
-              Kenali keunggulan setiap kelas karakter dan tantangan bos yang menunggumu di setiap lantai dungeon.
+              Kenali 3 kelas karakter andalanmu, serta daftar bos utama dan kawanan mobs pendamping di setiap tingkatan lantai dungeon.
             </p>
 
             {/* Tab Switcher */}
@@ -742,7 +779,7 @@ export default function AboutPage() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                4 Kelas Hero
+                3 Kelas Hero
               </button>
               <button
                 onClick={() => setActiveCodexTab("dungeons")}
@@ -752,28 +789,33 @@ export default function AboutPage() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                Ekspedisi Lantai 1-20
+                Showcase Boss &amp; Mobs (Lantai 1-20)
               </button>
             </div>
           </div>
 
-          {/* Tab 1: Hero Classes Codex */}
+          {/* Tab 1: Hero Classes Codex (3 Classes) */}
           {activeCodexTab === "classes" && (
             <div className="max-w-4xl mx-auto border border-[#48484A] bg-[#131313] p-6 sm:p-8">
               {/* Class Selector Badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-8 font-mono text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mb-8 font-mono text-xs">
                 {HERO_CLASSES.map((cls, idx) => (
                   <button
                     key={cls.id}
                     onClick={() => setSelectedClassIndex(idx)}
-                    className={`p-3 border text-left flex items-center gap-2.5 transition-all ${
+                    className={`p-3.5 border text-left flex items-center gap-3 transition-all ${
                       selectedClassIndex === idx
                         ? "border-[#00ff41] bg-[#00ff41]/10 text-white shadow-neon"
                         : "border-[#48484A] bg-black text-zinc-400 hover:text-white"
                     }`}
                   >
-                    <img src={cls.icon} alt={cls.name} className="w-6 h-6 object-contain pixelated" />
-                    <span className="font-bold truncate">{cls.name}</span>
+                    <div className="w-8 h-8 flex items-center justify-center shrink-0">
+                      <img src={cls.icon} alt={cls.name} className="w-full h-full object-contain pixelated" />
+                    </div>
+                    <div className="truncate">
+                      <div className="font-bold text-white text-sm">{cls.name}</div>
+                      <div className="text-[10px] text-[#00ff41] font-normal truncate">{cls.title}</div>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -810,7 +852,7 @@ export default function AboutPage() {
             </div>
           )}
 
-          {/* Tab 2: Dungeon Floors Codex */}
+          {/* Tab 2: Dungeon Floors Codex (Boss & Accompanying Mobs Showcase) */}
           {activeCodexTab === "dungeons" && (
             <div className="max-w-4xl mx-auto border border-[#48484A] bg-[#131313] p-6 sm:p-8">
               {/* Floor Tier Selector */}
@@ -831,9 +873,10 @@ export default function AboutPage() {
                 ))}
               </div>
 
-              {/* Selected Tier Deep View */}
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center border-t border-[#48484A] pt-6">
-                <div className="md:col-span-4 flex flex-col items-center text-center space-y-3">
+              {/* Selected Tier Deep View with Boss & Accompanying Mobs */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-t border-[#48484A] pt-6">
+                {/* Left: Boss Spotlight */}
+                <div className="lg:col-span-5 flex flex-col items-center text-center space-y-4 bg-black/60 border border-[#48484A] p-5">
                   <div className="w-28 h-28 bg-black border-2 border-red-500/80 p-3 shadow-red-glow flex items-center justify-center">
                     <img
                       src={`/assets/dungeon/monsters/${activeDungeonTier.bossSprite}_idle_anim_f0.png`}
@@ -842,20 +885,49 @@ export default function AboutPage() {
                     />
                   </div>
                   <div>
-                    <h3 className="font-headline font-black text-lg text-white">{activeDungeonTier.name}</h3>
-                    <div className="text-xs font-mono text-red-400 font-bold">{activeDungeonTier.boss}</div>
+                    <div className="text-[10px] font-mono text-red-400 font-bold tracking-widest uppercase">
+                      {activeDungeonTier.floorRange} // TANTANGAN UTAMA
+                    </div>
+                    <h3 className="font-headline font-black text-xl text-white mt-1">{activeDungeonTier.boss}</h3>
+                    <div className="text-xs font-mono text-zinc-400">{activeDungeonTier.name}</div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 w-full font-mono text-xs pt-1">
+                    <div className="p-2.5 bg-black border border-[#48484A] text-left">
+                      <div className="text-[10px] text-zinc-400 font-bold">TOTAL DARAH BOS:</div>
+                      <div className="text-white text-xs font-bold mt-0.5">{activeDungeonTier.bossHp}</div>
+                    </div>
+                    <div className="p-2.5 bg-black border border-[#48484A] text-left">
+                      <div className="text-[10px] text-zinc-400 font-bold">PENALTI ABSEN:</div>
+                      <div className="text-red-400 text-xs font-bold mt-0.5">{activeDungeonTier.dailyDamage}</div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="md:col-span-8 space-y-4 font-mono text-xs">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-3 bg-black border border-[#48484A]">
-                      <div className="text-zinc-400 font-bold">TOTAL DARAH BOS:</div>
-                      <div className="text-white text-sm font-bold mt-0.5">{activeDungeonTier.bossHp}</div>
+                {/* Right: Mobs Pendamping & Strategy Notes */}
+                <div className="lg:col-span-7 space-y-5 font-mono text-xs">
+                  <div className="space-y-2">
+                    <div className="text-zinc-400 font-bold uppercase flex items-center justify-between">
+                      <span>4 MOBS PENDAMPING LANTAI:</span>
+                      <span className="text-[10px] text-zinc-500 font-normal">Kalahkan sebelum bos</span>
                     </div>
-                    <div className="p-3 bg-black border border-[#48484A]">
-                      <div className="text-zinc-400 font-bold">PENALTI ABSEN LATIHAN:</div>
-                      <div className="text-red-400 text-sm font-bold mt-0.5">{activeDungeonTier.dailyDamage}</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {activeDungeonTier.mobs.map((mob) => (
+                        <div
+                          key={mob.name}
+                          className="p-3 bg-black border border-[#48484A] flex flex-col items-center text-center space-y-1 hover:border-[#00ff41] transition-colors"
+                        >
+                          <div className="w-10 h-10 flex items-center justify-center">
+                            <img
+                              src={`/assets/dungeon/monsters/${mob.sprite}_${mob.anim}_f0.png`}
+                              alt={mob.name}
+                              className="w-full h-full object-contain pixelated scale-125"
+                            />
+                          </div>
+                          <div className="text-[10px] text-[#00ff41] font-bold">{mob.floor}</div>
+                          <div className="text-xs text-zinc-200 font-bold truncate max-w-full">{mob.name}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
