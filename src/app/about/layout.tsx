@@ -28,6 +28,60 @@ export const metadata: Metadata = {
       "Ubah beban angkatan gym menjadi serangan pamungkas menaklukkan bos dungeon 16-bit.",
     images: ["/og-image.png"],
   },
+  keywords: [
+    "Tentang IronPixels",
+    "fitness RPG retro",
+    "Real Volume Score RVS",
+    "gym tracker gamifikasi",
+    "dungeon workout",
+    "multiplayer gym app",
+  ],
+};
+
+const aboutJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "AboutPage",
+      "@id": "https://iron-pixels.vercel.app/about#webpage",
+      url: "https://iron-pixels.vercel.app/about",
+      name: "Tentang IronPixels - Retro 16-Bit Gamified Fitness RPG",
+      description:
+        "Pelajari filosofi, sistem Real Volume Score (RVS), mekanika raid dungeon 16-bit, dan arsitektur IronPixels.",
+      inLanguage: "id-ID",
+      isPartOf: {
+        "@type": "WebSite",
+        "@id": "https://iron-pixels.vercel.app/#website",
+      },
+      about: {
+        "@type": "WebApplication",
+        "@id": "https://iron-pixels.vercel.app/#webapp",
+      },
+      author: {
+        "@type": "Person",
+        "@id": "https://portfolio-felix-bariq.vercel.app/#person",
+        name: "Almakius Felix Bariq Hekopung",
+        url: "https://portfolio-felix-bariq.vercel.app",
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: "https://iron-pixels.vercel.app",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "About",
+            item: "https://iron-pixels.vercel.app/about",
+          },
+        ],
+      },
+    },
+  ],
 };
 
 export default function AboutLayout({
@@ -35,5 +89,13 @@ export default function AboutLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutJsonLd) }}
+      />
+      {children}
+    </>
+  );
 }
