@@ -132,6 +132,52 @@ const jsonLd = {
         url: "https://portfolio-felix-bariq.vercel.app",
       },
     },
+    {
+      "@type": "FAQPage",
+      "@id": "https://iron-pixels.vercel.app/#faq",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Apa itu IronPixels?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "IronPixels adalah aplikasi web gamified fitness RPG retro 16-bit yang mengubah repetisi dan volume angkat beban di gym menjadi kekuatan tempur (Combat Power) untuk menaklukkan bos dungeon, membuka senjata mythical, dan menyelesaikan misi bersama teman.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Bagaimana cara kerja penghitungan damage RVS (Real Volume Score)?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "RVS dihitung secara server-authoritative menggunakan formula yang menyeimbangkan beban angkatan, repetisi, rasio berat badan lifter, jenis gerakan, dan stat hero (STR/AGI), sehingga setiap set latihan memberikan kontribusi serangan yang adil.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Apakah mencatat workout memulihkan darah (HP) hero?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Ya, setiap kali Anda menyelesaikan sesi workout gym yang valid, hero Anda langsung mendapatkan Instant 100% Full Heal, memulihkan seluruh HP dan menghapus cicilan penalti serangan bos harian.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Apakah IronPixels gratis dimainkan?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "IronPixels 100% gratis dimainkan tanpa sistem pay-to-win. Seluruh gold, peti gacha, dan equipment diperoleh murni dari konsistensi latihan angkat beban dan progres menembus lantai dungeon.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Bagaimana cara bermain co-op raid dungeon bersama teman?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Anda dapat membuat atau bergabung ke dalam Party (guild) di tab Social, lalu menantang bos lantai bersama anggota tim secara real-time dengan sinkronisasi instan via Supabase Realtime WebSockets.",
+          },
+        },
+      ],
+    },
   ],
 };
 
