@@ -37,54 +37,54 @@ interface ExerciseOption {
   category: string;
   mult: number;
   stat: "STR" | "AGI";
-  tier: "Tier S (Compound)" | "Tier A (Compound)" | "Tier B (Isolation)";
+  tier: string;
 }
 
 const SIM_EXERCISES: ExerciseOption[] = [
-  { id: "bench_press", name: "Barbell Bench Press", category: "Chest", mult: 1.15, stat: "STR", tier: "Tier S (Compound)" },
-  { id: "back_squat", name: "Barbell Back Squat", category: "Legs", mult: 1.25, stat: "STR", tier: "Tier S (Compound)" },
-  { id: "deadlift", name: "Conventional Deadlift", category: "Back", mult: 1.30, stat: "STR", tier: "Tier S (Compound)" },
-  { id: "ohp", name: "Overhead Press", category: "Shoulders", mult: 1.10, stat: "STR", tier: "Tier A (Compound)" },
-  { id: "pull_up", name: "Pull Up (Bodyweight)", category: "Back", mult: 1.20, stat: "AGI", tier: "Tier A (Compound)" },
-  { id: "bicep_curl", name: "Dumbbell Bicep Curl", category: "Arms", mult: 0.95, stat: "STR", tier: "Tier B (Isolation)" },
+  { id: "bench_press", name: "Barbell Bench Press", category: "Chest", mult: 1.15, stat: "STR", tier: "Compound (Chest)" },
+  { id: "back_squat", name: "Barbell Back Squat", category: "Legs", mult: 1.25, stat: "STR", tier: "Compound (Legs)" },
+  { id: "deadlift", name: "Conventional Deadlift", category: "Back", mult: 1.30, stat: "STR", tier: "Compound (Back)" },
+  { id: "ohp", name: "Overhead Press", category: "Shoulders", mult: 1.10, stat: "STR", tier: "Compound (Shoulders)" },
+  { id: "pull_up", name: "Pull Up (Bodyweight)", category: "Back", mult: 1.20, stat: "AGI", tier: "Bodyweight (Back)" },
+  { id: "bicep_curl", name: "Dumbbell Bicep Curl", category: "Arms", mult: 0.95, stat: "STR", tier: "Isolation (Arms)" },
 ];
 
 const HERO_CLASSES = [
   {
     id: "knight",
-    name: "Knight (Paladin)",
+    name: "Knight",
     icon: "/assets/dungeon/heroes/knight_m_idle_anim_f0.png",
-    stat: "STR & VIT Focused",
-    favLift: "Barbell Back Squat & Bench Press",
-    role: "Tank / Heavy DPS",
-    desc: "Mengekstraksi kekuatan dari angkatan compound terberat. Menghasilkan damage pukulan masif per set dan memiliki pertahanan tertinggi terhadap serangan balasan bos lantai.",
+    stat: "Fokus STR & VIT",
+    favLift: "Barbell Squat & Bench Press",
+    role: "Pertahanan Tebal & Serangan Stabil",
+    desc: "Pilihan ideal untuk lifter yang menyukai angkatan barbel compound berat. Memiliki pertahanan kokoh terhadap serangan bos dan menghasilkan damage stabil di setiap set latihan.",
   },
   {
     id: "elf",
-    name: "Elf (Ranger)",
+    name: "Elf",
     icon: "/assets/dungeon/heroes/elf_m_idle_anim_f0.png",
-    stat: "AGI & LUK Focused",
-    favLift: "Weighted Pull-Up & Bodyweight Calisthenics",
-    role: "Speed DPS / Critical Striker",
-    desc: "Memanfaatkan rasio kekuatan terhadap berat badan (relative strength). Setiap repetisi pull-up atau latihan berkecepatan tinggi memicu serangan beruntun dengan peluang critical strike tinggi.",
+    stat: "Fokus AGI & LUK",
+    favLift: "Pull-Up & Latihan Kalistenik",
+    role: "Serangan Cepat & Peluang Kritikal",
+    desc: "Memaksimalkan rasio kekuatan terhadap berat badan. Sangat cocok bagi penggemar pull-up dan bodyweight training dengan peluang critical strike yang lebih tinggi.",
   },
   {
     id: "wizard",
-    name: "Wizard (Mage)",
+    name: "Wizard",
     icon: "/assets/dungeon/heroes/wizzard_m_idle_anim_f0.png",
-    stat: "STR & LUK Focused",
-    favLift: "Overhead Press & High-Volume Sets",
-    role: "Burst Area DPS",
-    desc: "Mengonversi volume repetisi tinggi menjadi serangan sihir elementer. Semakin disiplin menyelesaikan repetisi di zona hipertrofi, semakin dahsyat damage ledakan sihir yang tercipta.",
+    stat: "Fokus INT & Repetisi Tinggi",
+    favLift: "Overhead Press & Repetisi Tinggi",
+    role: "Damage Sihir & Serangan Area",
+    desc: "Mengubah latihan repetisi tinggi di zona hipertrofi menjadi serangan sihir beruntun. Efektif menembus pertahanan bos lantai dengan damage sihir konsisten.",
   },
   {
     id: "dwarf",
-    name: "Dwarf (Berserker)",
+    name: "Dwarf",
     icon: "/assets/dungeon/heroes/dwarf_m_idle_anim_f0.png",
-    stat: "Pure STR & Raw Grit",
-    favLift: "Heavy Deadlift & Barbell Rows",
-    role: "Pure Physical Bruiser",
-    desc: "Bertarung di ambang batas kegagalan otot (RPE 9-10). Setiap set intensitas tinggi yang memaksa otot bekerja sampai batas akhir melipatgandakan Combat Power secara eksponensial.",
+    stat: "Fokus Pure STR",
+    favLift: "Deadlift & Barbell Rows",
+    role: "Damage Fisik Maksimal",
+    desc: "Spesialis angkatan tarikan berat dari lantai. Memberikan lonjakan damage paling tinggi saat mengangkat beban berat mendekati batas kemampuan fisik.",
   },
 ];
 
@@ -96,8 +96,8 @@ const DUNGEON_TIERS = [
     bossSprite: "goblin",
     bossHp: "1,200 - 3,500 HP",
     dailyDamage: "10 - 25 HP / hari",
-    loot: "Common Rusty Blades & Leather Armor",
-    note: "Zona adaptasi bagi rekrutan baru. Bangun kebiasaan mencatat set dan pahami ritme recovery tubuh.",
+    loot: "Rusty Blades & Leather Armor",
+    note: "Area awal untuk membiasakan diri mencatat set latihan dan memahami ritme pertarungan dungeon.",
   },
   {
     floorRange: "Lantai 6 - 10",
@@ -106,8 +106,8 @@ const DUNGEON_TIERS = [
     bossSprite: "orc_warrior",
     bossHp: "4,500 - 12,000 HP",
     dailyDamage: "30 - 65 HP / hari",
-    loot: "Rare Iron Plate & Heavy Halberd",
-    note: "Bos mulai mencicil serangan harian jika kamu absen latihan terlalu lama. Konsistensi 3-4 sesi per minggu sangat krusial.",
+    loot: "Iron Plate & Heavy Halberd",
+    note: "Bos mulai memberi tantangan harian. Rutin latihan 3-4 kali seminggu akan menjaga darah heromu tetap penuh.",
   },
   {
     floorRange: "Lantai 11 - 15",
@@ -116,8 +116,8 @@ const DUNGEON_TIERS = [
     bossSprite: "ogre",
     bossHp: "15,000 - 35,000 HP",
     dailyDamage: "75 - 120 HP / hari",
-    loot: "Epic Mithril Armor & Dragon Slayer Axe",
-    note: "Membutuhkan progressive overload disiplin atau party raid bersama teman gym agar pertahanan bos dapat ditembus.",
+    loot: "Mithril Armor & Dragon Slayer Axe",
+    note: "Tingkat kesulitan meningkat. Dibutuhkan progres beban bertahap atau kerja sama party agar bos lantai bisa ditaklukkan.",
   },
   {
     floorRange: "Lantai 16 - 20",
@@ -126,35 +126,35 @@ const DUNGEON_TIERS = [
     bossSprite: "big_demon",
     bossHp: "45,000 - 100,000+ HP",
     dailyDamage: "150 - 250 HP / hari",
-    loot: "Mythical Excalibur & Relic of the Ancients",
-    note: "Puncak ujian bagi para lifter sejati. Hanya kombinasi volume angkatan legendaris dan kerja sama tim yang mampu menumbangkan takhta abadi.",
+    loot: "Excalibur & Relic of the Ancients",
+    note: "Tantangan tertinggi dengan bos terkuat. Menghadiahi senjata legendaris dan equipment tingkat tertinggi.",
   },
 ];
 
 const FAQ_ITEMS = [
   {
     q: "Apa itu IronPixels?",
-    a: "IronPixels adalah aplikasi web gamified fitness RPG retro 16-bit yang mengubah repetisi dan volume angkat beban di gym menjadi kekuatan tempur (Combat Power) untuk menaklukkan bos dungeon, membuka senjata mythical, dan menyelesaikan misi bersama teman.",
+    a: "IronPixels adalah aplikasi gamified fitness tracker bergaya retro 16-bit RPG. Setiap repetisi dan beban yang kamu angkat di gym otomatis diubah menjadi kekuatan serangan untuk mengalahkan bos dungeon, membuka senjata langka, dan menyelesaikan misi bersama teman.",
   },
   {
     q: "Bagaimana cara kerja penghitungan damage RVS (Real Volume Score)?",
-    a: "RVS dihitung di server menggunakan formula biomekanika: Berat Beban (kg) x Repetisi x Rasio Berat Badan (% BW) x 0.1 x Multiplier Gerakan x Stat Hero (STR/AGI). Gerakan compound berat seperti Squat dan Deadlift menghasilkan multiplier lebih tinggi daripada gerakan isolasi, sehingga kalkulasi adil bagi semua berat badan.",
+    a: "RVS dihitung berdasarkan formula matematis: Beban Angkatan (kg) × Repetisi × Rasio Berat Badan (% BW) × Multiplier Gerakan. Gerakan compound berat seperti Squat dan Deadlift memiliki kontribusi multiplier lebih besar daripada gerakan isolasi, sehingga sistem adil bagi semua rentang berat badan.",
   },
   {
     q: "Apakah mencatat workout memulihkan darah (HP) hero?",
-    a: "Ya! Setiap kali Anda menyelesaikan sesi workout gym yang valid, hero Anda langsung mendapatkan Instant 100% Full Heal. Seluruh HP pulih total dan cicilan serangan bos harian terhapus seketika. Selama Anda konsisten ke gym, hero Anda tidak akan pernah tewas.",
+    a: "Ya! Setiap kali kamu menyelesaikan satu sesi workout di gym, hero kamu langsung pulih 100% HP dan penalti serangan bos harian otomatis terhapus. Selama kamu konsisten berlatih, heromu akan selalu bugar dan siap menjelajah dungeon.",
   },
   {
-    q: "Apakah ada pembelian pay-to-win menggunakan uang asli?",
-    a: "Sama sekali tidak ada (100% Fair Play). Seluruh Gold, peti misterius, senjata legendaris, dan upgrade Blacksmith diperoleh murni dari progres latihan beban di dunia nyata dan penaklukan lantai dungeon.",
+    q: "Apakah ada sistem pay-to-win menggunakan uang asli?",
+    a: "Tidak ada sama sekali. IronPixels 100% gratis dimainkan dan menjunjung tinggi fair play. Semua gold, peti hadiah, senjata, dan upgrade blacksmith diperoleh murni dari kerja keras fisikmu saat berlatih di gym.",
   },
   {
-    q: "Bagaimana cara kerja Co-Op Dungeon Raid bersama teman?",
-    a: "Anda dapat membuat atau bergabung ke dalam Party (guild) di tab Social. Saat Anda atau anggota tim menyelesaikan sesi latihan di gym, damage dari volume latihan tersebut langsung memotong HP bos lantai yang sama secara real-time via WebSockets Supabase.",
+    q: "Bagaimana cara bermain Co-Op Dungeon Raid bersama teman?",
+    a: "Kamu bisa membuat atau bergabung ke dalam Party (guild) di tab Social. Saat kamu atau teman satu party menyelesaikan workout di gym, damage dari volume latihan tersebut langsung memotong HP bos lantai yang sama secara real-time via WebSockets.",
   },
   {
     q: "Bagaimana jika saya perlu mengambil Rest Day (Hari Istirahat)?",
-    a: "Istirahat adalah bagian fundamental dari pembentukan otot. Serangan harian bos di lantai bawah tidak langsung menewaskan hero dalam 1-2 hari. Anda dapat beristirahat dengan tenang selama 1–2 hari, lalu hero akan kembali pulih 100% pada sesi latihan berikutnya.",
+    a: "Istirahat adalah bagian penting dari pertumbuhan otot. Serangan bos harian di lantai dungeon tidak langsung menghabiskan darah hero dalam 1-2 hari. Kamu bisa beristirahat dengan tenang selama 1–2 hari, lalu darah heromu akan kembali penuh begitu sesi latihan berikutnya selesai dicatat.",
   },
 ];
 
@@ -199,7 +199,7 @@ export default function AboutPage() {
     setFloatingDamage({ value: finalDamage, isCrit });
     setMonsterCurrentHp((prev) => Math.max(0, prev - finalDamage));
 
-    const logEntry = `${isCrit ? "[CRITICAL HIT!] " : ""}${currentExercise.name} (${simWeight}kg x ${simReps}) menghasilkan ${finalDamage.toLocaleString()} RVS damage ke Ogre Guardian!`;
+    const logEntry = `${isCrit ? "[CRITICAL HIT!] " : ""}${currentExercise.name} (${simWeight} kg × ${simReps} reps) menghasilkan ${finalDamage.toLocaleString()} RVS damage!`;
     setRecentCombatLog((prev) => [logEntry, ...prev.slice(0, 2)]);
 
     setTimeout(() => setIsHitShaking(false), 400);
@@ -248,15 +248,15 @@ export default function AboutPage() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-7 font-mono text-xs uppercase tracking-wider text-zinc-400">
-            <a href="#manifesto" className="hover:text-white transition-colors">Manifesto</a>
-            <a href="#hukum-besi" className="hover:text-white transition-colors">Hukum RVS</a>
+            <a href="#cerita" className="hover:text-white transition-colors">Tentang Kami</a>
+            <a href="#hukum-besi" className="hover:text-white transition-colors">Cara Kerja RVS</a>
             <a href="#simulator" className="hover:text-[#00ff41] transition-colors flex items-center gap-1.5 text-white font-bold">
               <Flame className="w-3.5 h-3.5 text-[#00ff41]" />
-              Simulator Tempur
+              Simulator
             </a>
-            <a href="#codex" className="hover:text-white transition-colors">Codex Petualang</a>
+            <a href="#codex" className="hover:text-white transition-colors">Hero &amp; Dungeon</a>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-            <a href="#arsitektur" className="hover:text-white transition-colors">Arsitektur</a>
+            <a href="#arsitektur" className="hover:text-white transition-colors">Teknologi</a>
           </nav>
 
           {/* CTA Buttons */}
@@ -265,13 +265,13 @@ export default function AboutPage() {
               href="/login"
               className="px-4 py-2 border border-[#48484A] bg-[#1C1C1E] hover:border-zinc-300 font-mono text-xs uppercase tracking-wider text-zinc-300 hover:text-white transition-all"
             >
-              Masuk Terminal
+              Masuk
             </Link>
             <Link
               href="/register"
               className="px-5 py-2 border border-[#00ff41] bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(0,255,65,0.35)] transition-all flex items-center gap-1.5"
             >
-              <span>Tempa Hero</span>
+              <span>Daftar Gratis</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -289,17 +289,17 @@ export default function AboutPage() {
         {/* Mobile Nav Dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-[#131313] border-b border-[#48484A] px-4 py-4 space-y-3 font-mono text-xs uppercase">
-            <a href="#manifesto" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-zinc-300 hover:text-[#00ff41]">Manifesto</a>
-            <a href="#hukum-besi" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-zinc-300 hover:text-[#00ff41]">Hukum RVS</a>
+            <a href="#cerita" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-zinc-300 hover:text-[#00ff41]">Tentang Kami</a>
+            <a href="#hukum-besi" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-zinc-300 hover:text-[#00ff41]">Cara Kerja RVS</a>
             <a href="#simulator" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-[#00ff41] font-bold">⚡ Simulator Tempur</a>
-            <a href="#codex" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-zinc-300 hover:text-[#00ff41]">Codex Petualang</a>
+            <a href="#codex" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-zinc-300 hover:text-[#00ff41]">Hero &amp; Dungeon</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-1.5 text-zinc-300 hover:text-[#00ff41]">FAQ</a>
             <div className="pt-2 flex flex-col gap-2">
               <Link href="/login" className="w-full text-center py-2.5 border border-[#48484A] bg-[#1C1C1E] text-white font-mono text-xs">
-                Masuk Terminal
+                Masuk
               </Link>
               <Link href="/register" className="w-full text-center py-2.5 bg-[#00ff41] text-black font-mono font-bold text-xs shadow-neon">
-                Tempa Hero Baru
+                Daftar Akun Gratis
               </Link>
             </div>
           </div>
@@ -309,18 +309,22 @@ export default function AboutPage() {
       {/* HERO SECTION */}
       <section className="relative pt-12 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 max-w-7xl mx-auto w-full">
         <div className="flex flex-col items-center text-center space-y-6 max-w-4xl mx-auto">
+          {/* Tagline Pill */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-[#00ff41]/40 bg-[#00ff41]/10 text-[#00ff41] font-mono text-xs uppercase tracking-widest font-bold">
+            <Flame className="w-3.5 h-3.5" />
+            <span>LEVEL UP BADANMU &bull; LEVEL UP HEROMU</span>
+          </div>
+
           {/* Main Headline */}
-          <h1 className="font-headline font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tight text-white leading-[1.05]">
-            BESI BERAT. REPETISI NYATA. DUNGEON JATUH.
+          <h1 className="font-headline font-black text-4xl sm:text-6xl md:text-7xl uppercase tracking-tight text-white leading-[1.08]">
+            ANGKAT BEBAN DI DUNIA NYATA. TAKLUKKAN BOS DI DUNGEON.
           </h1>
 
-          {/* Subtitle in Authentic Lifter Voice */}
+          {/* Subtitle in Natural & Engaging Voice */}
           <p className="font-body text-base sm:text-lg md:text-xl text-zinc-300 max-w-3xl leading-relaxed">
-            Aplikasi gym biasa mencatat latihanmu seperti rekap akuntansi kantor. RPG mobile biasa
-            hanya menguras dompet tanpa membuat fisikmu lebih bugar. IronPixels mengawinkan{" "}
-            <strong className="text-white">progressive overload nyata</strong> dengan{" "}
-            <strong className="text-[#00ff41]">dungeon crawler 16-bit</strong>. Setiap kilogram di barbel
-            adalah tebasan pedang. Bukan game pencet layar—badanmu yang bekerja, heromu yang naik level.
+            Bosan mencatat latihan di spreadsheet yang kaku? Di IronPixels, setiap beban dan repetisi
+            yang kamu angkat di gym langsung diubah jadi damage tempur hero. Tumbangkan bos dungeon 16-bit,
+            buka senjata langka, dan selesaikan raid bareng teman.
           </p>
 
           {/* Primary Action Buttons */}
@@ -330,7 +334,7 @@ export default function AboutPage() {
               className="px-8 py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-black text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(0,255,65,0.4)] transition-all flex items-center gap-2 hover:scale-[1.02]"
             >
               <Swords className="w-5 h-5 stroke-[2.5]" />
-              <span>MULAI TEMPA HERO SEKARANG</span>
+              <span>MULAI PETUALANGAN (GRATIS)</span>
             </Link>
 
             <a
@@ -338,7 +342,7 @@ export default function AboutPage() {
               className="px-6 py-4 border border-[#48484A] bg-[#1C1C1E] hover:border-[#00ff41] text-zinc-200 hover:text-white font-mono text-sm uppercase tracking-wider transition-all flex items-center gap-2"
             >
               <Flame className="w-4 h-4 text-[#00ff41]" />
-              <span>UJI SIMULATOR COMBAT</span>
+              <span>COBA SIMULATOR RVS</span>
             </a>
           </div>
         </div>
@@ -350,9 +354,9 @@ export default function AboutPage() {
               <span className="w-2.5 h-2.5 bg-red-500 rounded-full" />
               <span className="w-2.5 h-2.5 bg-yellow-500 rounded-full" />
               <span className="w-2.5 h-2.5 bg-green-500 rounded-full" />
-              <span className="text-zinc-200 font-bold ml-2">LIVE COMBAT SIMULATION // FLOOR 20</span>
+              <span className="text-zinc-200 font-bold ml-2">ARENA BATTLE LIVE // LANTAI 20</span>
             </div>
-            <div className="text-[#00ff41] font-bold">ABYSSAL RAID ACTIVE</div>
+            <div className="text-[#00ff41] font-bold">ABYSSAL RAID AKTIF</div>
           </div>
 
           <div className="py-6 px-4 bg-black flex justify-center overflow-x-auto select-none">
@@ -414,48 +418,46 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* MANIFESTO LIFTER (SPLIT-SCREEN SECTION - NO REPETITIVE CARDS) */}
-      <section id="manifesto" className="py-20 border-t border-[#48484A] bg-[#0E0E0E]">
+      {/* CERITA DI BALIK IRONPIXELS (SPLIT-SCREEN SECTION) */}
+      <section id="cerita" className="py-20 border-t border-[#48484A] bg-[#0E0E0E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            {/* Left Column: The Manifesto Narrative */}
+            {/* Left Column: The Story */}
             <div className="lg:col-span-6 space-y-6">
               <h2 className="font-headline font-black text-3xl sm:text-4xl uppercase text-white leading-tight">
-                KONSISTENSI DI GYM ITU BRUTAL. KAMI MEMBANGUN PENGHARGAAN YANG SEPADAN.
+                KENAPA KAMI MEMBANGUN IRONPIXELS?
               </h2>
               <div className="font-body text-zinc-300 space-y-4 text-base leading-relaxed">
                 <p>
-                  Mayoritas orang menyerah dalam 90 hari pertama karena rasa sakit di otot terasa sia-sia
-                  di hadapan layar spreadsheet HP yang dingin. Di sisi lain, mobile game biasa menuntutmu
-                  menekan layar berjam-jam sambil menguras dompet tanpa membuat fisikmu lebih bugar.
+                  Konsistensi di gym sering kali rontok bukan karena kamu kurang niat, tapi karena
+                  pencatatan latihan terasa membosankan dan progres fisik butuh waktu lama untuk terlihat.
+                  Di sisi lain, mobile game biasa menyita waktu berjam-jam tanpa memberi dampak kebugaran bagi tubuh.
                 </p>
                 <p>
-                  IronPixels membalik logika tersebut: <strong className="text-white">keringatmu adalah satu-satunya mata uang</strong>.
-                  Di sini, cheat code tidak berlaku karena gravitasi bumi tidak bisa di-hack. Kamu tidak bisa
-                  membeli pedang mythical dengan kartu kredit—kamu harus mengangkat beban nyata dari lantai sampai
-                  ototmu bergetar.
+                  IronPixels menjembatani keduanya: <strong className="text-white">setiap repetisi dan tetes keringatmu di gym punya dampak nyata di dalam game</strong>.
+                  Tanpa jalan pintas dan tanpa sistem pay-to-win. Level hero, senjata legendaris, dan ranking guild-mu
+                  murni hasil dari disiplin dan kerja keras fisikmu sendiri.
                 </p>
               </div>
 
               <div className="p-4 border-l-2 border-[#00ff41] bg-[#1C1C1E] font-mono text-xs text-zinc-300 space-y-1">
-                <div className="text-[#00ff41] font-bold">FILOSOFI TANPA PAY-TO-WIN:</div>
-                <div>Semua stat, exp, senjata, dan gold murni diperoleh dari beban barbel yang berpindah di dunia nyata.</div>
+                <div className="text-[#00ff41] font-bold">100% FREE-TO-PLAY &amp; FAIR PLAY:</div>
+                <div>Semua exp, senjata, dan hadiah murni diperoleh dari disiplin angkat beban di dunia nyata.</div>
               </div>
             </div>
 
-            {/* Right Column: 3 Hukum Besi Dungeon */}
-            <div className="lg:col-span-6 space-y-4 font-mono">
+            {/* Right Column: 3 Pilar Utama */}
+            <div id="hukum-besi" className="lg:col-span-6 space-y-4 font-mono">
               <div className="border border-[#48484A] bg-[#131313] p-5 space-y-2">
                 <div className="flex items-center gap-3">
                   <span className="w-8 h-8 bg-black border border-[#00ff41] text-[#00ff41] font-black text-sm flex items-center justify-center">
                     I
                   </span>
-                  <h3 className="font-headline font-bold text-lg text-white">HUKUM BEBAN PROGRESIF (RVS)</h3>
+                  <h3 className="font-headline font-bold text-lg text-white">FORMULA RVS (REAL VOLUME SCORE)</h3>
                 </div>
                 <p className="font-body text-sm text-zinc-400 pl-11">
-                  Gerakan compound berat seperti Barbell Squat dan Deadlift menghasilkan multiplier combat terbesar
-                  karena menuntut rekrutmen serat otot terbanyak. Semakin tinggi beban terhadap berat badanmu,
-                  semakin telak tebasan hero.
+                  Beban angkatan, repetisi, dan jenis gerakan dikalkulasikan secara adil berdasarkan berat badanmu.
+                  Latihan compound berat seperti Squat dan Deadlift memberikan kontribusi damage paling masif.
                 </p>
               </div>
 
@@ -464,11 +466,11 @@ export default function AboutPage() {
                   <span className="w-8 h-8 bg-black border border-red-500 text-red-400 font-black text-sm flex items-center justify-center">
                     II
                   </span>
-                  <h3 className="font-headline font-bold text-lg text-white">HUKUM PEMULIHAN (100% INSTANT HEAL)</h3>
+                  <h3 className="font-headline font-bold text-lg text-white">REST DAY AMAN, WORKOUT LANGSUNG PULIH</h3>
                 </div>
                 <p className="font-body text-sm text-zinc-400 pl-11">
-                  Menyelesaikan satu sesi latihan gym yang valid langsung memulihkan 100% HP hero dan menghapus
-                  ancaman cicilan serangan bos harian. Konsistensi latihan adalah pelindung terbaik dari kematian hero.
+                  Satu sesi workout langsung memulihkan 100% darah hero. Butuh rest day 1–2 hari untuk pemulihan otot?
+                  Nggak masalah, heromu tetap bertahan dan siap tancap gas di sesi latihan berikutnya.
                 </p>
               </div>
 
@@ -477,11 +479,11 @@ export default function AboutPage() {
                   <span className="w-8 h-8 bg-black border border-purple-500 text-purple-400 font-black text-sm flex items-center justify-center">
                     III
                   </span>
-                  <h3 className="font-headline font-bold text-lg text-white">HUKUM ALIANSI GUILD (CO-OP WEBSOCKETS)</h3>
+                  <h3 className="font-headline font-bold text-lg text-white">RAID BERSAMA TEMAN SATU GUILD</h3>
                 </div>
                 <p className="font-body text-sm text-zinc-400 pl-11">
-                  Bangun Party bersama kawan gym-mu. Setiap set yang kamu selesaikan di gym langsung memotong
-                  HP bos lantai yang sama secara real-time di layar teman-teman satu guild-mu.
+                  Bentuk party bareng teman gym-mu. Total damage dari sesi latihan kalian langsung digabungkan
+                  secara real-time untuk menumbangkan bos dungeon bersama-sama.
                 </p>
               </div>
             </div>
@@ -494,19 +496,19 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
             <h2 className="font-headline font-black text-3xl sm:text-4xl uppercase text-white">
-              TERMINAL UJI COMBAT POWER (RVS ENGINE)
+              SIMULATOR SERANGAN RVS
             </h2>
             <p className="font-body text-zinc-300 text-base">
-              Masukkan beban latihan dan repetisi riilmu di konsol bawah ini. Saksikan bagaimana matematis
-              Real Volume Score langsung dieksekusi menjadi serangan fisik terhadap Ogre Guardian.
+              Pilih gerakan latihan, atur beban dan repetisinya, lalu saksikan langsung seberapa dahsyat
+              serangan heromu saat menghantam bos dungeon di bawah ini.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start max-w-5xl mx-auto">
-            {/* Left Console: Lifter Parameters */}
+            {/* Left Console: Simulator Controls */}
             <div className="lg:col-span-5 bg-[#131313] border-2 border-[#48484A] p-6 space-y-5 font-mono shadow-[0_8px_30px_rgba(0,0,0,0.8)]">
               <div className="flex items-center justify-between border-b border-[#48484A] pb-3">
-                <span className="text-xs uppercase text-zinc-300 font-bold">KONSOL OPERATIF</span>
+                <span className="text-xs uppercase text-zinc-300 font-bold">KONSOL SIMULATOR</span>
                 <button
                   onClick={handleToggleSound}
                   className={`px-2.5 py-1 border text-xs flex items-center gap-1.5 transition-colors ${
@@ -514,13 +516,13 @@ export default function AboutPage() {
                   }`}
                 >
                   {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                  <span>{isMuted ? "SFX MUTED" : "SFX AKTIF"}</span>
+                  <span>{isMuted ? "SFX MATI" : "SFX AKTIF"}</span>
                 </button>
               </div>
 
               {/* Movement Selector */}
               <div className="space-y-1.5">
-                <label className="text-[11px] text-zinc-400 uppercase font-bold">PILIH GERAKAN LATIHAN:</label>
+                <label className="text-[11px] text-zinc-400 uppercase font-bold">GERAKAN LATIHAN:</label>
                 <select
                   value={selectedExId}
                   onChange={(e) => setSelectedExId(e.target.value)}
@@ -528,7 +530,7 @@ export default function AboutPage() {
                 >
                   {SIM_EXERCISES.map((ex) => (
                     <option key={ex.id} value={ex.id}>
-                      {ex.name} &bull; {ex.tier}
+                      {ex.name} ({ex.tier})
                     </option>
                   ))}
                 </select>
@@ -571,7 +573,7 @@ export default function AboutPage() {
               {/* Bodyweight Slider */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-zinc-400 font-bold uppercase">BERAT BADAN LIFTER:</span>
+                  <span className="text-zinc-400 font-bold uppercase">BERAT BADAN PENGGUNA:</span>
                   <span className="text-sky-400 font-bold text-sm">{simBodyweight} KG</span>
                 </div>
                 <input
@@ -592,11 +594,11 @@ export default function AboutPage() {
                   <span className="text-white font-bold">{totalVolume.toLocaleString()} KG</span>
                 </div>
                 <div className="flex justify-between text-zinc-400">
-                  <span>Rasio Kekuatan / BB:</span>
-                  <span className="text-white font-bold">{(bodyweightRatio * 100).toFixed(0)}% BW</span>
+                  <span>Rasio Beban terhadap BB:</span>
+                  <span className="text-white font-bold">{(bodyweightRatio * 100).toFixed(0)}% BB</span>
                 </div>
                 <div className="flex justify-between border-t border-[#48484A] pt-2 text-[#00ff41]">
-                  <span className="font-bold">OUTPUT RVS COMBAT:</span>
+                  <span className="font-bold">ESTIMASI DAMAGE RVS:</span>
                   <span className="font-bold text-base">+{calculatedRvs.toLocaleString()} DMG</span>
                 </div>
               </div>
@@ -608,20 +610,20 @@ export default function AboutPage() {
                 className="w-full py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(0,255,65,0.3)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Swords className="w-4 h-4 stroke-[3]" />
-                <span>{isAttacking ? "MENGEKSEKUSI TEBASAN..." : "TEBAS BOS DUNGEON SEKARANG"}</span>
+                <span>{isAttacking ? "MENYERANG BOS..." : "SERANG BOS SEKARANG"}</span>
               </button>
             </div>
 
             {/* Right Screen: Authentic Arcade Screen */}
             <div className="lg:col-span-7 bg-[#101015] border-2 border-[#48484A] p-6 flex flex-col justify-between min-h-[460px] relative shadow-[0_8px_30px_rgba(0,0,0,0.8)]">
               <div className="flex items-center justify-between border-b border-[#48484A] pb-3 font-mono text-xs">
-                <span className="text-zinc-300 font-bold">ARENA MONITOR // FLOOR 12</span>
+                <span className="text-zinc-300 font-bold">ARENA MONITOR // LANTAI 12</span>
                 <button
                   onClick={handleResetMonster}
                   className="text-zinc-400 hover:text-white flex items-center gap-1 transition-colors text-[11px]"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>RESET BOS HP</span>
+                  <span>RESET DARAH BOS</span>
                 </button>
               </div>
 
@@ -690,7 +692,7 @@ export default function AboutPage() {
                   >
                     {floatingDamage.isCrit && (
                       <span className="text-yellow-400 text-xs tracking-widest uppercase animate-bounce">
-                        ⚡ CRITICAL STRIKE!
+                        ⚡ CRITICAL HIT!
                       </span>
                     )}
                     <span className={floatingDamage.isCrit ? "text-yellow-300" : "text-red-400"}>
@@ -710,7 +712,7 @@ export default function AboutPage() {
                   ))
                 ) : (
                   <div className="text-zinc-500 leading-tight">
-                    &gt; Menunggu eksekusi set latihan. Pilih gerakan dan tekan tombol serang di sebelah kiri.
+                    &gt; Siap bertarung. Atur beban dan repetisi di sebelah kiri, lalu tekan tombol serang.
                   </div>
                 )}
               </div>
@@ -719,15 +721,15 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* INTERACTIVE DUNGEON CODEX (REPLACING 8 STACKED CARDS) */}
+      {/* CODEX HERO & LANTAI DUNGEON */}
       <section id="codex" className="py-20 border-t border-[#48484A] bg-[#0E0E0E]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-10">
             <h2 className="font-headline font-black text-3xl sm:text-4xl uppercase text-white">
-              CODEX PETUALANG &amp; PETA LANTAI
+              PILIHAN KELAS HERO &amp; LANTAI DUNGEON
             </h2>
             <p className="font-body text-zinc-300 text-base">
-              Pelajari spesialisasi gaya latihan setiap kelas pahlawan dan tantangan bos yang menanti di tiap lantai dungeon.
+              Kenali keunggulan setiap kelas karakter dan tantangan bos yang menunggumu di setiap lantai dungeon.
             </p>
 
             {/* Tab Switcher */}
@@ -740,7 +742,7 @@ export default function AboutPage() {
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                4 Archetype Hero
+                4 Kelas Hero
               </button>
               <button
                 onClick={() => setActiveCodexTab("dungeons")}
@@ -771,7 +773,7 @@ export default function AboutPage() {
                     }`}
                   >
                     <img src={cls.icon} alt={cls.name} className="w-6 h-6 object-contain pixelated" />
-                    <span className="font-bold truncate">{cls.name.split(" ")[0]}</span>
+                    <span className="font-bold truncate">{cls.name}</span>
                   </button>
                 ))}
               </div>
@@ -795,12 +797,12 @@ export default function AboutPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-zinc-400 font-bold uppercase">GERAKAN LATIHAN FAVORIT:</div>
+                    <div className="text-zinc-400 font-bold uppercase">GERAKAN FAVORIT:</div>
                     <div className="text-amber-400 text-sm font-bold">{activeHeroClass.favLift}</div>
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-zinc-400 font-bold uppercase">SPESIALISASI TEMPUR:</div>
+                    <div className="text-zinc-400 font-bold uppercase">SPESIALISASI PERMAINAN:</div>
                     <p className="font-body text-zinc-300 text-sm leading-relaxed">{activeHeroClass.desc}</p>
                   </div>
                 </div>
@@ -848,22 +850,22 @@ export default function AboutPage() {
                 <div className="md:col-span-8 space-y-4 font-mono text-xs">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-3 bg-black border border-[#48484A]">
-                      <div className="text-zinc-400 font-bold">TOTAL BOS HP:</div>
+                      <div className="text-zinc-400 font-bold">TOTAL DARAH BOS:</div>
                       <div className="text-white text-sm font-bold mt-0.5">{activeDungeonTier.bossHp}</div>
                     </div>
                     <div className="p-3 bg-black border border-[#48484A]">
-                      <div className="text-zinc-400 font-bold">PENALTI ABSEN:</div>
+                      <div className="text-zinc-400 font-bold">PENALTI ABSEN LATIHAN:</div>
                       <div className="text-red-400 text-sm font-bold mt-0.5">{activeDungeonTier.dailyDamage}</div>
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-zinc-400 font-bold uppercase">DROP LOOT SENJATA:</div>
+                    <div className="text-zinc-400 font-bold uppercase">DROP PERLENGKAPAN:</div>
                     <div className="text-amber-400 text-sm font-bold">{activeDungeonTier.loot}</div>
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-zinc-400 font-bold uppercase">CATATAN OPERATIF:</div>
+                    <div className="text-zinc-400 font-bold uppercase">CATATAN STRATEGI:</div>
                     <p className="font-body text-zinc-300 text-sm leading-relaxed">{activeDungeonTier.note}</p>
                   </div>
                 </div>
@@ -900,19 +902,19 @@ export default function AboutPage() {
 
               <div className="md:col-span-8 space-y-4 border-t md:border-t-0 md:border-l border-[#48484A] md:pl-8 pt-6 md:pt-0">
                 <h4 className="font-headline font-black text-2xl text-white">
-                  ARSITEKTUR PRODUCTION-GRADE REALTIME
+                  DIBANGUN DENGAN TEKNOLOGI MODERN
                 </h4>
                 <p className="font-body text-zinc-300 text-sm leading-relaxed">
-                  IronPixels dibangun bukan sebagai landing page statis, melainkan platform full-stack
-                  lengkap yang mengawinkan kecepatan Next.js 15 App Router dengan kehandalan sinkronisasi
-                  data Supabase PostgreSQL dan WebSockets multi-player.
+                  IronPixels dikembangkan sebagai platform web app full-stack yang mengawinkan kecepatan
+                  Next.js 15 App Router dengan sinkronisasi multiplayer real-time via WebSockets Supabase
+                  dan basis data PostgreSQL yang aman.
                 </p>
 
                 <div className="grid grid-cols-2 gap-2 font-mono text-xs text-zinc-300">
                   <div className="p-2 bg-black border border-[#48484A]">&bull; Next.js 15 App Router</div>
                   <div className="p-2 bg-black border border-[#48484A]">&bull; Supabase Realtime</div>
                   <div className="p-2 bg-black border border-[#48484A]">&bull; PostgreSQL RLS Auth</div>
-                  <div className="p-2 bg-black border border-[#48484A]">&bull; 16-Bit Sprites by 0x72</div>
+                  <div className="p-2 bg-black border border-[#48484A]">&bull; 16-Bit Pixel Art by 0x72</div>
                 </div>
 
                 <div className="pt-2">
@@ -923,7 +925,7 @@ export default function AboutPage() {
                     className="inline-flex items-center gap-2 text-xs font-mono text-zinc-400 hover:text-white transition-colors"
                   >
                     <Github className="w-4 h-4" />
-                    <span>felixpalingan/IronPixels (Open Project)</span>
+                    <span>felixpalingan/IronPixels (Open Source Repository)</span>
                   </a>
                 </div>
               </div>
@@ -937,10 +939,10 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="text-center space-y-3 mb-10">
             <h2 className="font-headline font-black text-3xl sm:text-4xl uppercase text-white">
-              PERTANYAAN YANG SERING DIAJUKAN (FAQ)
+              PERTANYAAN UMUM (FAQ)
             </h2>
             <p className="font-body text-zinc-300 text-base">
-              Detail transparan mengenai cara kerja sistem, mekanika pemulihan hero, dan keadilan ekonomi game.
+              Semua hal yang perlu kamu tahu seputar cara bermain, kalkulasi damage, dan perkembangan heromu.
             </p>
           </div>
 
@@ -993,12 +995,12 @@ export default function AboutPage() {
           </div>
 
           <h2 className="font-headline font-black text-3xl sm:text-5xl uppercase text-white leading-tight">
-            BARBEL SUDAH MENUNGGU DI RAK. DUNGEON MENANTI DITEMBUS.
+            SIAP MULAI PETUALANGAN GYM-MU?
           </h2>
 
           <p className="font-body text-zinc-300 text-base max-w-xl mx-auto leading-relaxed">
-            Tinggalkan pencatatan membosankan. Bawa heromu ke gym hari ini, angkat beban nyata,
-            dan nikmati setiap repetisi yang berbuah kemenangan legendaris.
+            Tinggalkan pencatatan yang membosankan. Bawa heromu ke gym hari ini, angkat beban di dunia nyata,
+            dan rasakan kepuasan saat setiap set latihan punya arti.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
@@ -1007,14 +1009,14 @@ export default function AboutPage() {
               className="px-8 py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-black text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(0,255,65,0.4)] transition-all flex items-center gap-2 hover:scale-[1.02]"
             >
               <Swords className="w-5 h-5 stroke-[2.5]" />
-              <span>MULAI PETUALANGAN GRATIS</span>
+              <span>DAFTAR SEKARANG (GRATIS)</span>
             </Link>
 
             <Link
               href="/login"
               className="px-6 py-4 border border-[#48484A] bg-[#1C1C1E] hover:border-zinc-300 text-zinc-200 hover:text-white font-mono text-sm uppercase tracking-wider transition-all"
             >
-              MASUK TERMINAL
+              MASUK KE TERMINAL
             </Link>
           </div>
         </div>
@@ -1059,8 +1061,8 @@ export default function AboutPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 pt-6 border-t border-zinc-900 text-center text-[10px] text-zinc-600">
-          PERINGATAN OPERATIF: Selalu utamakan teknik dan bentuk angkatan (form) yang benar, lakukan pemanasan memadai,
-          dan dengarkan sinyal tubuh sebelum menambah beban pada barbel.
+          Catatan: Selalu utamakan teknik gerakan yang benar, lakukan pemanasan sebelum latihan,
+          dan sesuaikan beban dengan kemampuan fisik masing-masing.
         </div>
       </footer>
     </div>
