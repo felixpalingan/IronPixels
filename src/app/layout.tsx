@@ -53,10 +53,10 @@ export const metadata: Metadata = {
     description: "Transform gym volume into RPG combat power, raid dungeon bosses, and conquer fitness quests.",
     images: [
       {
-        url: "/icon.png",
-        width: 512,
-        height: 512,
-        alt: "IronPixels Logo",
+        url: "/og-image.png",
+        width: 1864,
+        height: 928,
+        alt: "IronPixels - Retro 16-Bit Gamified Fitness RPG Dashboard",
       },
     ],
   },
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "IronPixels - Gamified Fitness RPG",
     description: "Level up your gym workouts with retro 16-bit RPG mechanics.",
-    images: ["/icon.png"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -116,7 +116,7 @@ const jsonLd = {
         priceCurrency: "USD",
         availability: "https://schema.org/InStock",
       },
-      image: "https://iron-pixels.vercel.app/icon.png",
+      image: "https://iron-pixels.vercel.app/og-image.png",
     },
     {
       "@type": "WebSite",

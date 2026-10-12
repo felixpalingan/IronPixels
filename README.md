@@ -28,6 +28,10 @@
   <img src="https://img.shields.io/badge/Tests-18%2F18_Passing-brightgreen?style=for-the-badge" alt="Tests Status" />
 </p>
 
+<p align="center">
+  <img src="./public/og-image.png" alt="IronPixels Hero Hub Dashboard" width="900" />
+</p>
+
 ---
 
 ## 📖 Overview
