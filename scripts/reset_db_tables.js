@@ -32,15 +32,13 @@ async function wipeDatabase() {
   console.log("Cleaning up and resetting all Supabase DB tables...");
 
   const queries = [
-    { table: "Session_Sets", column: "set_id" },
-    { table: "Session_Exercises", column: "log_id" },
-    { table: "Workout_Sessions", column: "session_id" },
+    { table: "workout_sessions", column: "session_id" },
+    { table: "workout_routines", column: "routine_id" },
+    { table: "party_invites", column: "invite_id" },
     { table: "user_inventory", column: "inventory_id" },
     { table: "Party_Members", column: "member_id" },
     { table: "Party", column: "party_id" },
     { table: "friends", column: "id" },
-    { table: "Equipped_Gear", column: "id" },
-    { table: "User_Skills", column: "skill_id" },
     { table: "profiles", column: "id" },
   ];
 
@@ -55,6 +53,19 @@ async function wipeDatabase() {
     } catch (e) {
       console.log(`Skipped table '${item.table}':`, e.message);
     }
+  }
+
+  // Reset dungeon_bosses to 100% full health and status Active
+  try {
+    for (let st = 1; st <= 20; st++) {
+      const { data: bRow } = await supabase.from("dungeon_bosses").select("max_hp").eq("stage", st).single();
+      if (bRow) {
+        await supabase.from("dungeon_bosses").update({ current_hp: bRow.max_hp, status: "Active" }).eq("stage", st);
+      }
+    }
+    console.log("Successfully reset all 20 dungeon_bosses stages to max_hp and status Active.");
+  } catch (err) {
+    console.log("Error resetting dungeon_bosses:", err.message);
   }
 
   console.log("Database tables cleanup complete!");

@@ -433,13 +433,14 @@ export function DashboardLayout() {
   }) => {
     setLastSessionDamage(summary.totalRvs);
 
-    const healAmount = Math.round(summary.totalRvs * 1.5);
-    const newHp = Math.min(userData.max_hp, userData.current_hp + healAmount);
+    // 100% Instant Full Heal on workout completion:
+    const healedAmount = Math.max(0, userData.max_hp - (userData.current_hp || 0));
+    const newHp = userData.max_hp;
 
     setSessionVictoryModal({
       totalRvs: summary.totalRvs,
       totalVolume: summary.totalVolume,
-      healedHp: healAmount,
+      healedHp: healedAmount > 0 ? healedAmount : userData.max_hp,
     });
 
     const newTotalRvs = dailyRvs + summary.totalRvs;

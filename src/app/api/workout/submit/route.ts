@@ -113,10 +113,8 @@ export async function POST(request: Request) {
         }
 
         const effectiveMaxHp = (p.max_hp || 1000) + gearBonusHp;
-        const wasDefeated = Number(p.current_hp ?? effectiveMaxHp) <= 0;
-        const newHp = wasDefeated
-          ? effectiveMaxHp
-          : Math.min(effectiveMaxHp, (Number(p.current_hp) || effectiveMaxHp) + healAmount);
+        // Workout completed instantly restores hero HP back to 100% full health!
+        const newHp = effectiveMaxHp;
         const newGold = (p.gold || 0) + earnedGold;
         const newDailyRvs = Number(p.daily_rvs || 0) + serverRvs;
 

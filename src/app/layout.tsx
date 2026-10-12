@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "gym level up",
     "solo leveling gym",
   ],
-  authors: [{ name: "Almakius Felix Bariq Hekopung", url: "https://github.com/felixpalingan" }],
+  authors: [{ name: "Almakius Felix Bariq Hekopung", url: "https://portfolio-felix-bariq.vercel.app" }],
   creator: "Almakius Felix Bariq Hekopung",
   publisher: "Almakius Felix Bariq Hekopung",
   manifest: "/manifest.webmanifest",
@@ -45,7 +45,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "en_US",
+    locale: "id_ID",
+    alternateLocale: ["en_US"],
     url: "https://iron-pixels.vercel.app",
     siteName: "IronPixels",
     title: "IronPixels - Retro 16-Bit Gamified Fitness RPG",
@@ -60,14 +61,78 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "IronPixels - Gamified Fitness RPG",
     description: "Level up your gym workouts with retro 16-bit RPG mechanics.",
     images: ["/icon.png"],
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   verification: {
     google: "u4LJw861Sd1D-bEjorhvvNzYhsOaDRd8unleA61RqHg",
   },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://iron-pixels.vercel.app/#webapp",
+      name: "IronPixels",
+      url: "https://iron-pixels.vercel.app",
+      applicationCategory: "HealthApplication",
+      genre: "Fitness RPG",
+      operatingSystem: "All",
+      browserRequirements: "Requires JavaScript. Requires HTML5.",
+      description:
+        "Transform gym volume and workout logs into 16-bit RPG power. Slay dungeon bosses, forge mythical equipment, and team up for real-time co-op raids.",
+      author: {
+        "@type": "Person",
+        "@id": "https://portfolio-felix-bariq.vercel.app/#person",
+        name: "Almakius Felix Bariq Hekopung",
+        url: "https://portfolio-felix-bariq.vercel.app",
+      },
+      creator: {
+        "@type": "Person",
+        "@id": "https://portfolio-felix-bariq.vercel.app/#person",
+      },
+      publisher: {
+        "@type": "Person",
+        "@id": "https://portfolio-felix-bariq.vercel.app/#person",
+      },
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+      },
+      image: "https://iron-pixels.vercel.app/icon.png",
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://iron-pixels.vercel.app/#website",
+      url: "https://iron-pixels.vercel.app",
+      name: "IronPixels",
+      description: "Retro 16-Bit Gamified Fitness RPG",
+      inLanguage: ["id", "en"],
+      publisher: {
+        "@type": "Person",
+        "@id": "https://portfolio-felix-bariq.vercel.app/#person",
+        name: "Almakius Felix Bariq Hekopung",
+        url: "https://portfolio-felix-bariq.vercel.app",
+      },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -76,7 +141,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="id">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="antialiased bg-[#0A0A0A] text-[#e5e2e1]">
         {children}
         <Analytics />

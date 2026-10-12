@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { DUNGEON_STAGES_CATALOG } from "@/lib/bossState";
 
 export async function GET() {
   try {
@@ -66,11 +67,16 @@ export async function GET() {
 
       // Only trigger if not a new account and no workout yesterday/today
       if (!isNewAccountToday && !hasRecentWorkout) {
-        const BOSS_PENALTY_DMG = 250;
+        const userFloor = Math.max(1, Number(profile.max_floor) || 1);
+        const BOSS_PENALTY_DMG = 200 + (userFloor - 1) * 25;
         effectiveCurrentHp = Math.max(0, effectiveCurrentHp - BOSS_PENALTY_DMG);
+
+        const stageInfo = DUNGEON_STAGES_CATALOG[userFloor];
+        const bossDisplayName = stageInfo ? stageInfo.name.replace(/^Stage \d+:\s*/, "") : `Floor ${userFloor} Monster`;
+
         bossAttackEvent = {
           damageDealt: BOSS_PENALTY_DMG,
-          bossName: "Demon Lord Ignis",
+          bossName: bossDisplayName,
         };
       }
 

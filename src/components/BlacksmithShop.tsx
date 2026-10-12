@@ -44,7 +44,7 @@ const CHEST_OPTIONS: ChestOption[] = [
     id: "silver",
     name: "Silver Cache",
     rarityTag: "RARE & EPIC GEAR",
-    price: 2500,
+    price: 2000,
     borderColor: "border-[#00ff41]",
     glowColor: "shadow-[0_0_25px_rgba(0,255,65,0.4)]",
     bgGradient: "bg-[#141416]",
@@ -56,7 +56,7 @@ const CHEST_OPTIONS: ChestOption[] = [
     id: "void",
     name: "Void Relic Chest",
     rarityTag: "LEGENDARY RELICS",
-    price: 10000,
+    price: 6000,
     borderColor: "border-amber-400",
     glowColor: "shadow-[0_0_30px_rgba(251,191,36,0.5)]",
     bgGradient: "bg-[#141416]",
@@ -208,7 +208,7 @@ export function BlacksmithShop({
   };
 
   const handleBuyFullHealPotion = () => {
-    const POTION_PRICE = 10000;
+    const POTION_PRICE = 800;
     if (userGold < POTION_PRICE) return;
 
     onUpdateGold(userGold - POTION_PRICE);
@@ -284,15 +284,15 @@ export function BlacksmithShop({
 
         <button
           onClick={handleBuyFullHealPotion}
-          disabled={userGold < 10000}
+          disabled={userGold < 800}
           className={`px-3 py-2 border font-headline font-extrabold text-xs uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
-            userGold >= 10000
+            userGold >= 800
               ? "border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black shadow-neon"
               : "border-zinc-800 bg-black/40 text-zinc-600 cursor-not-allowed"
           }`}
         >
           <Coins className="w-3.5 h-3.5" />
-          <span>10,000 GOLD</span>
+          <span>800 GOLD</span>
         </button>
       </div>
 

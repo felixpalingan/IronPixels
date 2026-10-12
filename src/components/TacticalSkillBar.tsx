@@ -77,20 +77,26 @@ export function TacticalSkillBar({
 
       let multiplier = 2.0;
       let attackType: "attack01" | "attack02" | "attack03" = "attack01";
-      let cdMins = 3;
+      let cdMins = 2;
 
       if (type === "weapon") {
-        multiplier = 5.0;
+        multiplier = 4.5;
         attackType = "attack03";
-        cdMins = 4;
-      } else if (type === "armor") {
-        multiplier = 3.2;
-        attackType = "attack02";
         cdMins = 3;
-      } else {
-        multiplier = 2.2;
-        attackType = "attack01";
+      } else if (type === "armor") {
+        multiplier = 2.8;
+        attackType = "attack02";
         cdMins = 2;
+      } else {
+        if (accCount === 1) {
+          multiplier = 1.6;
+          attackType = "attack01";
+          cdMins = 1;
+        } else {
+          multiplier = 2.0;
+          attackType = "attack02";
+          cdMins = 1.5;
+        }
       }
 
       const cdSecs = getSavedSlotCdSecs(slotKey);

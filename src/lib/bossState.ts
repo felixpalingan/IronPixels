@@ -53,28 +53,28 @@ function seededRandom(seed: number): number {
 
 export const DUNGEON_STAGES_CATALOG: Record<
   number,
-  { name: string; category: EnemyCategory; config: EnemyConfig; hp: number }
+  { name: string; category: EnemyCategory; config: EnemyConfig; hp: number; gold: number; exp: number }
 > = {
-  1: { name: "Stage 1: Imp", category: "mob", config: { spriteKey: "imp", displayName: "Imp", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 1200 },
-  2: { name: "Stage 2: Swampy", category: "mob", config: { spriteKey: "swampy", displayName: "Swampy", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 1450 },
-  3: { name: "Stage 3: Goblin", category: "mob", config: { spriteKey: "goblin", displayName: "Goblin", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 1750 },
-  4: { name: "Stage 4: Skeleton", category: "mob", config: { spriteKey: "skelet", displayName: "Skeleton", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 2100 },
-  5: { name: "Stage 5: [BOSS] Ogre King", category: "boss", config: { spriteKey: "ogre", displayName: "Ogre King", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 6750 },
-  6: { name: "Stage 6: Masked Orc", category: "mob", config: { spriteKey: "masked_orc", displayName: "Masked Orc", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 3000 },
-  7: { name: "Stage 7: Poison Slug", category: "mob", config: { spriteKey: "slug", displayName: "Poison Slug", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 3600 },
-  8: { name: "Stage 8: Tiny Zombie", category: "mob", config: { spriteKey: "tiny_zombie", displayName: "Tiny Zombie", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 4300 },
-  9: { name: "Stage 9: Muddy", category: "mob", config: { spriteKey: "muddy", displayName: "Muddy", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 5200 },
-  10: { name: "Stage 10: [BOSS] Undead Giant", category: "boss", config: { spriteKey: "big_zombie", displayName: "Undead Giant", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 9200 },
-  11: { name: "Stage 11: Dark Necromancer", category: "mob", config: { spriteKey: "necromancer", displayName: "Dark Necromancer", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 7500 },
-  12: { name: "Stage 12: Pumpkin Dude", category: "mob", config: { spriteKey: "pumpkin_dude", displayName: "Pumpkin Dude", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 9000 },
-  13: { name: "Stage 13: Orc Warrior", category: "mob", config: { spriteKey: "orc_warrior", displayName: "Orc Warrior", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 10800 },
-  14: { name: "Stage 14: Wogol", category: "mob", config: { spriteKey: "wogol", displayName: "Wogol", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 13000 },
-  15: { name: "Stage 15: [BOSS] Demon Lord", category: "boss", config: { spriteKey: "big_demon", displayName: "Demon Lord", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 12500 },
-  16: { name: "Stage 16: Chort Fiend", category: "mob", config: { spriteKey: "chort", displayName: "Chort Fiend", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 18500 },
-  17: { name: "Stage 17: Ice Zombie", category: "mob", config: { spriteKey: "ice_zombie", displayName: "Ice Zombie", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 22200 },
-  18: { name: "Stage 18: Orc Shaman", category: "mob", config: { spriteKey: "orc_shaman", displayName: "Orc Shaman", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 26600 },
-  19: { name: "Stage 19: Shadow Lich", category: "mob", config: { spriteKey: "necromancer", displayName: "Shadow Lich", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 32000 },
-  20: { name: "Stage 20: [BOSS] Abyssal Overlord", category: "boss", config: { spriteKey: "big_demon", displayName: "Abyssal Overlord", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 35000 },
+  1: { name: "Stage 1: Imp", category: "mob", config: { spriteKey: "imp", displayName: "Imp", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 1500, gold: 120, exp: 60 },
+  2: { name: "Stage 2: Swampy", category: "mob", config: { spriteKey: "swampy", displayName: "Swampy", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 2200, gold: 140, exp: 70 },
+  3: { name: "Stage 3: Goblin", category: "mob", config: { spriteKey: "goblin", displayName: "Goblin", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 3200, gold: 170, exp: 85 },
+  4: { name: "Stage 4: Skeleton", category: "mob", config: { spriteKey: "skelet", displayName: "Skeleton", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 4500, gold: 200, exp: 100 },
+  5: { name: "Stage 5: [BOSS] Ogre King", category: "boss", config: { spriteKey: "ogre", displayName: "Ogre King", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 12000, gold: 750, exp: 400 },
+  6: { name: "Stage 6: Masked Orc", category: "mob", config: { spriteKey: "masked_orc", displayName: "Masked Orc", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 6500, gold: 250, exp: 125 },
+  7: { name: "Stage 7: Poison Slug", category: "mob", config: { spriteKey: "slug", displayName: "Poison Slug", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 8500, gold: 290, exp: 145 },
+  8: { name: "Stage 8: Tiny Zombie", category: "mob", config: { spriteKey: "tiny_zombie", displayName: "Tiny Zombie", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 11000, gold: 340, exp: 170 },
+  9: { name: "Stage 9: Muddy", category: "mob", config: { spriteKey: "muddy", displayName: "Muddy", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 14500, gold: 400, exp: 200 },
+  10: { name: "Stage 10: [BOSS] Undead Giant", category: "boss", config: { spriteKey: "big_zombie", displayName: "Undead Giant", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 30000, gold: 1200, exp: 700 },
+  11: { name: "Stage 11: Dark Necromancer", category: "mob", config: { spriteKey: "necromancer", displayName: "Dark Necromancer", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 18000, gold: 480, exp: 240 },
+  12: { name: "Stage 12: Pumpkin Dude", category: "mob", config: { spriteKey: "pumpkin_dude", displayName: "Pumpkin Dude", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 22000, gold: 560, exp: 280 },
+  13: { name: "Stage 13: Orc Warrior", category: "mob", config: { spriteKey: "orc_warrior", displayName: "Orc Warrior", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 27000, gold: 650, exp: 325 },
+  14: { name: "Stage 14: Wogol", category: "mob", config: { spriteKey: "wogol", displayName: "Wogol", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 33000, gold: 750, exp: 375 },
+  15: { name: "Stage 15: [BOSS] Demon Lord", category: "boss", config: { spriteKey: "big_demon", displayName: "Demon Lord", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 65000, gold: 2200, exp: 1200 },
+  16: { name: "Stage 16: Chort Fiend", category: "mob", config: { spriteKey: "chort", displayName: "Chort Fiend", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 40000, gold: 880, exp: 440 },
+  17: { name: "Stage 17: Ice Zombie", category: "mob", config: { spriteKey: "ice_zombie", displayName: "Ice Zombie", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 48000, gold: 1000, exp: 500 },
+  18: { name: "Stage 18: Orc Shaman", category: "mob", config: { spriteKey: "orc_shaman", displayName: "Orc Shaman", animPrefix: "idle_anim", hasRunAnim: true, isBig: false }, hp: 58000, gold: 1150, exp: 575 },
+  19: { name: "Stage 19: Shadow Lich", category: "mob", config: { spriteKey: "necromancer", displayName: "Shadow Lich", animPrefix: "anim", hasRunAnim: false, isBig: false }, hp: 70000, gold: 1300, exp: 650 },
+  20: { name: "Stage 20: [BOSS] Abyssal Overlord", category: "boss", config: { spriteKey: "big_demon", displayName: "Abyssal Overlord", animPrefix: "idle_anim", hasRunAnim: true, isBig: true }, hp: 125000, gold: 3500, exp: 2000 },
 };
 
 export function getEnemyForFloor(floor: number): { config: EnemyConfig; category: EnemyCategory } {
@@ -100,10 +100,10 @@ export function getHpForFloor(floor: number, category: EnemyCategory, mode: "sol
   if (floor <= 20 && DUNGEON_STAGES_CATALOG[floor]) {
     baseHp = DUNGEON_STAGES_CATALOG[floor].hp;
   } else {
-    // Proportional Infinite scaling starting from floor 20 base (35,000 HP)
-    // Smooth +10% per floor for mobs, and 2.75x multiplier for bosses
-    const baseMobHp = Math.round(35000 * Math.pow(1.10, floor - 20));
-    baseHp = category === "boss" ? Math.round(baseMobHp * 2.75) : baseMobHp;
+    // Proportional Infinite scaling starting from floor 20 base (70,000 HP mob / 125,000 HP boss)
+    // Smooth +10% per floor for mobs, and 2.5x multiplier for bosses
+    const baseMobHp = Math.round(70000 * Math.pow(1.10, floor - 20));
+    baseHp = category === "boss" ? Math.round(baseMobHp * 2.5) : baseMobHp;
   }
 
   if (mode === "party") {
@@ -117,21 +117,16 @@ export function getRewardsForFloor(floor: number, category: EnemyCategory, mode:
   let baseGold: number;
   let baseExp: number;
 
-  if (floor <= 20) {
-    if (category === "boss") {
-      baseGold = Math.round(500 * Math.pow(1.3, floor / 5));
-      baseExp = Math.round(250 * Math.pow(1.3, floor / 5));
-    } else {
-      baseGold = Math.round(100 * Math.pow(1.15, floor));
-      baseExp = Math.round(50 * Math.pow(1.15, floor));
-    }
+  if (floor <= 20 && DUNGEON_STAGES_CATALOG[floor]) {
+    baseGold = DUNGEON_STAGES_CATALOG[floor].gold;
+    baseExp = DUNGEON_STAGES_CATALOG[floor].exp;
   } else {
     // Proportional Infinite rewards starting from floor 20 base (+8% per floor)
-    const mobGold = Math.round(1000 * Math.pow(1.08, floor - 20));
-    const mobExp = Math.round(500 * Math.pow(1.08, floor - 20));
+    const mobGold = Math.round(1300 * Math.pow(1.08, floor - 20));
+    const mobExp = Math.round(650 * Math.pow(1.08, floor - 20));
 
-    baseGold = category === "boss" ? Math.round(mobGold * 3) : mobGold;
-    baseExp = category === "boss" ? Math.round(mobExp * 3) : mobExp;
+    baseGold = category === "boss" ? Math.round(mobGold * 2.7) : mobGold;
+    baseExp = category === "boss" ? Math.round(mobExp * 2.7) : mobExp;
   }
 
   return {

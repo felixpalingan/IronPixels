@@ -17,8 +17,8 @@ export async function POST(request: Request) {
 
     const CHEST_PRICES: Record<string, number> = {
       bronze: 500,
-      silver: 2500,
-      void: 10000,
+      silver: 2000,
+      void: 6000,
     };
 
     const price = CHEST_PRICES[chest_type];
