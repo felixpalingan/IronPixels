@@ -655,9 +655,9 @@ export function DashboardLayout() {
               alt="IronPixels Logo"
               className="w-8 h-8 object-contain border border-pixel-green/80 shadow-neon bg-black p-0.5"
             />
-            <span className="font-headline font-extrabold tracking-wider text-lg text-pixel-green uppercase">
+            <h1 className="font-headline font-extrabold tracking-wider text-lg text-pixel-green uppercase m-0 leading-none">
               IRONPIXELS
-            </span>
+            </h1>
           </div>
 
           <div className="flex items-center gap-2">
