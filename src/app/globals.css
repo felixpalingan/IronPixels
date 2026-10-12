@@ -54,11 +54,11 @@ img, canvas, svg, .pixelated, .pixel-art {
 }
 
 @keyframes boss-hit-shake {
-  0% { transform: translateX(0px) scale(1.1); filter: brightness(2) red; }
+  0% { transform: translateX(0px) scale(1.1); filter: brightness(2) drop-shadow(0 0 10px rgba(239, 68, 68, 0.9)); }
   25% { transform: translateX(-6px) scale(1.1); }
   50% { transform: translateX(6px) scale(1.1); }
   75% { transform: translateX(-3px) scale(1.1); }
-  100% { transform: translateX(0px) scale(1); }
+  100% { transform: translateX(0px) scale(1); filter: none; }
 }
 
 .flip-horizontal {

@@ -156,6 +156,8 @@ export function CombatArena({
 
   const [enemyState, setEnemyState] = useState<EnemySpriteState>("idle");
   const [heroState, setHeroState] = useState<HeroState>("idle");
+  const [isLunging, setIsLunging] = useState<boolean>(false);
+  const [attackingPartyMemberId, setAttackingPartyMemberId] = useState<string | null>(null);
   const [soloLogs, setSoloLogs] = useState<Array<{ id: string; msg: string; color: string }>>([]);
   const [partyLogs, setPartyLogs] = useState<Array<{ id: string; msg: string; color: string }>>([]);
 
@@ -274,6 +276,12 @@ export function CombatArena({
             true,
             `[${(payload.attacker_username || "RAIDER").toUpperCase()}] ${(payload.action_name || "ATTACK").toUpperCase()} -${formatNumber(payload.damage)}`
           );
+
+          // Trigger lunging animation for the specific party member who attacked
+          if (payload.attacker_id) {
+            setAttackingPartyMemberId(payload.attacker_id);
+            setTimeout(() => setAttackingPartyMemberId(null), 500);
+          }
 
           // Enemy hit flash
           setEnemyState("hit");
@@ -429,7 +437,11 @@ export function CombatArena({
     soundEngine.play("attack");
     soundEngine.triggerHaptic(50);
     setHeroState(attackType);
-    setTimeout(() => setHeroState("idle"), 500);
+    setIsLunging(true);
+    setTimeout(() => {
+      setHeroState("idle");
+      setIsLunging(false);
+    }, 500);
 
     if (targetMode === activeMode) {
       setEnemyState("hit");
@@ -841,31 +853,42 @@ export function CombatArena({
                 partyMembers.slice(0, 5).map((member, idx) => {
                   const yOffset = idx === 0 ? "translate-y-2" : idx === 1 || idx === 2 ? "translate-y-0" : "-translate-y-2";
                   const tagPos = idx % 2 === 0 ? "top" : "bottom";
-                  const isCurrentUser = member.user_id === userId;
+                  const isCurrentUser = member.user_id === userId || (idx === 0 && !partyMembers.some((m) => m.user_id === userId));
                   const activeWeapon = isCurrentUser && equippedWeaponIcon ? equippedWeaponIcon : (member.weapon_icon || "/assets/items/weapons/01.png");
+                  const memberIsAttacking = (isCurrentUser && isLunging) || (attackingPartyMemberId === member.user_id);
 
                   return (
                     <div key={member.user_id || idx} className={`transition-transform duration-300 ${yOffset}`}>
-                      <HeroSprite
-                        currentState={heroState}
-                        characterClass={member.character_class}
-                        gender={member.gender || "m"}
-                        scale={1.25}
-                        weaponIcon={activeWeapon}
-                        showNameTag={member.username.split(" ")[0]}
-                        nameTagPosition={tagPos}
-                      />
+                      <motion.div
+                        animate={memberIsAttacking ? { x: [0, 35, 0] } : { x: 0 }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                      >
+                        <HeroSprite
+                          currentState={memberIsAttacking ? heroState : "idle"}
+                          characterClass={member.character_class}
+                          gender={member.gender || "m"}
+                          scale={1.25}
+                          weaponIcon={activeWeapon}
+                          showNameTag={member.username.split(" ")[0]}
+                          nameTagPosition={tagPos}
+                        />
+                      </motion.div>
                     </div>
                   );
                 })
               ) : (
-                <HeroSprite
-                  currentState={heroState}
-                  characterClass={characterClass}
-                  gender={gender}
-                  scale={2.0}
-                  weaponIcon={equippedWeaponIcon}
-                />
+                <motion.div
+                  animate={isLunging ? { x: [0, 45, 0] } : { x: 0 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                >
+                  <HeroSprite
+                    currentState={heroState}
+                    characterClass={characterClass}
+                    gender={gender}
+                    scale={2.0}
+                    weaponIcon={equippedWeaponIcon}
+                  />
+                </motion.div>
               )}
             </div>
             <div className="pointer-events-auto z-10 flex items-center justify-end">
