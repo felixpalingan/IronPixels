@@ -33,6 +33,9 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { soundEngine } from "@/lib/soundEffects";
+import { DungeonStageMap } from "@/components/DungeonStageMap";
+import { HeroSprite } from "@/components/HeroSprite";
+import { EnemySprite } from "@/components/EnemySprite";
 
 interface ExerciseOption {
   id: string;
@@ -453,62 +456,61 @@ export default function AboutPage() {
           </div>
 
           {/* Dungeon Stage Arena */}
-          <div className="dungeon-bg-stage p-6 sm:p-10 min-h-[260px] flex items-center justify-between relative">
-            {/* Dungeon Floor Tile Strip */}
-            <div className="dungeon-floor-tile" />
-
-            {/* Left: Party Lineup */}
-            <div className="flex items-end gap-3 z-20 pb-4">
-              <div className="flex flex-col items-center">
-                <span className="font-mono text-[9px] text-[#00ff41] bg-black/80 px-1.5 py-0.5 border border-zinc-700 mb-1">
-                  LVL 45 KNIGHT
-                </span>
-                <img
-                  src="/assets/dungeon/heroes/knight_m_idle_anim_f0.png"
-                  alt="Knight Hero"
-                  className="w-16 h-16 object-contain pixelated drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+          <div className="py-6 px-4 bg-black flex justify-center overflow-x-auto select-none border-t border-zinc-800">
+            <DungeonStageMap floor={20}>
+              {/* Left: Party Lineup */}
+              <div className="pointer-events-auto flex items-end justify-start gap-3 sm:gap-4 px-1 z-20">
+                <HeroSprite
+                  currentState="idle"
+                  characterClass="knight"
+                  gender="m"
+                  scale={1.8}
+                  weaponIcon="/assets/items/weapons/01.png"
+                  showNameTag="LVL 45 KNIGHT"
+                  nameTagPosition="top"
+                />
+                <HeroSprite
+                  currentState="idle"
+                  characterClass="elf"
+                  gender="f"
+                  scale={1.6}
+                  weaponIcon="/assets/items/weapons/03.png"
+                  showNameTag="LVL 42 ELF"
+                  nameTagPosition="top"
+                />
+                <HeroSprite
+                  currentState="idle"
+                  characterClass="wizzard"
+                  gender="m"
+                  scale={1.6}
+                  weaponIcon="/assets/items/weapons/07.png"
+                  showNameTag="LVL 48 MAGE"
+                  nameTagPosition="top"
                 />
               </div>
 
-              <div className="flex flex-col items-center hidden sm:flex">
-                <span className="font-mono text-[9px] text-sky-400 bg-black/80 px-1.5 py-0.5 border border-zinc-700 mb-1">
-                  LVL 42 ELF
-                </span>
-                <img
-                  src="/assets/dungeon/heroes/elf_m_idle_anim_f0.png"
-                  alt="Elf Hero"
-                  className="w-14 h-14 object-contain pixelated drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+              {/* Right: Boss */}
+              <div className="pointer-events-auto z-10 flex flex-col items-center justify-end">
+                <div className="mb-2 flex flex-col items-center">
+                  <span className="font-headline font-black text-[9px] text-red-400 tracking-wider bg-black/90 px-1.5 py-0.5 border border-red-500/80 mb-1">
+                    ABYSSAL DEMON OVERLORD
+                  </span>
+                  <div className="w-24 bg-black border border-red-900 h-2 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-red-600 to-red-400 w-3/4 animate-pulse" />
+                  </div>
+                </div>
+                <EnemySprite
+                  currentState="idle"
+                  spriteConfig={{
+                    spriteKey: "big_demon",
+                    animPrefix: "idle_anim",
+                    hasRunAnim: true,
+                    isBig: true,
+                  }}
+                  scale={2.4}
                 />
               </div>
-
-              <div className="flex flex-col items-center hidden sm:flex">
-                <span className="font-mono text-[9px] text-purple-400 bg-black/80 px-1.5 py-0.5 border border-zinc-700 mb-1">
-                  LVL 48 MAGE
-                </span>
-                <img
-                  src="/assets/dungeon/heroes/wizzard_m_idle_anim_f0.png"
-                  alt="Wizard Hero"
-                  className="w-14 h-14 object-contain pixelated drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
-                />
-              </div>
-            </div>
-
-            {/* Right: Terrifying Boss */}
-            <div className="flex flex-col items-center z-20 pb-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="font-headline font-black text-xs text-red-400 tracking-wider bg-black/90 px-2 py-0.5 border border-red-500/80">
-                  ABYSSAL DEMON OVERLORD
-                </span>
-              </div>
-              <div className="w-32 bg-black border border-red-900 h-2.5 mb-2 overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-red-600 to-red-400 w-3/4 animate-pulse" />
-              </div>
-              <img
-                src="/assets/dungeon/monsters/big_demon_idle_anim_f0.png"
-                alt="Big Demon Boss"
-                className="w-24 h-24 object-contain pixelated animate-boss-idle flip-horizontal drop-shadow-[0_0_20px_rgba(255,0,0,0.4)]"
-              />
-            </div>
+            </DungeonStageMap>
           </div>
         </div>
       </section>
@@ -831,32 +833,48 @@ export default function AboutPage() {
               </div>
 
               {/* Arena Battle Ground */}
-              <div className="dungeon-bg-stage my-6 p-6 min-h-[220px] flex items-center justify-between relative border border-zinc-800">
-                <div className="dungeon-floor-tile" />
+              <div className="relative overflow-hidden flex justify-center my-6 bg-black border border-zinc-800">
+                <DungeonStageMap floor={12}>
+                  {/* Hero Side */}
+                  <div className="pointer-events-auto z-20 flex items-end justify-start px-2">
+                    <motion.div
+                      animate={isAttacking ? { x: [0, 50, 0] } : { x: 0 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <HeroSprite
+                        currentState={isAttacking ? "attack01" : "idle"}
+                        characterClass="knight"
+                        gender="m"
+                        scale={2.0}
+                        weaponIcon="/assets/items/weapons/01.png"
+                        showNameTag="YOU (LIFTER)"
+                        nameTagPosition="top"
+                      />
+                    </motion.div>
+                  </div>
 
-                {/* Hero Side */}
-                <motion.div
-                  animate={isAttacking ? { x: [0, 80, 0] } : { x: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="z-20 flex flex-col items-center"
-                >
-                  <span className="font-mono text-[9px] text-[#00ff41] bg-black/80 px-1 border border-zinc-700 mb-1">
-                    YOU (LIFTER)
-                  </span>
-                  <img
-                    src="/assets/dungeon/heroes/knight_m_idle_anim_f0.png"
-                    alt="Knight Hero"
-                    className="w-20 h-20 object-contain pixelated drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]"
-                  />
-                </motion.div>
+                  {/* Boss Side */}
+                  <div className="pointer-events-auto z-10 flex items-end justify-end px-2">
+                    <EnemySprite
+                      currentState={isHitShaking ? "hit" : "idle"}
+                      spriteConfig={{
+                        spriteKey: "ogre",
+                        animPrefix: "idle_anim",
+                        hasRunAnim: true,
+                        isBig: true,
+                      }}
+                      scale={2.2}
+                    />
+                  </div>
+                </DungeonStageMap>
 
                 {/* Floating Damage Popup */}
                 {floatingDamage && (
                   <motion.div
-                    initial={{ opacity: 0, y: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, y: -40, scale: 1.2 }}
+                    initial={{ opacity: 0, y: 15, scale: 0.8 }}
+                    animate={{ opacity: 1, y: -25, scale: 1.2 }}
                     exit={{ opacity: 0 }}
-                    className="absolute right-20 top-10 z-30 font-headline font-black text-xl sm:text-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,1)] flex flex-col items-center"
+                    className="absolute right-1/4 top-1/4 z-30 font-headline font-black text-xl sm:text-2xl drop-shadow-[0_2px_8px_rgba(0,0,0,1)] flex flex-col items-center pointer-events-none"
                   >
                     {floatingDamage.isCrit && (
                       <span className="text-yellow-400 text-xs tracking-widest uppercase animate-bounce">
@@ -868,22 +886,6 @@ export default function AboutPage() {
                     </span>
                   </motion.div>
                 )}
-
-                {/* Boss Side */}
-                <div
-                  className={`z-20 flex flex-col items-center ${
-                    isHitShaking ? "animate-boss-hit" : "animate-boss-idle"
-                  }`}
-                >
-                  <span className="font-mono text-[9px] text-red-400 bg-black/80 px-1 border border-red-900 mb-1">
-                    TARGET
-                  </span>
-                  <img
-                    src="/assets/dungeon/monsters/ogre_idle_anim_f0.png"
-                    alt="Ogre Boss"
-                    className="w-24 h-24 object-contain pixelated flip-horizontal drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]"
-                  />
-                </div>
               </div>
 
               {/* Result Explainer */}

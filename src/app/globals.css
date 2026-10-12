@@ -64,27 +64,3 @@ img, canvas, svg, .pixelated, .pixel-art {
 .flip-horizontal {
   transform: scaleX(-1);
 }
-
-.dungeon-bg-stage {
-  position: relative;
-  background-color: #0d0d11;
-  background-image: url('/assets/dungeon/tiles/atlas_walls_high-16x32.png');
-  background-repeat: repeat;
-  background-size: 64px 128px;
-  image-rendering: pixelated;
-}
-
-.dungeon-floor-tile {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 48px;
-  background-image: url('/assets/dungeon/tiles/atlas_floor-16x16.png');
-  background-repeat: repeat;
-  background-size: 32px 32px;
-  image-rendering: pixelated;
-  border-top: 3px solid #333340;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.9);
-  z-index: 10;
-}
