@@ -271,7 +271,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-9 h-9 bg-black border border-[#00ff41] p-0.5 shadow-[0_0_10px_rgba(0,255,65,0.3)] flex items-center justify-center">
-              <img src="/icon.png" alt="IronPixels Logo" className="w-full h-full object-contain pixelated" />
+              <img src="/icon.png" alt="IronPixels Logo" className="w-full h-full object-contain pixelated" style={{ imageRendering: "pixelated" }} />
             </div>
             <div className="flex flex-col">
               <span className="font-headline font-black text-lg tracking-wider text-white group-hover:text-[#00ff41] transition-colors leading-none">
@@ -810,7 +810,7 @@ export default function AboutPage() {
                     }`}
                   >
                     <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                      <img src={cls.icon} alt={cls.name} className="w-full h-full object-contain pixelated" />
+                      <img src={cls.icon} alt={cls.name} className="w-full h-full object-contain pixelated" style={{ imageRendering: "pixelated" }} />
                     </div>
                     <div className="truncate">
                       <div className="font-bold text-white text-sm">{cls.name}</div>
@@ -824,7 +824,7 @@ export default function AboutPage() {
               <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center border-t border-[#48484A] pt-6">
                 <div className="md:col-span-4 flex flex-col items-center text-center space-y-3">
                   <div className="w-28 h-28 bg-black border-2 border-[#00ff41] p-3 shadow-[0_0_20px_rgba(0,255,65,0.2)] flex items-center justify-center">
-                    <img src={activeHeroClass.icon} alt={activeHeroClass.name} className="w-full h-full object-contain pixelated scale-125" />
+                    <img src={activeHeroClass.icon} alt={activeHeroClass.name} className="w-full h-full object-contain pixelated" style={{ imageRendering: "pixelated" }} />
                   </div>
                   <div>
                     <h3 className="font-headline font-black text-xl text-white">{activeHeroClass.name}</h3>
@@ -881,7 +881,8 @@ export default function AboutPage() {
                     <img
                       src={`/assets/dungeon/monsters/${activeDungeonTier.bossSprite}_idle_anim_f0.png`}
                       alt={activeDungeonTier.boss}
-                      className="w-full h-full object-contain pixelated scale-125 flip-horizontal"
+                      className="w-full h-full object-contain pixelated -scale-x-100"
+                      style={{ imageRendering: "pixelated" }}
                     />
                   </div>
                   <div>
@@ -921,7 +922,8 @@ export default function AboutPage() {
                             <img
                               src={`/assets/dungeon/monsters/${mob.sprite}_${mob.anim}_f0.png`}
                               alt={mob.name}
-                              className="w-full h-full object-contain pixelated scale-125"
+                              className="w-full h-full object-contain pixelated"
+                              style={{ imageRendering: "pixelated" }}
                             />
                           </div>
                           <div className="text-[10px] text-[#00ff41] font-bold">{mob.floor}</div>
@@ -954,7 +956,7 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
               <div className="md:col-span-4 flex flex-col items-center text-center space-y-4">
                 <div className="w-24 h-24 bg-black border-2 border-[#00ff41] p-1 shadow-[0_0_15px_rgba(0,255,65,0.3)]">
-                  <img src="/icon.png" alt="Almakius Felix Bariq Hekopung" className="w-full h-full object-cover pixelated" />
+                  <img src="/icon.png" alt="Almakius Felix Bariq Hekopung" className="w-full h-full object-cover pixelated" style={{ imageRendering: "pixelated" }} />
                 </div>
                 <div>
                   <h3 className="font-headline font-black text-lg text-white">Almakius Felix Bariq Hekopung</h3>
@@ -1063,7 +1065,7 @@ export default function AboutPage() {
       <section className="py-20 border-t border-[#48484A] bg-[#0A0A0A] text-center">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-6">
           <div className="w-16 h-16 bg-black border-2 border-[#00ff41] p-1 mx-auto shadow-[0_0_20px_rgba(0,255,65,0.3)]">
-            <img src="/icon.png" alt="IronPixels" className="w-full h-full object-contain pixelated" />
+            <img src="/icon.png" alt="IronPixels" className="w-full h-full object-contain pixelated" style={{ imageRendering: "pixelated" }} />
           </div>
 
           <h2 className="font-headline font-black text-3xl sm:text-5xl uppercase text-white leading-tight">
@@ -1099,7 +1101,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 bg-black border border-[#00ff41] p-0.5">
-              <img src="/icon.png" alt="IronPixels" className="w-full h-full object-contain pixelated" />
+              <img src="/icon.png" alt="IronPixels" className="w-full h-full object-contain pixelated" style={{ imageRendering: "pixelated" }} />
             </div>
             <div>
               <span className="text-zinc-300 font-bold">IRONPIXELS</span> &copy; 2026. All rights reserved.

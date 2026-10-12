@@ -64,6 +64,7 @@ export function PixelAvatar({
         src={heroFramePath}
         alt="Hero Pixel Avatar"
         className="w-14 h-16 object-contain pixelated relative z-20 scale-125 drop-shadow-[0_0_10px_rgba(0,255,65,0.6)]"
+        style={{ imageRendering: "pixelated" }}
       />
 
       <div

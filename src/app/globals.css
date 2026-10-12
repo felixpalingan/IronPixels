@@ -16,11 +16,15 @@ body {
   overflow-x: hidden;
 }
 
-img, canvas, svg, .pixelated, .pixel-art {
+/* Pixel-Art Nearest-Neighbor Crisp Rendering (No Smoothing / No Blur) */
+img,
+canvas,
+.pixelated,
+.pixel-art {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
   image-rendering: pixelated !important;
-  image-rendering: crisp-edges !important;
-  image-rendering: -moz-crisp-edges !important;
-  image-rendering: -webkit-optimize-contrast !important;
 }
 
 ::-webkit-scrollbar {
