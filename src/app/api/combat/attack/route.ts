@@ -225,6 +225,7 @@ export async function POST(request: Request) {
             .from("profiles")
             .update({
               max_floor: nextFloor,
+              dungeon_enemy_hp: null,
               gold: newGold,
               exp: newExp,
               max_exp: currentMaxExp,
@@ -240,6 +241,7 @@ export async function POST(request: Request) {
             .from("Party")
             .update({
               total_party_floor: nextFloor,
+              current_boss_hp: null,
               updated_at: new Date().toISOString(),
             })
             .eq("party_id", resolvedPartyId);
@@ -389,6 +391,29 @@ export async function POST(request: Request) {
           max_floor: nextFloor,
         },
       });
+    }
+
+    // Persist damaged enemy HP to DB so page refresh never resets enemy health
+    if (mode === "solo") {
+      try {
+        await supabase
+          .from("profiles")
+          .update({
+            dungeon_enemy_hp: newHp,
+            updated_at: new Date().toISOString(),
+          })
+          .or(`id.eq.${currentUserId},user_id.eq.${currentUserId}`);
+      } catch (e) {}
+    } else if (mode === "party" && resolvedPartyId) {
+      try {
+        await supabase
+          .from("Party")
+          .update({
+            current_boss_hp: newHp,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("party_id", resolvedPartyId);
+      } catch (e) {}
     }
 
     return NextResponse.json({

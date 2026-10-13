@@ -230,21 +230,37 @@ export function CombatArena({
       if (res.ok) {
         const data = await res.json();
         if (data && data.stage && data.sprite_config) {
+          let targetCurrentHp = Number(data.current_hp);
+
+          // Check if local cache has damaged HP on the exact same floor
+          const localKey = mode === "party" ? "ironpixels_active_party_enemy" : "ironpixels_active_solo_enemy";
+          try {
+            const saved = localStorage.getItem(localKey);
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed && parsed.floor === data.stage && typeof parsed.current_hp === "number") {
+                targetCurrentHp = Math.min(targetCurrentHp, parsed.current_hp);
+              }
+            }
+          } catch (e) {}
+
           const mapped: EnemyData = {
             enemy_id: data.boss_id,
             display_name: data.sprite_config?.displayName || data.boss_name,
             floor: data.stage,
-            current_hp: Number(data.current_hp),
+            current_hp: targetCurrentHp,
             max_hp: Number(data.max_hp),
-            status: data.status || "Active",
+            status: targetCurrentHp <= 0 ? "Defeated" : (data.status || "Active"),
             category: data.category || "mob",
             mode,
             sprite_config: data.sprite_config || defaultSpriteConfig,
           };
           if (mode === "party") {
             setPartyEnemy(mapped);
+            try { localStorage.setItem("ironpixels_active_party_enemy", JSON.stringify(mapped)); } catch (e) {}
           } else {
             setSoloEnemy(mapped);
+            try { localStorage.setItem("ironpixels_active_solo_enemy", JSON.stringify(mapped)); } catch (e) {}
           }
         }
       }

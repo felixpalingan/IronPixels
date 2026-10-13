@@ -54,21 +54,29 @@ export async function GET(request: Request) {
 
     // 1. Determine current floor from query param, party floor, or profile max_floor
     let currentFloor: number = targetFloor || 1;
+    let savedEnemyHp: number | null = null;
+
     if (!targetFloor) {
       if (mode === "party" && activePartyId) {
         const { data: partyRec } = await supabase
           .from("Party")
-          .select("total_party_floor")
+          .select("total_party_floor, current_boss_hp")
           .eq("party_id", activePartyId)
           .single();
         currentFloor = partyRec?.total_party_floor || 1;
+        if (partyRec?.current_boss_hp !== undefined && partyRec?.current_boss_hp !== null) {
+          savedEnemyHp = Number(partyRec.current_boss_hp);
+        }
       } else {
         const { data: profRec } = await supabase
           .from("profiles")
-          .select("max_floor")
+          .select("max_floor, dungeon_enemy_hp")
           .or(`id.eq.${userId},user_id.eq.${userId}`)
           .single();
         currentFloor = profRec?.max_floor || 1;
+        if (profRec?.dungeon_enemy_hp !== undefined && profRec?.dungeon_enemy_hp !== null) {
+          savedEnemyHp = Number(profRec.dungeon_enemy_hp);
+        }
       }
     }
 
@@ -82,13 +90,15 @@ export async function GET(request: Request) {
     if (stageRows && stageRows.length > 0) {
       const stageData = stageRows[0];
       const maxHp = Number(mode === "party" ? stageData.max_hp * 2 : stageData.max_hp);
+      const effectiveHp = savedEnemyHp !== null ? Math.min(maxHp, Math.max(0, savedEnemyHp)) : maxHp;
+
       return NextResponse.json({
         boss_id: stageData.boss_id,
         boss_name: stageData.boss_name,
         stage: stageData.stage,
-        current_hp: maxHp,
+        current_hp: effectiveHp,
         max_hp: maxHp,
-        status: "Active",
+        status: effectiveHp <= 0 ? "Defeated" : "Active",
         category: stageData.category || "mob",
         sprite_config: stageData.sprite_config,
         boss_type: stageData.sprite_config?.spriteKey || "imp",
@@ -98,13 +108,16 @@ export async function GET(request: Request) {
 
     // Fallback for endless stages beyond 20
     const fallbackEnemy = buildFloorEnemy(currentFloor, mode);
+    const maxHp = fallbackEnemy.max_hp;
+    const effectiveHp = savedEnemyHp !== null ? Math.min(maxHp, Math.max(0, savedEnemyHp)) : maxHp;
+
     return NextResponse.json({
       boss_id: fallbackEnemy.enemy_id,
       boss_name: fallbackEnemy.display_name,
       stage: fallbackEnemy.floor,
-      current_hp: fallbackEnemy.current_hp,
-      max_hp: fallbackEnemy.max_hp,
-      status: fallbackEnemy.status,
+      current_hp: effectiveHp,
+      max_hp: maxHp,
+      status: effectiveHp <= 0 ? "Defeated" : fallbackEnemy.status,
       category: fallbackEnemy.category,
       sprite_config: fallbackEnemy.sprite_config,
       boss_type: fallbackEnemy.sprite_config.spriteKey,
