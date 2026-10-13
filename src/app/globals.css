@@ -68,3 +68,26 @@ canvas,
 .flip-horizontal {
   transform: scaleX(-1);
 }
+
+@keyframes shimmer-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer-wave {
+  background: linear-gradient(
+    90deg,
+    rgba(24, 24, 27, 0.6) 0%,
+    rgba(39, 39, 42, 0.85) 30%,
+    rgba(63, 63, 70, 0.95) 50%,
+    rgba(39, 39, 42, 0.85) 70%,
+    rgba(24, 24, 27, 0.6) 100%
+  );
+  background-size: 250% 100%;
+  animation: shimmer-wave 1.75s ease-in-out infinite;
+}
+

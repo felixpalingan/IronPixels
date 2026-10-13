@@ -8,6 +8,7 @@ import { LeaderboardEntry, PartyLeaderboardEntry } from "@/app/api/multiplayer/l
 import { FriendUser } from "@/app/api/multiplayer/friends/route";
 import { PartyState } from "@/app/api/multiplayer/party/route";
 import { createClient } from "@/lib/supabase/client";
+import { LeaderboardSkeleton, Skeleton } from "@/components/Skeleton";
 
 interface MultiplayerHubProps {
   userId?: string;
@@ -30,13 +31,16 @@ export function MultiplayerHub({
 
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>([]);
   const [partyLeaderboardList, setPartyLeaderboardList] = useState<PartyLeaderboardEntry[]>([]);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState<boolean>(true);
   const [friendsData, setFriendsData] = useState<{ friends: FriendUser[]; pending: FriendUser[] }>({
     friends: [],
     pending: [],
   });
+  const [isLoadingFriends, setIsLoadingFriends] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<FriendUser[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [isSearchLoading, setIsSearchLoading] = useState<boolean>(false);
   const [party, setParty] = useState<PartyState | null>(null);
   const [partyInvites, setPartyInvites] = useState<any[]>([]);
   const [partyNotice, setPartyNotice] = useState<string | null>(null);
@@ -52,6 +56,7 @@ export function MultiplayerHub({
   const [mainPartyNameInput, setMainPartyNameInput] = useState<string>("");
 
   const fetchLeaderboard = async (group: "user" | "party", metric: "floor" | "rvs" | "streak") => {
+    setIsLoadingLeaderboard(true);
     const catQuery = `${group}_${metric}`;
     try {
       const res = await fetch(`/api/multiplayer/leaderboard?category=${catQuery}`);
@@ -78,17 +83,24 @@ export function MultiplayerHub({
           setLeaderboardList(data);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      setIsLoadingLeaderboard(false);
+    }
   };
 
   const fetchFriends = async () => {
+    setIsLoadingFriends(true);
     try {
       const res = await fetch("/api/multiplayer/friends");
       if (res.ok) {
         const data = await res.json();
         setFriendsData(data);
       }
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      setIsLoadingFriends(false);
+    }
   };
 
   const fetchParty = async () => {
@@ -161,16 +173,21 @@ export function MultiplayerHub({
     if (!queryStr.trim()) {
       setSearchResults([]);
       setIsSearching(false);
+      setIsSearchLoading(false);
       return;
     }
     setIsSearching(true);
+    setIsSearchLoading(true);
     try {
       const res = await fetch(`/api/multiplayer/friends?query=${encodeURIComponent(queryStr)}`);
       if (res.ok) {
         const data = await res.json();
         setSearchResults(data);
       }
-    } catch (e) {}
+    } catch (e) {
+    } finally {
+      setIsSearchLoading(false);
+    }
   };
 
   const handleFriendAction = async (targetId: string, action: string) => {
@@ -631,68 +648,86 @@ export function MultiplayerHub({
             </div>
 
             <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
-              {lbGroup === "party" ? (
-                partyLeaderboardList.map((entry, idx) => {
-                  const rank = idx + 1;
-                  const badge = getRankBadge(rank);
-                  const BadgeIcon = badge.icon;
+              {isLoadingLeaderboard && (lbGroup === "party" ? partyLeaderboardList.length === 0 : leaderboardList.length === 0) ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 px-1 text-[10px] text-[#00ff41] font-bold animate-pulse">
+                    <span className="w-1.5 h-1.5 bg-[#00ff41]" />
+                    <span>SYNCHRONIZING {lbGroup === "party" ? "GUILD PARTIES" : "LEADERBOARD"}...</span>
+                  </div>
+                  <LeaderboardSkeleton count={6} />
+                </div>
+              ) : lbGroup === "party" ? (
+                partyLeaderboardList.length === 0 ? (
+                  <div className="border border-dashed border-pixel-border p-6 text-center text-xs text-zinc-500">
+                    No guild parties found in this category.
+                  </div>
+                ) : (
+                  partyLeaderboardList.map((entry, idx) => {
+                    const rank = idx + 1;
+                    const badge = getRankBadge(rank);
+                    const BadgeIcon = badge.icon;
 
-                  return (
-                    <div
-                      key={entry.party_id}
-                      onClick={() => setInspectParty(entry)}
-                      className="border border-purple-500/60 bg-purple-950/20 p-3 flex items-center justify-between shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:border-purple-400 cursor-pointer transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 border flex items-center justify-center font-extrabold text-xs ${badge.bg}`}
-                        >
-                          <BadgeIcon className="w-4 h-4" />
+                    return (
+                      <div
+                        key={entry.party_id}
+                        onClick={() => setInspectParty(entry)}
+                        className="border border-purple-500/60 bg-purple-950/20 p-3 flex items-center justify-between shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:border-purple-400 cursor-pointer transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 border flex items-center justify-center font-extrabold text-xs ${badge.bg}`}
+                          >
+                            <BadgeIcon className="w-4 h-4" />
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {entry.leader_weapon && (
+                              <div className="w-8 h-8 bg-black border border-purple-800 p-0.5 flex items-center justify-center">
+                                <img
+                                  src={entry.leader_weapon}
+                                  alt="Weapon"
+                                  className="w-full h-full object-contain pixelated"
+                                />
+                              </div>
+                            )}
+
+                            <div>
+                              <div className="font-headline font-extrabold text-xs text-purple-300 flex items-center gap-1.5 uppercase">
+                                <span>{entry.party_name}</span>
+                              </div>
+                              <div className="text-[9px] text-zinc-400 font-bold">
+                                Leader: {entry.leader_name} &bull; {entry.member_count}/10 Members
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {entry.leader_weapon && (
-                            <div className="w-8 h-8 bg-black border border-purple-800 p-0.5 flex items-center justify-center">
-                              <img
-                                src={entry.leader_weapon}
-                                alt="Weapon"
-                                className="w-full h-full object-contain pixelated"
-                              />
+                        <div className="text-right">
+                          {lbMetric === "floor" && (
+                            <div className="font-headline font-black text-sm text-[#00ff41]">
+                              FLOOR {entry.total_party_floor}
                             </div>
                           )}
-
-                          <div>
-                            <div className="font-headline font-extrabold text-xs text-purple-300 flex items-center gap-1.5 uppercase">
-                              <span>{entry.party_name}</span>
+                          {lbMetric === "rvs" && (
+                            <div className="font-headline font-black text-sm text-amber-400">
+                              {formatNumber(entry.total_party_rvs)} RVS
                             </div>
-                            <div className="text-[9px] text-zinc-400 font-bold">
-                              Leader: {entry.leader_name} &bull; {entry.member_count}/10 Members
+                          )}
+                          {lbMetric === "streak" && (
+                            <div className="font-headline font-black text-sm text-rose-400 flex items-center gap-1 justify-end">
+                              <Flame className="w-3.5 h-3.5" />
+                              <span>{entry.party_streak} DAYS</span>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </div>
-
-                      <div className="text-right">
-                        {lbMetric === "floor" && (
-                          <div className="font-headline font-black text-sm text-[#00ff41]">
-                            FLOOR {entry.total_party_floor}
-                          </div>
-                        )}
-                        {lbMetric === "rvs" && (
-                          <div className="font-headline font-black text-sm text-amber-400">
-                            {formatNumber(entry.total_party_rvs)} RVS
-                          </div>
-                        )}
-                        {lbMetric === "streak" && (
-                          <div className="font-headline font-black text-sm text-rose-400 flex items-center gap-1 justify-end">
-                            <Flame className="w-3.5 h-3.5" />
-                            <span>{entry.party_streak} DAYS</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
+                )
+              ) : leaderboardList.length === 0 ? (
+                <div className="border border-dashed border-pixel-border p-6 text-center text-xs text-zinc-500">
+                  No solo warriors found in this category.
+                </div>
               ) : (
                 leaderboardList.map((entry, idx) => {
                   const rank = idx + 1;
@@ -794,10 +829,31 @@ export function MultiplayerHub({
 
             {isSearching ? (
               <div className="space-y-2">
-                <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                  SEARCH RESULTS ({searchResults.length})
+                <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center justify-between">
+                  <span>SEARCH RESULTS ({searchResults.length})</span>
+                  {isSearchLoading && (
+                    <span className="text-[#00ff41] animate-pulse">SEARCHING DATABASE...</span>
+                  )}
                 </div>
-                {searchResults.length === 0 ? (
+                {isSearchLoading && searchResults.length === 0 ? (
+                  <div className="space-y-2">
+                    {[...Array(3)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="border border-pixel-border bg-surface p-3 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Skeleton className="w-8 h-8" />
+                          <div className="space-y-1.5">
+                            <Skeleton className="w-28 h-3.5" />
+                            <Skeleton className="w-36 h-2.5" />
+                          </div>
+                        </div>
+                        <Skeleton className="w-14 h-6" />
+                      </div>
+                    ))}
+                  </div>
+                ) : searchResults.length === 0 ? (
                   <div className="border border-dashed border-pixel-border p-4 text-center text-xs text-zinc-500">
                     No players found matching "{searchQuery}".
                   </div>
@@ -896,7 +952,29 @@ export function MultiplayerHub({
                     <span className="text-zinc-500 text-[9px]">ACTIVE WARRIORS</span>
                   </div>
 
-                  {friendsData.friends.length === 0 ? (
+                  {isLoadingFriends && friendsData.friends.length === 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 px-1 text-[10px] text-[#00ff41] font-bold animate-pulse">
+                        <span className="w-1.5 h-1.5 bg-[#00ff41]" />
+                        <span>SYNCHRONIZING FRIENDS LIST...</span>
+                      </div>
+                      {[...Array(3)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="border border-pixel-border bg-surface p-3 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="w-9 h-9 border border-zinc-800" />
+                            <div className="space-y-1.5">
+                              <Skeleton className="w-24 h-3.5" />
+                              <Skeleton className="w-36 h-2.5" />
+                            </div>
+                          </div>
+                          <Skeleton className="w-16 h-7" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : friendsData.friends.length === 0 ? (
                     <div className="border border-dashed border-pixel-border p-6 text-center text-xs text-zinc-500 space-y-2">
                       <Users className="w-6 h-6 mx-auto text-zinc-600" />
                       <div>YOU HAVE NO FRIENDS ADDED YET.</div>

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { Coins, Swords, Shield, Heart, Sparkles, Check, Package, Trash2 } from "lucide-react";
 import { InventoryRecord, ItemType } from "@/lib/equipment";
 import { formatNumber } from "@/lib/formatters";
+import { InventoryGridSkeleton } from "@/components/Skeleton";
 
 interface InventoryGridProps {
   inventory: InventoryRecord[];
+  isLoading?: boolean;
   onToggleEquip: (inventoryId: string, currentEquippedState: boolean, itemType: ItemType) => void;
   onSellItem?: (inventoryId: string, sellGoldValue: number) => void;
 }
@@ -27,7 +29,7 @@ export function getSellPriceByRarity(rarity: string): number {
   }
 }
 
-export function InventoryGrid({ inventory, onToggleEquip, onSellItem }: InventoryGridProps) {
+export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onSellItem }: InventoryGridProps) {
   const [filter, setFilter] = useState<"all" | ItemType>("all");
 
   const filteredInventory = inventory.filter(
@@ -77,7 +79,15 @@ export function InventoryGrid({ inventory, onToggleEquip, onSellItem }: Inventor
         ))}
       </div>
 
-      {filteredInventory.length === 0 ? (
+      {isLoading && inventory.length === 0 ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold uppercase tracking-wider animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-[#00ff41] animate-ping" />
+            <span>MEMUAT ITEM VAULT (SYNCHRONIZING ITEMS)...</span>
+          </div>
+          <InventoryGridSkeleton />
+        </div>
+      ) : filteredInventory.length === 0 ? (
         <div className="border border-zinc-800 bg-[#141416] p-8 text-center space-y-2">
           <Package className="w-10 h-10 text-zinc-600 mx-auto" />
           <p className="text-xs text-zinc-400 uppercase tracking-wider">

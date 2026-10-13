@@ -5,6 +5,7 @@ import { Dumbbell, Calendar, Flame, ChevronDown, ChevronUp, History, Sparkles, A
 import { formatNumber } from "@/lib/formatters";
 import { soundEngine } from "@/lib/soundEffects";
 import { WeightUnit, kgToLbs, toDisplayWeight } from "@/lib/unitConversion";
+import { WorkoutHistorySkeleton } from "@/components/Skeleton";
 
 export interface ExerciseSetLog {
   set_number: number;
@@ -208,7 +209,15 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
           </div>
         )}
 
-        {sessions.length === 0 ? (
+        {loading && sessions.length === 0 ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold uppercase tracking-wider animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-[#00ff41] animate-ping" />
+              <span>MEMUAT RIWAYAT WORKOUT (SYNCHRONIZING LOGS)...</span>
+            </div>
+            <WorkoutHistorySkeleton />
+          </div>
+        ) : sessions.length === 0 ? (
           <div className="p-8 border border-dashed border-pixel-border/60 bg-black/40 text-center space-y-3">
             <div className="w-12 h-12 border border-pixel-border bg-black text-zinc-600 flex items-center justify-center mx-auto">
               <Dumbbell className="w-6 h-6" />

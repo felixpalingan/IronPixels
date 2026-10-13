@@ -21,6 +21,7 @@ import { MultiplayerHub } from "@/components/MultiplayerHub";
 import { AnalyticsView } from "@/components/AnalyticsView";
 import { TombstoneModal } from "@/components/TombstoneModal";
 import { EQUIPMENT_DICTIONARY, InventoryRecord, ItemType } from "@/lib/equipment";
+import { Skeleton } from "@/components/Skeleton";
 
 interface UserProfileData {
   user_id: string;
@@ -77,6 +78,8 @@ export function DashboardLayout() {
   const INITIAL_INVENTORY: InventoryRecord[] = [];
 
   const [userInventory, setUserInventory] = useState<InventoryRecord[]>(INITIAL_INVENTORY);
+  const [isInventoryLoading, setIsInventoryLoading] = useState<boolean>(true);
+  const [isTopLoading, setIsTopLoading] = useState<boolean>(true);
   const [userGold, setUserGold] = useState<number>(500);
   const [topWarriors, setTopWarriors] = useState<any[]>([]);
   const [topParties, setTopParties] = useState<any[]>([]);
@@ -117,6 +120,7 @@ export function DashboardLayout() {
         const parsedInv = JSON.parse(localInv);
         if (Array.isArray(parsedInv) && parsedInv.length > 0) {
           setUserInventory(parsedInv);
+          setIsInventoryLoading(false);
         }
       } catch (e) {}
     }
@@ -143,16 +147,25 @@ export function DashboardLayout() {
             setBossAttackModal(dataProf.boss_attack);
           }
         }
+      } catch (err) {}
 
+      try {
         const resInv = await fetch("/api/user/inventory");
         if (resInv.ok) {
           const dataInv = await resInv.json();
-          if (Array.isArray(dataInv) && dataInv.length > 0) {
+          if (Array.isArray(dataInv)) {
             setUserInventory(dataInv);
-            localStorage.setItem("ironpixels_inventory", JSON.stringify(dataInv));
+            if (dataInv.length > 0) {
+              localStorage.setItem("ironpixels_inventory", JSON.stringify(dataInv));
+            }
           }
         }
+      } catch (err) {
+      } finally {
+        setIsInventoryLoading(false);
+      }
 
+      try {
         const resLead = await fetch("/api/multiplayer/leaderboard?category=user_floor");
         if (resLead.ok) {
           const dataLead = await resLead.json();
@@ -164,7 +177,10 @@ export function DashboardLayout() {
           const dataPartyLead = await resPartyLead.json();
           if (Array.isArray(dataPartyLead)) setTopParties(dataPartyLead.slice(0, 3));
         }
-      } catch (err) {}
+      } catch (err) {
+      } finally {
+        setIsTopLoading(false);
+      }
     }
 
     fetchData();
@@ -1020,7 +1036,13 @@ export function DashboardLayout() {
                         <span>TOP SOLO WARRIORS (CLICK TO INSPECT)</span>
                       </div>
 
-                      {topWarriors.length === 0 ? (
+                      {isTopLoading && topWarriors.length === 0 ? (
+                        <div className="space-y-1.5">
+                          <Skeleton className="w-full h-11 border border-zinc-800" />
+                          <Skeleton className="w-full h-11 border border-zinc-800" />
+                          <Skeleton className="w-full h-11 border border-zinc-800" />
+                        </div>
+                      ) : topWarriors.length === 0 ? (
                         <div className="p-3 border border-zinc-800 bg-black text-center text-xs text-zinc-500 italic">
                           No solo warriors logged yet.
                         </div>
@@ -1056,7 +1078,12 @@ export function DashboardLayout() {
                         <span>TOP GUILD PARTIES (CLICK TO INSPECT)</span>
                       </div>
 
-                      {topParties.length === 0 ? (
+                      {isTopLoading && topParties.length === 0 ? (
+                        <div className="space-y-1.5">
+                          <Skeleton className="w-full h-11 border border-purple-900/60" />
+                          <Skeleton className="w-full h-11 border border-purple-900/60" />
+                        </div>
+                      ) : topParties.length === 0 ? (
                         <div className="p-3 border border-purple-950/40 bg-black text-center text-xs text-zinc-500 italic">
                           No active guild parties created yet.
                         </div>
@@ -1261,6 +1288,7 @@ export function DashboardLayout() {
               >
                 <InventoryGrid
                   inventory={userInventory}
+                  isLoading={isInventoryLoading}
                   onToggleEquip={handleToggleEquip}
                   onSellItem={handleSellItem}
                 />

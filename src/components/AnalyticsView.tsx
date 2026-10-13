@@ -188,8 +188,12 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
             <div>
               <h3 className="font-headline font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
                 <span>HERO GYM ANALYTICS</span>
-                <span className="px-1.5 py-0.2 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] text-[8px] font-bold uppercase">
-                  LIVE DB SYNC
+                <span className={`px-1.5 py-0.2 border text-[8px] font-bold uppercase ${
+                  !isDbLoaded
+                    ? "border-amber-400/80 bg-amber-950/40 text-amber-300 animate-pulse"
+                    : "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41]"
+                }`}>
+                  {!isDbLoaded ? "SYNCHRONIZING..." : "LIVE DB SYNC"}
                 </span>
               </h3>
               <p className="text-[10px] text-zinc-400">
@@ -206,18 +210,37 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
 
         {/* METRICS OVERVIEW GRID */}
         <div className="grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="p-2 border border-pixel-border/60 bg-black/60">
-            <div className="text-[9px] text-zinc-400 font-bold uppercase">SESSIONS LOGGED</div>
-            <div className="font-headline font-black text-white text-sm">{history.length} SESSIONS</div>
-          </div>
-          <div className="p-2 border border-pixel-border/60 bg-black/60">
-            <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL VOLUME</div>
-            <div className="font-headline font-black text-[#00ff41] text-sm">{formatNumber(totalVolumeKg)} KG</div>
-          </div>
-          <div className="p-2 border border-pixel-border/60 bg-black/60">
-            <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL RVS DEALT</div>
-            <div className="font-headline font-black text-amber-300 text-sm">+{formatNumber(totalRvsDealt)} RVS</div>
-          </div>
+          {!isDbLoaded ? (
+            <>
+              <div className="p-2 border border-pixel-border/60 bg-black/60 space-y-1">
+                <div className="text-[9px] text-zinc-400 font-bold uppercase">SESSIONS</div>
+                <div className="h-5 w-16 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
+              </div>
+              <div className="p-2 border border-pixel-border/60 bg-black/60 space-y-1">
+                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL VOLUME</div>
+                <div className="h-5 w-20 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
+              </div>
+              <div className="p-2 border border-pixel-border/60 bg-black/60 space-y-1">
+                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL RVS</div>
+                <div className="h-5 w-16 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="p-2 border border-pixel-border/60 bg-black/60">
+                <div className="text-[9px] text-zinc-400 font-bold uppercase">SESSIONS LOGGED</div>
+                <div className="font-headline font-black text-white text-sm">{history.length} SESSIONS</div>
+              </div>
+              <div className="p-2 border border-pixel-border/60 bg-black/60">
+                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL VOLUME</div>
+                <div className="font-headline font-black text-[#00ff41] text-sm">{formatNumber(totalVolumeKg)} KG</div>
+              </div>
+              <div className="p-2 border border-pixel-border/60 bg-black/60">
+                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL RVS DEALT</div>
+                <div className="font-headline font-black text-amber-300 text-sm">+{formatNumber(totalRvsDealt)} RVS</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
