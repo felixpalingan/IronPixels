@@ -1,40 +1,50 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Tentang IronPixels - Fitness RPG 16-Bit",
+  title: "About IronPixels - 16-Bit Gamified Fitness RPG",
   description:
-    "Pelajari filosofi, sistem Real Volume Score (RVS), mekanika raid dungeon 16-bit, dan arsitektur IronPixels. Ubah konsistensi gym jadi kekuatan tempur heromu.",
+    "Discover the philosophy, Real Volume Score (RVS) mechanics, 16-bit co-op dungeon raids, and tech architecture of IronPixels. Transform your gym workouts into legendary hero power.",
   alternates: {
     canonical: "/about",
+    languages: {
+      "en-US": "/about",
+      "id-ID": "/about",
+    },
   },
   openGraph: {
-    title: "Tentang IronPixels | 16-Bit Gamified Fitness RPG & RVS Engine",
+    title: "About IronPixels | 16-Bit Gamified Fitness RPG & RVS Engine",
     description:
-      "Ubah beban angkatan gym menjadi serangan penakluk bos dungeon 16-bit. Pelajari formula RVS, co-op raid party, dan sistem fair play tanpa pay-to-win.",
+      "Convert real-world gym volume into dungeon-slaying strike power. Learn the RVS formula, co-op guild raids, and 100% fair play mechanics.",
     url: "https://iron-pixels.vercel.app/about",
+    locale: "en_US",
+    alternateLocale: ["id_ID"],
     images: [
       {
         url: "/og-image.png",
         width: 1864,
         height: 928,
-        alt: "Tentang IronPixels - 16-Bit Gamified Fitness RPG",
+        alt: "About IronPixels - 16-Bit Gamified Fitness RPG",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tentang IronPixels - 16-Bit Gamified Fitness RPG",
+    title: "About IronPixels - 16-Bit Gamified Fitness RPG",
     description:
-      "Ubah beban angkatan gym menjadi serangan pamungkas menaklukkan bos dungeon 16-bit.",
+      "Transform your gym workouts into devastating attacks to conquer 16-bit dungeon bosses.",
     images: ["/og-image.png"],
   },
   keywords: [
+    "About IronPixels",
+    "16-bit fitness RPG",
+    "Real Volume Score RVS",
+    "gamified workout tracker",
+    "retro gym RPG",
+    "co-op dungeon workout",
+    "multiplayer fitness quest",
     "Tentang IronPixels",
     "fitness RPG retro",
-    "Real Volume Score RVS",
     "gym tracker gamifikasi",
-    "dungeon workout",
-    "multiplayer gym app",
   ],
 };
 
@@ -45,10 +55,10 @@ const aboutJsonLd = {
       "@type": "AboutPage",
       "@id": "https://iron-pixels.vercel.app/about#webpage",
       url: "https://iron-pixels.vercel.app/about",
-      name: "Tentang IronPixels - Fitness RPG 16-Bit",
+      name: "About IronPixels - 16-Bit Gamified Fitness RPG",
       description:
-        "Pelajari filosofi, sistem Real Volume Score (RVS), mekanika raid dungeon 16-bit, dan arsitektur IronPixels.",
-      inLanguage: "id-ID",
+        "Learn the philosophy, Real Volume Score (RVS) system, 16-bit dungeon raid mechanics, and full-stack architecture of IronPixels.",
+      inLanguage: ["en-US", "id-ID"],
       isPartOf: {
         "@type": "WebSite",
         "@id": "https://iron-pixels.vercel.app/#website",
@@ -91,50 +101,50 @@ const aboutJsonLd = {
       mainEntity: [
         {
           "@type": "Question",
-          name: "Apa itu IronPixels?",
+          name: "What is IronPixels?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "IronPixels adalah aplikasi gamified fitness tracker bergaya retro 16-bit RPG. Setiap repetisi dan beban yang kamu angkat di gym otomatis diubah menjadi kekuatan serangan untuk mengalahkan bos dungeon, membuka senjata langka, dan menyelesaikan misi bersama teman.",
+            text: "IronPixels is a gamified 16-bit retro RPG fitness tracker. Every rep and kilo you lift in the gym transforms into attack power to defeat dungeon bosses, forge rare gear, and complete co-op raids with friends.",
           },
         },
         {
           "@type": "Question",
-          name: "Bagaimana cara kerja penghitungan damage RVS (Real Volume Score)?",
+          name: "How does the Real Volume Score (RVS) damage calculation work?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "RVS dihitung berdasarkan formula matematis: Beban Angkatan (kg) × Repetisi × Rasio Berat Badan (% BW) × Multiplier Gerakan. Gerakan compound berat seperti Squat dan Deadlift memiliki kontribusi multiplier lebih besar daripada gerakan isolasi, sehingga sistem adil bagi semua rentang berat badan.",
+            text: "RVS is calculated with a precise mathematical formula: Lifted Weight (kg) × Reps × Bodyweight Ratio (% BW) × Exercise Multiplier. Heavy compound movements like Squats and Deadlifts grant higher multipliers than isolation work, creating a balanced and fair playing field across all bodyweight classes.",
           },
         },
         {
           "@type": "Question",
-          name: "Apakah mencatat workout memulihkan darah (HP) hero?",
+          name: "Does logging workouts restore my hero's health (HP)?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Ya! Setiap kali kamu menyelesaikan satu sesi workout di gym, hero kamu langsung pulih 100% HP dan penalti serangan bos harian otomatis terhapus. Selama kamu konsisten berlatih, heromu akan selalu bugar dan siap menjelajah dungeon.",
+            text: "Yes! Completing any logged gym session instantly restores 100% of your hero's HP and wipes out daily boss absence damage penalties. As long as you stay active, your hero stays battle-ready.",
           },
         },
         {
           "@type": "Question",
-          name: "Apakah ada sistem pay-to-win menggunakan uang asli?",
+          name: "Is there any pay-to-win mechanism using real money?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Tidak ada sama sekali. IronPixels 100% gratis dimainkan dan menjunjung tinggi fair play. Semua gold, peti hadiah, senjata, dan upgrade blacksmith diperoleh murni dari kerja keras fisikmu saat berlatih di gym.",
+            text: "Zero pay-to-win. IronPixels is 100% free to play and upholds strict athletic fair play. All gold, loot chests, weapons, and blacksmith upgrades are earned purely from your sweat and iron in the real world.",
           },
         },
         {
           "@type": "Question",
-          name: "Bagaimana cara bermain Co-Op Dungeon Raid bersama teman?",
+          name: "How do Co-Op Dungeon Raids with friends work?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Kamu bisa membuat atau bergabung ke dalam Party (guild) di tab Social. Saat kamu atau teman satu party menyelesaikan workout di gym, damage dari volume latihan tersebut langsung memotong HP bos lantai yang sama secara real-time via WebSockets.",
+            text: "You can create or join a Party (guild) in the Social tab. When you or any guildmate completes a gym workout, the resulting training volume cuts into the shared floor boss's HP in real time via WebSockets.",
           },
         },
         {
           "@type": "Question",
-          name: "Bagaimana jika saya perlu mengambil Rest Day (Hari Istirahat)?",
+          name: "What happens if I take a Rest Day?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Istirahat adalah bagian penting dari pertumbuhan otot. Serangan bos harian di lantai dungeon tidak langsung menghabiskan darah hero dalam 1-2 hari. Kamu bisa beristirahat dengan tenang selama 1–2 hari, lalu darah heromu akan kembali penuh begitu sesi latihan berikutnya selesai dicatat.",
+            text: "Rest days are vital for muscular hypertrophy and recovery. Daily boss penalties in the dungeon do not wipe out your hero over 1–2 rest days. Take your rest days with peace of mind—your hero will fully recover upon your next logged session.",
           },
         },
       ],
