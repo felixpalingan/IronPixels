@@ -126,7 +126,10 @@ export function calculateWorkoutSessionTotals({
 
     // Look up canonical definition from database
     const def = EXERCISE_DATABASE.find(
-      (d) => (rawId && d.id === rawId) || (rawName && d.name.toLowerCase() === rawName.toLowerCase())
+      (d) =>
+        (rawId && d.id === rawId) ||
+        (rawName && d.name.toLowerCase() === rawName.toLowerCase()) ||
+        (rawName && d.aliases?.some((a) => a.toLowerCase() === rawName.toLowerCase()))
     );
 
     const category = def?.category || ex.category || "Chest";

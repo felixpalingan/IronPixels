@@ -728,11 +728,26 @@ export function WorkoutTrackerForm({
 
   const filteredDatabase = allExercises.filter((def) => {
     const matchesCategory = selectedCategory === "All" || def.category === selectedCategory;
+    if (!matchesCategory) return false;
+
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+
+    const normalizedQ = q
+      .replace(/dumbell/g, "dumbbell")
+      .replace(/squad\b/g, "squat")
+      .replace(/goblit/g, "goblet")
+      .replace(/pushups/g, "push up")
+      .replace(/pullups/g, "pull up");
+
     const matchesSearch =
-      def.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      def.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      def.targetMuscles.some((m) => m.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesSearch;
+      def.name.toLowerCase().includes(q) ||
+      def.name.toLowerCase().includes(normalizedQ) ||
+      def.category.toLowerCase().includes(q) ||
+      def.targetMuscles.some((m) => m.toLowerCase().includes(q) || m.toLowerCase().includes(normalizedQ)) ||
+      (def.aliases && def.aliases.some((a) => a.toLowerCase().includes(q) || a.toLowerCase().includes(normalizedQ)));
+
+    return matchesCategory && Boolean(matchesSearch);
   });
 
   const getDifficultyBadgeStyle = (label: string) => {
