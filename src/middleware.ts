@@ -51,6 +51,9 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = isAuthOnlyRoute || path === "/about";
 
   if (!user && !isPublicRoute) {
+    if (path === "/") {
+      return NextResponse.redirect(new URL("/about", request.url));
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

@@ -30,6 +30,7 @@ import { soundEngine } from "@/lib/soundEffects";
 import { DungeonStageMap } from "@/components/DungeonStageMap";
 import { HeroSprite } from "@/components/HeroSprite";
 import { EnemySprite } from "@/components/EnemySprite";
+import { supabase } from "@/lib/supabaseClient";
 
 export type Lang = "en" | "id";
 
@@ -80,6 +81,8 @@ const DICT = {
     navTech: "Tech Stack",
     login: "Log In",
     register: "Play Free",
+    enterGame: "Enter Game",
+    continueQuest: "CONTINUE QUEST",
     registerFreeFull: "START YOUR QUEST (FREE)",
     trySimulator: "TRY RVS SIMULATOR",
     heroTagline: "LEVEL UP YOUR BODY • LEVEL UP YOUR HERO",
@@ -191,6 +194,8 @@ const DICT = {
     navTech: "Teknologi",
     login: "Masuk",
     register: "Daftar Gratis",
+    enterGame: "Buka Game",
+    continueQuest: "LANJUTKAN PETUALANGAN",
     registerFreeFull: "MULAI PETUALANGAN (GRATIS)",
     trySimulator: "COBA SIMULATOR RVS",
     heroTagline: "LEVEL UP BADANMU • LEVEL UP HEROMU",
@@ -492,6 +497,8 @@ export default function AboutPage() {
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEngine.getIsMuted());
   const [recentCombatLog, setRecentCombatLog] = useState<string[]>([]);
 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   // Initialize lang from localStorage if available
   useEffect(() => {
     try {
@@ -502,6 +509,12 @@ export default function AboutPage() {
     } catch {
       // localStorage may be disabled
     }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setIsLoggedIn(true);
+      }
+    });
   }, []);
 
   const handleSetLang = (newLang: Lang) => {
@@ -655,19 +668,31 @@ export default function AboutPage() {
 
             {/* Desktop Auth CTAs */}
             <div className="hidden sm:flex items-center gap-2.5">
-              <Link
-                href="/login"
-                className="px-3.5 py-2 border border-[#48484A] bg-[#1C1C1E] hover:border-zinc-300 font-mono text-xs uppercase tracking-wider text-zinc-300 hover:text-white transition-all"
-              >
-                {t.login}
-              </Link>
-              <Link
-                href="/register"
-                className="px-4 py-2 border border-[#00ff41] bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(0,255,65,0.35)] transition-all flex items-center gap-1.5"
-              >
-                <span>{t.register}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/"
+                  className="px-4 py-2 border border-[#00ff41] bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(0,255,65,0.35)] transition-all flex items-center gap-1.5"
+                >
+                  <span>{t.enterGame}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="px-3.5 py-2 border border-[#48484A] bg-[#1C1C1E] hover:border-zinc-300 font-mono text-xs uppercase tracking-wider text-zinc-300 hover:text-white transition-all"
+                  >
+                    {t.login}
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-4 py-2 border border-[#00ff41] bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_rgba(0,255,65,0.35)] transition-all flex items-center gap-1.5"
+                  >
+                    <span>{t.register}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Toggle Button */}
@@ -753,18 +778,29 @@ export default function AboutPage() {
             </a>
 
             <div className="pt-2 flex flex-col gap-2">
-              <Link
-                href="/login"
-                className="w-full text-center py-2.5 border border-[#48484A] bg-[#1C1C1E] text-white font-mono text-xs"
-              >
-                {t.login}
-              </Link>
-              <Link
-                href="/register"
-                className="w-full text-center py-2.5 bg-[#00ff41] text-black font-mono font-bold text-xs shadow-neon"
-              >
-                {t.register}
-              </Link>
+              {isLoggedIn ? (
+                <Link
+                  href="/"
+                  className="w-full text-center py-2.5 bg-[#00ff41] text-black font-mono font-bold text-xs shadow-neon"
+                >
+                  {t.enterGame}
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="w-full text-center py-2.5 border border-[#48484A] bg-[#1C1C1E] text-white font-mono text-xs"
+                  >
+                    {t.login}
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="w-full text-center py-2.5 bg-[#00ff41] text-black font-mono font-bold text-xs shadow-neon"
+                  >
+                    {t.register}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -792,11 +828,11 @@ export default function AboutPage() {
           {/* Primary Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
-              href="/register"
+              href={isLoggedIn ? "/" : "/register"}
               className="px-8 py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-black text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(0,255,65,0.4)] transition-all flex items-center gap-2 hover:scale-[1.02]"
             >
               <Swords className="w-5 h-5 stroke-[2.5]" />
-              <span>{t.registerFreeFull}</span>
+              <span>{isLoggedIn ? t.continueQuest : t.registerFreeFull}</span>
             </Link>
 
             <a
@@ -1493,18 +1529,18 @@ export default function AboutPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Link
-              href="/register"
+              href={isLoggedIn ? "/" : "/register"}
               className="px-8 py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-mono font-black text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(0,255,65,0.4)] transition-all flex items-center gap-2 hover:scale-[1.02]"
             >
               <Swords className="w-5 h-5 stroke-[2.5]" />
-              <span>{t.ctaRegister}</span>
+              <span>{isLoggedIn ? t.continueQuest : t.ctaRegister}</span>
             </Link>
 
             <Link
-              href="/login"
+              href={isLoggedIn ? "/" : "/login"}
               className="px-6 py-4 border border-[#48484A] bg-[#1C1C1E] hover:border-zinc-300 text-zinc-200 hover:text-white font-mono text-sm uppercase tracking-wider transition-all"
             >
-              {t.ctaLogin}
+              {isLoggedIn ? t.enterGame : t.ctaLogin}
             </Link>
           </div>
         </div>
