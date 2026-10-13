@@ -505,51 +505,53 @@ export function DashboardLayout() {
     const oldBonusHp = getEquippedBonusHp(userInventory);
     const oldTotalMaxHp = baseMaxHp + oldBonusHp;
 
-    let updatedInventory: InventoryRecord[] = [];
+    // Compute updated inventory synchronously first
+    let updatedInventory: InventoryRecord[];
 
-    setUserInventory((prev) => {
-      let updated: InventoryRecord[];
-
-      if (nextEquippedState) {
-        if (itemType === "accessory") {
-          const equippedAccs = prev.filter((rec) => rec.is_equipped && rec.item.type === "accessory");
-          if (equippedAccs.length >= 2) {
-            const oldestAccId = equippedAccs[0].inventory_id;
-            updated = prev.map((rec) => {
-              if (rec.inventory_id === inventoryId) return { ...rec, is_equipped: true };
-              if (rec.inventory_id === oldestAccId) return { ...rec, is_equipped: false };
-              return rec;
-            });
-          } else {
-            updated = prev.map((rec) => (rec.inventory_id === inventoryId ? { ...rec, is_equipped: true } : rec));
-          }
-        } else {
-          updated = prev.map((rec) => {
+    if (nextEquippedState) {
+      if (itemType === "accessory") {
+        const equippedAccs = userInventory.filter((rec) => rec.is_equipped && rec.item?.type === "accessory");
+        if (equippedAccs.length >= 2) {
+          const oldestAccId = equippedAccs[0].inventory_id;
+          updatedInventory = userInventory.map((rec) => {
             if (rec.inventory_id === inventoryId) return { ...rec, is_equipped: true };
-            if (rec.is_equipped && rec.item.type === itemType) return { ...rec, is_equipped: false };
+            if (rec.inventory_id === oldestAccId) return { ...rec, is_equipped: false };
             return rec;
           });
+        } else {
+          updatedInventory = userInventory.map((rec) => (rec.inventory_id === inventoryId ? { ...rec, is_equipped: true } : rec));
         }
       } else {
-        updated = prev.map((rec) => (rec.inventory_id === inventoryId ? { ...rec, is_equipped: false } : rec));
+        updatedInventory = userInventory.map((rec) => {
+          if (rec.inventory_id === inventoryId) return { ...rec, is_equipped: true };
+          if (rec.is_equipped && rec.item?.type === itemType) return { ...rec, is_equipped: false };
+          return rec;
+        });
       }
+    } else {
+      updatedInventory = userInventory.map((rec) => (rec.inventory_id === inventoryId ? { ...rec, is_equipped: false } : rec));
+    }
 
-      updatedInventory = updated;
-      localStorage.setItem("ironpixels_inventory", JSON.stringify(updated));
-      return updated;
-    });
+    setUserInventory(updatedInventory);
+    try {
+      localStorage.setItem("ironpixels_inventory", JSON.stringify(updatedInventory));
+    } catch (e) {}
 
     const newBonusHp = getEquippedBonusHp(updatedInventory);
     const newTotalMaxHp = baseMaxHp + newBonusHp;
 
-    // Scale current HP proportionally by percentage (80% stays 80%, 100% stays 100%)
+    // Scale current HP proportionally or maintain 100%
     const currentHp = userData.current_hp;
     let newCurrentHp = currentHp;
 
     if (oldTotalMaxHp > 0 && newTotalMaxHp !== oldTotalMaxHp) {
       if (currentHp <= 0) {
         newCurrentHp = 0; // dead hero stays dead
+      } else if (currentHp >= oldTotalMaxHp) {
+        // Player was at full health -> maintain full health
+        newCurrentHp = newTotalMaxHp;
       } else {
+        // Player was damaged -> preserve the exact same health percentage
         const hpPercent = Math.max(0, Math.min(1, currentHp / oldTotalMaxHp));
         newCurrentHp = Math.min(newTotalMaxHp, Math.max(1, Math.round(hpPercent * newTotalMaxHp)));
       }
@@ -557,7 +559,9 @@ export function DashboardLayout() {
       if (profile) {
         const updatedProf = { ...profile, current_hp: newCurrentHp };
         setProfile(updatedProf);
-        localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+        try {
+          localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+        } catch (e) {}
       }
     }
 

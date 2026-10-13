@@ -108,9 +108,8 @@ export async function POST(request: Request) {
 
           const newTotalMax = baseMaxHp + newBonusHp;
           if (currentHp > 0) {
-            // Keep at same percentage or cap
-            const hpRatio = Math.min(1, currentHp / Math.max(1, baseMaxHp));
-            const calculatedHp = Math.min(newTotalMax, Math.round(hpRatio * newTotalMax));
+            // Keep at same percentage or cap (if full health, stay at new total max)
+            const calculatedHp = currentHp >= baseMaxHp ? newTotalMax : Math.min(newTotalMax, Math.round((currentHp / Math.max(1, baseMaxHp)) * newTotalMax));
             await supabase
               .from("profiles")
               .update({ current_hp: calculatedHp, updated_at: new Date().toISOString() })
