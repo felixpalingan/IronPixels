@@ -204,33 +204,13 @@ export function DashboardLayout() {
 
   const totalMaxHp = baseMaxHp + bonusStats.hp;
 
-  useEffect(() => {
-    if (profile && profile.current_hp !== undefined && profile.max_hp) {
-      const raw = Number(profile.current_hp);
-      const base = Number(profile.max_hp);
-      if (raw >= base && raw > 0 && raw < totalMaxHp) {
-        const updated = { ...profile, current_hp: totalMaxHp };
-        setProfile(updated);
-        localStorage.setItem("ironpixels_profile", JSON.stringify(updated));
-        fetch("/api/user/profile", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ current_hp: totalMaxHp }),
-        }).catch(() => {});
-      }
-    }
-  }, [totalMaxHp, baseMaxHp]);
-
   const rawCurrentHp =
     profile?.current_hp !== undefined && profile?.current_hp !== null
       ? Number(profile.current_hp)
       : totalMaxHp;
 
-  // If hero was at full health (e.g. 1000/1000 base), scale it so they are also at 100% of totalMaxHp
-  const effectiveCurrentHp =
-    rawCurrentHp >= baseMaxHp && rawCurrentHp > 0
-      ? totalMaxHp
-      : Math.min(totalMaxHp, Math.max(0, rawCurrentHp));
+  // Accurately respect damage taken without erroneously auto-healing to max
+  const effectiveCurrentHp = Math.min(totalMaxHp, Math.max(0, rawCurrentHp));
 
   const userData = {
     user_id: profile?.user_id || "",
@@ -781,11 +761,15 @@ export function DashboardLayout() {
                     </div>
                   </div>
 
+                  <p className="text-[11px] text-zinc-400 font-sans">
+                    Catat sesi latihan di gym hari ini untuk memulihkan 100% darah heromu!
+                  </p>
+
                   <button
                     onClick={() => setBossAttackModal(null)}
                     className="w-full h-12 bg-red-600 hover:bg-red-500 text-white font-headline font-black text-xs uppercase tracking-wider shadow-red-glow"
                   >
-                    ACKNOWLEDGE DAMAGE & RECOVER
+                    ACKNOWLEDGE DAMAGE (LOG GYM TO HEAL)
                   </button>
                 </div>
               </motion.div>
