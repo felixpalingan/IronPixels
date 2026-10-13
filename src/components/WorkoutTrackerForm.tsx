@@ -277,7 +277,9 @@ export function WorkoutTrackerForm({
   // Custom exercise form fields
   const [cName, setCName] = useState<string>("");
   const [cCategory, setCCategory] = useState<ExerciseDefinition["category"]>("Chest");
-  const [cEquipment, setCEquipment] = useState<ExerciseDefinition["equipment"]>("Dumbbell");
+  const [cEquipment, setCEquipment] = useState<ExerciseDefinition["equipment"]>("Bodyweight");
+  const [cDifficulty, setCDifficulty] = useState<ExerciseDefinition["difficultyLabel"]>("Intermediate");
+  const [cScalingStat, setCScalingStat] = useState<"STR" | "AGI">("AGI");
   const [cMultiplier, setCMultiplier] = useState<number>(1.0);
 
   useEffect(() => {
@@ -453,23 +455,70 @@ export function WorkoutTrackerForm({
     } catch (e) {}
   };
 
+  const handleSelectDifficulty = (label: ExerciseDefinition["difficultyLabel"]) => {
+    setCDifficulty(label);
+    const defaultMultMap: Record<ExerciseDefinition["difficultyLabel"], number> = {
+      Novice: 0.85,
+      Intermediate: 1.0,
+      Advanced: 1.2,
+      Master: 1.35,
+    };
+    setCMultiplier(defaultMultMap[label] || 1.0);
+  };
+
+  const handleSelectCategory = (cat: ExerciseDefinition["category"]) => {
+    setCCategory(cat);
+    if (cat === "Cardio" || cat === "Core") {
+      setCScalingStat("AGI");
+    }
+  };
+
+  const handleSelectEquipment = (eq: ExerciseDefinition["equipment"]) => {
+    setCEquipment(eq);
+    if (eq === "Bodyweight" || cCategory === "Cardio" || cCategory === "Core") {
+      setCScalingStat("AGI");
+    } else {
+      setCScalingStat("STR");
+    }
+  };
+
+  const handleDeleteCustomExercise = (id: string, name: string) => {
+    if (!window.confirm(`Hapus latihan kustom "${name}" dari database personal?`)) return;
+    const updated = customExercises.filter((e) => e.id !== id);
+    setCustomExercises(updated);
+    try {
+      localStorage.setItem("ironpixels_custom_exercises", JSON.stringify(updated));
+    } catch (e) {}
+  };
+
   const handleCreateCustomExercise = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cName.trim()) return;
+
+    const difficultyRankMap: Record<ExerciseDefinition["difficultyLabel"], number> = {
+      Novice: 1,
+      Intermediate: 2,
+      Advanced: 4,
+      Master: 5,
+    };
+
+    const cleanMultiplier = Math.round((Number(cMultiplier) || 1.0) * 100) / 100;
 
     const newCustomEx: ExerciseDefinition = {
       id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       name: cName.trim(),
       category: cCategory,
-      difficultyRank: 2,
-      difficultyLabel: "Intermediate",
+      difficultyRank: difficultyRankMap[cDifficulty] || 2,
+      difficultyLabel: cDifficulty,
       equipment: cEquipment,
+      scalingStat: cScalingStat,
       targetMuscles: [cCategory],
       instructions: [
-        `Perform ${cName.trim()} with strict form and full range of motion.`,
-        "Control both eccentric and concentric phases of movement.",
+        `Lakukan gerakan ${cName.trim()} dengan kontrol postur dan rentang gerak penuh (full ROM).`,
+        "Fokus pada kontraksi otot target, hembuskan napas saat fase kontraksi / beban puncak.",
       ],
-      rvsMultiplier: Number(cMultiplier) || 1.0,
+      rvsMultiplier: cleanMultiplier,
+      aliases: [cName.trim().toLowerCase()],
       isCustom: true,
     };
 
@@ -498,6 +547,7 @@ export function WorkoutTrackerForm({
     // Reset form and close modal
     setCName("");
     setCMultiplier(1.0);
+    setCDifficulty("Intermediate");
     setIsCustomModalOpen(false);
   };
 
@@ -1415,7 +1465,10 @@ export function WorkoutTrackerForm({
                 </div>
 
                 <button
-                  onClick={() => setIsCustomModalOpen(true)}
+                  onClick={() => {
+                    if (searchQuery.trim()) setCName(searchQuery.trim());
+                    setIsCustomModalOpen(true);
+                  }}
                   className="px-2.5 py-1.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] hover:bg-[#00ff41] hover:text-black font-mono font-bold text-[10px] uppercase transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-neon"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -1462,7 +1515,10 @@ export function WorkoutTrackerForm({
                   <div className="p-6 text-center text-xs text-zinc-500 italic border border-dashed border-zinc-800 space-y-3">
                     <p>No exercises match your search query or muscle filter.</p>
                     <button
-                      onClick={() => setIsCustomModalOpen(true)}
+                      onClick={() => {
+                        if (searchQuery.trim()) setCName(searchQuery.trim());
+                        setIsCustomModalOpen(true);
+                      }}
                       className="px-3 py-1.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] font-bold uppercase text-[10px] inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -1489,10 +1545,23 @@ export function WorkoutTrackerForm({
                             {def.name}
                           </div>
                           {def.isCustom && (
-                            <span className="px-1.5 py-0.2 border border-amber-400 bg-amber-950/80 text-amber-300 text-[9px] font-black uppercase flex items-center gap-1 flex-shrink-0">
-                              <Sparkles className="w-3 h-3" />
-                              CUSTOM
-                            </span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <span className="px-1.5 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 text-[9px] font-black uppercase flex items-center gap-1">
+                                <Sparkles className="w-3 h-3" />
+                                CUSTOM
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCustomExercise(def.id, def.name);
+                                }}
+                                title="Hapus latihan kustom"
+                                className="p-1 text-zinc-500 hover:text-red-400 hover:border-red-500/50 border border-zinc-800 bg-black cursor-pointer transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
                           )}
                         </div>
 
@@ -1564,97 +1633,303 @@ export function WorkoutTrackerForm({
 
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
-                  <h3 className="font-headline font-black text-lg text-white uppercase tracking-wider">
-                    CREATE CUSTOM EXERCISE
-                  </h3>
+                  <div className="p-1.5 border border-amber-400 bg-amber-950/60 text-amber-400">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-headline font-black text-lg text-white uppercase tracking-wider">
+                      BUAT GERAKAN KUSTOM
+                    </h3>
+                    <p className="text-[11px] text-zinc-400">
+                      Tambahkan gerakan baru ke database personalmu. Otomatis tersimpan dan bisa langsung dicatat.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-zinc-400">
-                  ADD A NEW CUSTOM MOVEMENT TO YOUR PERSONAL EXERCISE DATABASE
-                </p>
               </div>
 
-              <form onSubmit={handleCreateCustomExercise} className="space-y-3 pt-2">
+              {/* QUICK INSPIRATION PRESETS */}
+              <div className="space-y-1.5 pt-1">
+                <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider flex items-center justify-between">
+                  <span>💡 CONTOH CEPAT (KLIK UNTUK AUTO-FILL):</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { name: "Kettlebell Swing", cat: "Legs" as const, eq: "Dumbbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
+                    { name: "Ring Dips", cat: "Chest" as const, eq: "Bodyweight" as const, diff: "Advanced" as const, mult: 1.2, stat: "AGI" as const },
+                    { name: "Landmine Press", cat: "Shoulders" as const, eq: "Barbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
+                    { name: "Nordic Hamstring Curl", cat: "Legs" as const, eq: "Bodyweight" as const, diff: "Advanced" as const, mult: 1.2, stat: "AGI" as const },
+                    { name: "Farmer's Walk", cat: "Core" as const, eq: "Dumbbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
+                  ].map((preset) => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        setCName(preset.name);
+                        setCCategory(preset.cat);
+                        setCEquipment(preset.eq);
+                        setCDifficulty(preset.diff);
+                        setCMultiplier(preset.mult);
+                        setCScalingStat(preset.stat);
+                      }}
+                      className="px-2 py-1 text-[10px] font-bold border border-zinc-800 bg-black/60 text-zinc-300 hover:text-amber-400 hover:border-amber-400/80 transition-all cursor-pointer truncate"
+                    >
+                      + {preset.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateCustomExercise} className="space-y-4 pt-1">
+                {/* 1. EXERCISE NAME */}
                 <div className="space-y-1">
-                  <label className="text-[10px] text-zinc-400 font-bold uppercase">
-                    EXERCISE NAME:
+                  <label className="text-[10px] text-amber-400 font-bold uppercase flex items-center justify-between">
+                    <span>1. NAMA LATIHAN (EXERCISE NAME) *</span>
+                    <span className="text-[9px] text-zinc-500 font-normal">Wajib diisi</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={cName}
                     onChange={(e) => setCName(e.target.value)}
-                    placeholder="e.g. Kettlebell Swing, Landmine Press, Ring Dips..."
-                    className="w-full bg-black border border-pixel-border px-3 py-2 text-xs font-bold text-white focus:border-amber-400 outline-none"
+                    placeholder="Contoh: Kettlebell Clean, Deficit Deadlift, Ring Muscle Up..."
+                    className="w-full bg-black border border-pixel-border px-3 py-2.5 text-xs font-bold text-white focus:border-amber-400 outline-none transition-colors"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-zinc-400 font-bold uppercase">
-                      MUSCLE CATEGORY:
-                    </label>
-                    <select
-                      value={cCategory}
-                      onChange={(e) => setCCategory(e.target.value as any)}
-                      className="w-full bg-black border border-pixel-border px-2 py-2 text-xs font-bold text-white focus:border-amber-400 outline-none uppercase"
-                    >
-                      {(["Chest", "Back", "Legs", "Shoulders", "Arms", "Core", "Cardio"] as const).map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-zinc-400 font-bold uppercase">
-                      EQUIPMENT TYPE:
-                    </label>
-                    <select
-                      value={cEquipment}
-                      onChange={(e) => setCEquipment(e.target.value as any)}
-                      className="w-full bg-black border border-pixel-border px-2 py-2 text-xs font-bold text-white focus:border-amber-400 outline-none uppercase"
-                    >
-                      {(["Barbell", "Dumbbell", "Bodyweight", "Machine", "Cable"] as const).map((eq) => (
-                        <option key={eq} value={eq}>
-                          {eq}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] text-zinc-400 font-bold uppercase">
-                    RVS MULTIPLIER ({cMultiplier}x):
+                {/* 2. MUSCLE CATEGORY SELECTION (VISUAL GRID) */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-zinc-300 font-bold uppercase">
+                    2. TARGET KELOMPOK OTOT (MUSCLE GROUP):
                   </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.5"
-                    max="3.0"
-                    value={cMultiplier}
-                    onChange={(e) => setCMultiplier(parseFloat(e.target.value) || 1.0)}
-                    className="w-full bg-black border border-pixel-border px-3 py-2 text-xs font-bold text-white focus:border-amber-400 outline-none"
-                  />
+                  <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-4">
+                    {[
+                      { id: "Chest", label: "Dada", emoji: "🔴" },
+                      { id: "Back", label: "Punggung", emoji: "🔵" },
+                      { id: "Legs", label: "Kaki", emoji: "🟢" },
+                      { id: "Shoulders", label: "Bahu", emoji: "🟠" },
+                      { id: "Arms", label: "Lengan", emoji: "🟣" },
+                      { id: "Core", label: "Perut", emoji: "🟡" },
+                      { id: "Cardio", label: "Kardio", emoji: "🏃" },
+                    ].map((catItem) => {
+                      const isSel = cCategory === catItem.id;
+                      return (
+                        <button
+                          key={catItem.id}
+                          type="button"
+                          onClick={() => handleSelectCategory(catItem.id as any)}
+                          className={`py-2 px-1 text-[10px] uppercase font-bold text-center border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                            isSel
+                              ? "border-amber-400 bg-amber-500/20 text-amber-300 shadow-gold-glow"
+                              : "border-zinc-800 bg-black/60 text-zinc-400 hover:text-white hover:border-zinc-700"
+                          }`}
+                        >
+                          <span className="text-xs">{catItem.emoji}</span>
+                          <span className="truncate">{catItem.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <div className="pt-3 flex gap-2">
+                {/* 3. EQUIPMENT SELECTION (VISUAL PILLS) */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-zinc-300 font-bold uppercase">
+                    3. TIPE PERALATAN (EQUIPMENT):
+                  </label>
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+                    {[
+                      { id: "Bodyweight", label: "Bodyweight", icon: "🤸" },
+                      { id: "Dumbbell", label: "Dumbbell", icon: "🧱" },
+                      { id: "Barbell", label: "Barbell", icon: "🏋️" },
+                      { id: "Cable", label: "Cable", icon: "🪢" },
+                      { id: "Machine", label: "Machine", icon: "⚙️" },
+                    ].map((eqItem) => {
+                      const isSel = cEquipment === eqItem.id;
+                      return (
+                        <button
+                          key={eqItem.id}
+                          type="button"
+                          onClick={() => handleSelectEquipment(eqItem.id as any)}
+                          className={`py-1.5 px-2 text-[10px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                            isSel
+                              ? "border-amber-400 bg-amber-500/20 text-amber-300 shadow-gold-glow"
+                              : "border-zinc-800 bg-black/60 text-zinc-400 hover:text-white hover:border-zinc-700"
+                          }`}
+                        >
+                          <span>{eqItem.icon}</span>
+                          <span className="truncate">{eqItem.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. HERO STAT SCALING (STR vs AGI) */}
+                <div className="space-y-1.5 p-2.5 border border-zinc-800 bg-black/40">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-zinc-300 font-bold uppercase">
+                      4. STAT UTAMA SCALING HERO:
+                    </label>
+                    <span className="text-[9px] text-zinc-500 font-mono">
+                      Dipengaruhi stat karaktermu
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCScalingStat("STR")}
+                      className={`p-2 border text-left cursor-pointer transition-all ${
+                        cScalingStat === "STR"
+                          ? "border-amber-500 bg-amber-950/40 text-white shadow-gold-glow"
+                          : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1 font-bold text-xs text-amber-400">
+                        <span>🏋️</span>
+                        <span>STR (STRENGTH)</span>
+                      </div>
+                      <div className="text-[9px] text-zinc-400 mt-0.5 leading-tight">
+                        Damage & RVS meningkat dari stat STR. Cocok untuk angkat beban berat.
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCScalingStat("AGI")}
+                      className={`p-2 border text-left cursor-pointer transition-all ${
+                        cScalingStat === "AGI"
+                          ? "border-fuchsia-500 bg-fuchsia-950/40 text-white shadow-[0_0_15px_rgba(217,70,239,0.3)]"
+                          : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1 font-bold text-xs text-fuchsia-400">
+                        <span>🏃</span>
+                        <span>AGI (AGILITY)</span>
+                      </div>
+                      <div className="text-[9px] text-zinc-400 mt-0.5 leading-tight">
+                        Damage & RVS meningkat dari stat AGI. Cocok untuk calisthenics & kardio.
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 5. DIFFICULTY & RVS MULTIPLIER */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-zinc-300 font-bold uppercase">
+                      5. TINGKAT KESULITAN & PENGALI RVS ({cMultiplier.toFixed(2)}x):
+                    </label>
+                    <span className="text-[9px] text-emerald-400 font-mono">
+                      Multiplier EXP & Boss Dmg
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                    {[
+                      { id: "Novice" as const, label: "Pemula", mult: 0.85, color: "border-emerald-500/60 bg-emerald-950/30 text-emerald-300" },
+                      { id: "Intermediate" as const, label: "Standar", mult: 1.0, color: "border-sky-500/60 bg-sky-950/30 text-sky-300" },
+                      { id: "Advanced" as const, label: "Mahir", mult: 1.2, color: "border-purple-500/60 bg-purple-950/30 text-purple-300" },
+                      { id: "Master" as const, label: "Master", mult: 1.35, color: "border-amber-500/60 bg-amber-950/30 text-amber-300" },
+                    ].map((diff) => {
+                      const isSel = cDifficulty === diff.id;
+                      return (
+                        <button
+                          key={diff.id}
+                          type="button"
+                          onClick={() => handleSelectDifficulty(diff.id)}
+                          className={`p-2 border text-left transition-all cursor-pointer ${
+                            isSel ? `${diff.color} shadow-neon ring-1 ring-white/20` : "border-zinc-800 bg-black/60 text-zinc-400 hover:text-white"
+                          }`}
+                        >
+                          <div className="font-extrabold text-[11px] uppercase truncate">{diff.id}</div>
+                          <div className="text-[9px] opacity-75">{diff.label} ({diff.mult}x)</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* MULTIPLIER FINE TUNER */}
+                  <div className="flex items-center gap-2 p-2 bg-black border border-zinc-800">
+                    <span className="text-[10px] text-zinc-400 font-bold">FINE-TUNE MULTIPLIER:</span>
+                    <button
+                      type="button"
+                      onClick={() => setCMultiplier((prev) => Math.max(0.5, Math.round((prev - 0.05) * 100) / 100))}
+                      className="px-2 py-0.5 border border-zinc-700 bg-zinc-900 text-white font-black text-xs hover:bg-zinc-800 cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <span className="font-headline font-black text-xs text-amber-400 w-12 text-center">
+                      {cMultiplier.toFixed(2)}x
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCMultiplier((prev) => Math.min(3.0, Math.round((prev + 0.05) * 100) / 100))}
+                      className="px-2 py-0.5 border border-zinc-700 bg-zinc-900 text-white font-black text-xs hover:bg-zinc-800 cursor-pointer"
+                    >
+                      +
+                    </button>
+                    <span className="text-[9px] text-zinc-500 italic ml-auto truncate">
+                      (0.5x - 3.0x range)
+                    </span>
+                  </div>
+                </div>
+
+                {/* 6. LIVE PREVIEW CARD */}
+                <div className="space-y-1 pt-1">
+                  <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
+                    👁️ PRATINJAU KARTU LATIHAN (LIVE PREVIEW):
+                  </div>
+                  <div className="p-3 border border-amber-500/80 bg-black/90 space-y-2 shadow-gold-glow">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="font-headline font-black text-xs text-white uppercase tracking-wide truncate">
+                        {cName.trim() || "Nama Gerakan Kustom"}
+                      </div>
+                      <span className="px-1.5 py-0.2 border border-amber-400 bg-amber-950/80 text-amber-300 text-[9px] font-black uppercase flex items-center gap-1 flex-shrink-0">
+                        <Sparkles className="w-2.5 h-2.5" />
+                        CUSTOM
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={`px-2 py-0.5 border text-[9px] font-extrabold uppercase ${getDifficultyBadgeStyle(cDifficulty)}`}>
+                        {cDifficulty}
+                      </span>
+                      <span className="px-2 py-0.5 border border-sky-500/50 bg-sky-950/30 text-sky-300 text-[9px] font-bold uppercase">
+                        {cCategory}
+                      </span>
+                      <span className="px-2 py-0.5 border border-amber-500/50 bg-amber-950/30 text-amber-300 text-[9px] font-bold uppercase">
+                        {cEquipment}
+                      </span>
+                      {cScalingStat === "AGI" ? (
+                        <span className="px-2 py-0.5 border border-fuchsia-500/80 bg-fuchsia-950/60 text-fuchsia-300 text-[9px] font-black uppercase">
+                          🏃 AGI SCALING ({cMultiplier.toFixed(2)}x)
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 border border-amber-500/80 bg-amber-950/60 text-amber-300 text-[9px] font-black uppercase">
+                          🏋️ STR SCALING ({cMultiplier.toFixed(2)}x)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* MODAL ACTION BUTTONS */}
+                <div className="pt-2 flex gap-2">
                   <button
                     type="button"
                     onClick={() => setIsCustomModalOpen(false)}
-                    className="w-1/3 py-2.5 border border-zinc-700 bg-black text-zinc-400 hover:text-white font-bold text-xs uppercase cursor-pointer"
+                    className="w-1/3 py-2.5 border border-zinc-700 bg-black text-zinc-400 hover:text-white font-bold text-xs uppercase cursor-pointer transition-colors"
                   >
-                    CANCEL
+                    BATAL
                   </button>
 
                   <button
                     type="submit"
-                    className="w-2/3 py-2.5 border border-amber-400 bg-amber-500 hover:bg-amber-400 text-black font-headline font-black text-xs uppercase tracking-wider cursor-pointer shadow-gold-glow flex items-center justify-center gap-1"
+                    className="w-2/3 py-2.5 border border-amber-400 bg-amber-500 hover:bg-amber-400 text-black font-headline font-black text-xs uppercase tracking-wider cursor-pointer shadow-gold-glow flex items-center justify-center gap-1.5 transition-all"
                   >
                     <Plus className="w-4 h-4 stroke-[3]" />
-                    <span>SAVE & ADD TO WORKOUT</span>
+                    <span>SIMPAN & TAMBAH KE SESI</span>
                   </button>
                 </div>
               </form>
