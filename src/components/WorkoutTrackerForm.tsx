@@ -2072,6 +2072,28 @@ export function WorkoutTrackerForm({
                   })
                 )}
               </div>
+
+              {/* STICKY FOOTER ACTION BAR FOR MOBILE */}
+              <div className="pt-2.5 border-t border-zinc-800 flex items-center justify-between gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsPickerOpen(false)}
+                  className="px-4 py-2 border border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white font-bold text-xs uppercase cursor-pointer transition-colors"
+                >
+                  TUTUP (CLOSE)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (searchQuery.trim()) setCName(searchQuery.trim());
+                    setIsCustomModalOpen(true);
+                  }}
+                  className="px-3.5 py-2 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] hover:text-black text-[#00ff41] font-mono font-bold text-xs uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-neon"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>+ BUAT GERAKAN KUSTOM</span>
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
