@@ -1098,7 +1098,7 @@ export function WorkoutTrackerForm({
                     type="button"
                     onClick={() => handleAdjustTimer(-30)}
                     aria-label="Kurangi waktu istirahat 30 detik"
-                    className="min-h-[36px] min-w-[36px] px-2 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[11px] font-bold text-zinc-300 cursor-pointer transition-colors"
+                    className="min-h-[42px] min-w-[42px] sm:min-h-[36px] sm:min-w-[36px] px-2.5 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs sm:text-[11px] font-bold text-zinc-300 cursor-pointer transition-colors flex items-center justify-center active:scale-95"
                   >
                     -30s
                   </button>
@@ -1106,7 +1106,7 @@ export function WorkoutTrackerForm({
                     type="button"
                     onClick={() => handleAdjustTimer(30)}
                     aria-label="Tambah waktu istirahat 30 detik"
-                    className="min-h-[36px] min-w-[36px] px-2 py-1.5 bg-amber-950/70 border border-amber-500 hover:border-amber-400 text-[11px] font-bold text-amber-300 cursor-pointer shadow-gold-glow transition-colors"
+                    className="min-h-[42px] min-w-[42px] sm:min-h-[36px] sm:min-w-[36px] px-2.5 py-1.5 bg-amber-950/70 border border-amber-500 hover:border-amber-400 text-xs sm:text-[11px] font-bold text-amber-300 cursor-pointer shadow-gold-glow transition-colors flex items-center justify-center active:scale-95"
                   >
                     +30s
                   </button>
@@ -1114,7 +1114,7 @@ export function WorkoutTrackerForm({
                     type="button"
                     onClick={handleCancelTimer}
                     aria-label="Lewati waktu istirahat"
-                    className="min-h-[36px] px-3 py-1.5 bg-red-950/80 border border-red-600 hover:border-red-500 text-[11px] font-bold text-red-300 cursor-pointer shadow-red-glow transition-colors"
+                    className="min-h-[42px] px-3.5 py-1.5 sm:min-h-[36px] bg-red-950/80 border border-red-600 hover:border-red-500 text-xs sm:text-[11px] font-bold text-red-300 cursor-pointer shadow-red-glow transition-colors flex items-center justify-center active:scale-95"
                   >
                     SKIP
                   </button>
@@ -1309,7 +1309,7 @@ export function WorkoutTrackerForm({
                     key={item.sec}
                     type="button"
                     onClick={() => handleSetDefaultRestTimer(item.sec)}
-                    className={`px-2 py-1 border text-[9px] font-extrabold uppercase transition-all cursor-pointer ${
+                    className={`min-h-[36px] sm:min-h-0 px-3 sm:px-2 py-1.5 sm:py-1 border text-[10px] sm:text-[9px] font-extrabold uppercase transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
                       isDefault
                         ? "border-amber-400 bg-amber-500 text-black shadow-gold-glow"
                         : "border-zinc-800 bg-black text-zinc-400 hover:border-[#00ff41] hover:text-white"
@@ -1626,11 +1626,13 @@ export function WorkoutTrackerForm({
                         <div className="col-span-3">
                           <input
                             type="number"
+                            inputMode="decimal"
+                            step="any"
                             value={set.weight || ""}
                             onChange={(e) =>
                               handleUpdateSet(ex.id, setIdx, "weight", Number(e.target.value))
                             }
-                            className={`w-full bg-black border px-2 py-1 text-center font-bold outline-none text-xs ${
+                            className={`w-full bg-black border px-2 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-center font-bold outline-none text-base sm:text-xs ${
                               isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
                             }`}
                             placeholder={
@@ -1648,11 +1650,13 @@ export function WorkoutTrackerForm({
                         <div className="col-span-3">
                           <input
                             type="number"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             value={set.reps || ""}
                             onChange={(e) =>
                               handleUpdateSet(ex.id, setIdx, "reps", Number(e.target.value))
                             }
-                            className={`w-full bg-black border px-2 py-1 text-center font-bold outline-none text-xs ${
+                            className={`w-full bg-black border px-2 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-center font-bold outline-none text-base sm:text-xs ${
                               isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
                             }`}
                             placeholder={
@@ -1673,14 +1677,14 @@ export function WorkoutTrackerForm({
                           <button
                             type="button"
                             onClick={() => handleToggleCompleteSet(ex.id, setIdx)}
-                            className={`flex-1 py-1 px-1.5 border text-[9px] font-extrabold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer truncate ${
+                            className={`flex-1 min-h-[40px] sm:min-h-[32px] py-2 sm:py-1 px-1.5 border text-[10px] sm:text-[9px] font-extrabold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer truncate active:scale-95 ${
                               isDone
                                 ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
                                 : "border-zinc-700 bg-surface text-zinc-300 hover:border-[#00ff41] hover:text-[#00ff41]"
                             }`}
                             title={isDone ? "Click to uncheck set" : "Click to complete set & start 90s Rest Timer"}
                           >
-                            <Check className={`w-3 h-3 ${isDone ? "stroke-[3]" : "opacity-40"}`} />
+                            <Check className={`w-3.5 h-3.5 sm:w-3 sm:h-3 ${isDone ? "stroke-[3]" : "opacity-40"}`} />
                             <span>{isDone ? "DONE" : "LOG SET"}</span>
                           </button>
 
@@ -1688,16 +1692,17 @@ export function WorkoutTrackerForm({
                             <button
                               type="button"
                               onClick={() => handleRemoveSet(ex.id, setIdx)}
-                              className="text-zinc-600 hover:text-red-500 p-1 font-bold cursor-pointer flex-shrink-0"
+                              aria-label={`Hapus set #${set.set_number}`}
+                              className="min-h-[40px] min-w-[32px] text-zinc-600 hover:text-red-500 p-1 font-bold cursor-pointer flex-shrink-0 flex items-center justify-center active:scale-90"
                               title="Delete Set"
                             >
-                              <X className="w-3 h-3" />
+                              <X className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
 
                         {prevSet && (
-                          <div className="col-span-12 flex items-center justify-between px-2 py-1 text-[9px] bg-zinc-950/80 border-t border-zinc-900/80 text-zinc-400 font-mono">
+                          <div className="col-span-12 flex items-center justify-between px-2 py-1.5 text-[9.5px] sm:text-[9px] bg-zinc-950/80 border-t border-zinc-900/80 text-zinc-400 font-mono">
                             <div className="flex items-center gap-1.5">
                               <span className="text-zinc-500 font-semibold flex items-center gap-1">
                                 <History className="w-2.5 h-2.5 text-zinc-400" />
@@ -1716,7 +1721,7 @@ export function WorkoutTrackerForm({
                                   handleUpdateSet(ex.id, setIdx, "weight", toDisplayWeight(prevSet.weight_kg, weightUnit));
                                   handleUpdateSet(ex.id, setIdx, "reps", prevSet.reps);
                                 }}
-                                className="text-[#00ff41] hover:text-[#5cff87] hover:underline cursor-pointer flex items-center gap-1 font-bold text-[8.5px] uppercase tracking-wider"
+                                className="px-2 py-1 border border-[#00ff41]/40 bg-[#00ff41]/10 text-[#00ff41] hover:text-[#5cff87] hover:bg-[#00ff41]/20 cursor-pointer flex items-center gap-1 font-bold text-[9px] uppercase tracking-wider transition-colors active:scale-95"
                                 title="Copy previous weight and reps to this set"
                               >
                                 <span>⚡ AUTOFILL</span>
@@ -1732,9 +1737,9 @@ export function WorkoutTrackerForm({
                 <div className="flex items-center justify-between pt-2 border-t border-pixel-border/40 text-[10px]">
                   <button
                     onClick={() => handleAddSet(ex.id)}
-                    className="px-2.5 py-1 border border-pixel-border bg-black hover:border-[#00ff41] text-[#00ff41] font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                    className="min-h-[38px] px-3 py-2 sm:py-1 border border-pixel-border bg-black hover:border-[#00ff41] text-[#00ff41] font-bold text-[11px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                     <span>ADD SET</span>
                   </button>
 
