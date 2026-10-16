@@ -53,12 +53,15 @@ export function calculateSetRvs({
   const relevantStat = isAgilityEx ? safeAgi : safeStr;
   const statMultiplier = relevantStat / 50;
 
+  const isBodyweight = equipment === "Bodyweight";
+
   // If pure bodyweight calisthenics / agility movement (e.g. push-ups, pull-ups, planks)
-  if (isAgilityEx && safeWeight <= 0) {
+  if (isBodyweight && safeWeight <= 0) {
     return Math.round(safeUserWeight * safeReps * 0.12 * safeMultiplier * statMultiplier);
   }
 
-  const actualWeight = Math.max(1, safeWeight);
+  // If weighted bodyweight (e.g. weighted pull-ups +10kg), combine bodyweight with added weight
+  const actualWeight = isBodyweight ? safeUserWeight + safeWeight : Math.max(1, safeWeight);
   const resolvedMovementType =
     movementType || getExerciseMovementType({ category, equipment, name: exerciseName });
   const resolvedIsUnilateral =
@@ -82,10 +85,23 @@ export function calculateSetRvs({
       movementMultiplier = 1.8;
     }
   } else {
-    // Compound movements (e.g. Squat, Bench Press, Deadlift, Overhead Press)
-    // Normal baseline ~75% BW (for 56kg BW = 42kg)
-    baseLoadKg = safeUserWeight * 0.75;
-    movementMultiplier = 1.0;
+    // Compound movements
+    if (resolvedIsUnilateral) {
+      // Unilateral compound (e.g. Bulgarian Split Squat, Lunges, Single-Arm Dumbbell Row)
+      // Normal single-limb baseline ~30% BW (for 56kg BW = ~16.8kg)
+      baseLoadKg = safeUserWeight * 0.3;
+      movementMultiplier = 1.6;
+    } else if (equipment === "Dumbbell") {
+      // Dumbbell compound (e.g. Goblet Squat, DB Flat Bench Press per hand)
+      // Normal baseline ~40% BW (for 56kg BW = ~22.4kg)
+      baseLoadKg = safeUserWeight * 0.4;
+      movementMultiplier = 1.25;
+    } else {
+      // Standard heavy compound (e.g. Barbell Squat, Deadlift, Bench Press)
+      // Normal baseline ~75% BW (for 56kg BW = 42kg)
+      baseLoadKg = safeUserWeight * 0.75;
+      movementMultiplier = 1.0;
+    }
   }
 
   // Intensity ratio clamped to reasonable limits

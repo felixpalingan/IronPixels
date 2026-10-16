@@ -35,6 +35,38 @@ export function getExerciseMovementType(ex: {
   const name = (ex.name || "").toLowerCase();
   const category = (ex.category || "").toLowerCase();
 
+  // Known multi-joint compound patterns (even if placed under Arms, Core, or Shoulders)
+  if (
+    name.includes("dip") ||
+    name.includes("bench press") ||
+    name.includes("pushup") ||
+    name.includes("push-up") ||
+    name.includes("pullup") ||
+    name.includes("pull-up") ||
+    name.includes("chin-up") ||
+    name.includes("chin up") ||
+    name.includes("muscle-up") ||
+    name.includes("muscle up") ||
+    name.includes("squat") ||
+    name.includes("deadlift") ||
+    name.includes("row") ||
+    name.includes("overhead press") ||
+    name.includes("shoulder press") ||
+    name.includes("military press") ||
+    name.includes("arnold press") ||
+    name.includes("clean") ||
+    name.includes("snatch")
+  ) {
+    if (
+      !name.includes("french press") &&
+      !name.includes("pressdown") &&
+      !name.includes("pushdown") &&
+      !name.includes("pec deck")
+    ) {
+      return "compound";
+    }
+  }
+
   if (category === "arms") return "isolation";
   if (
     name.includes("curl") ||
@@ -43,6 +75,7 @@ export function getExerciseMovementType(ex: {
     name.includes("fly") ||
     name.includes("flye") ||
     name.includes("kickback") ||
+    name.includes("pushdown") ||
     name.includes("calf") ||
     name.includes("shrug") ||
     name.includes("crunch") ||
@@ -74,8 +107,14 @@ export function isExerciseUnilateral(ex: {
     name.includes("pistol") ||
     name.includes("split squat") ||
     name.includes("split squad") ||
+    name.includes("bulgarian") ||
     name.includes("lunge") ||
-    name.includes("hammer curl")
+    name.includes("archer") ||
+    name.includes("concentration curl") ||
+    name.includes("hammer curl") ||
+    name.includes("lateral raise") ||
+    name.includes("front raise") ||
+    name.includes("dumbbell row")
   );
 }
 
