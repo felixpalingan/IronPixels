@@ -1171,11 +1171,16 @@ export function WorkoutTrackerForm({
           </div>
         ) : (
           <div className="p-2.5 border border-[#00ff41]/80 bg-[#00ff41]/10 flex items-center justify-between gap-2 shadow-neon">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00ff41] animate-ping flex-shrink-0" />
-              <span className="text-xs font-headline font-bold text-[#00ff41] uppercase tracking-wider">
-                SESI LATIHAN SEDANG BERJALAN ⏱️
-              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-headline font-bold text-[#00ff41] uppercase tracking-wider truncate">
+                  SESI LATIHAN SEDANG BERJALAN ⏱️
+                </span>
+                <span className="text-[9px] text-zinc-300 font-mono truncate">
+                  Auto-save draft aktif 💾 ({loggedExercises.length} gerakan, {loggedExercises.reduce((sum, ex) => sum + ex.sets.length, 0)} set)
+                </span>
+              </div>
             </div>
             <button
               type="button"
@@ -1660,6 +1665,23 @@ export function WorkoutTrackerForm({
           <Plus className="w-4 h-4" />
           <span>CHOOSE EXERCISE FROM DATABASE ({EXERCISE_DATABASE.length} EXERCISES)</span>
         </button>
+
+        {isWorkoutActive && loggedExercises.length === 0 && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("Yakin ingin membatalkan sesi latihan kosong ini?\n\nTimer akan berhenti dan di-reset.")) {
+                  handleDiscardWorkout();
+                }
+              }}
+              className="w-full py-2.5 border border-red-900/60 bg-red-950/40 hover:bg-red-900 text-red-300 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-red-glow"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>BATALKAN SESI LATIHAN KOSONG</span>
+            </button>
+          </div>
+        )}
 
         {loggedExercises.length > 0 && (
           <div className="space-y-2 pt-1">
