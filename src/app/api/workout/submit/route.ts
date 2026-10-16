@@ -126,6 +126,7 @@ export async function POST(request: Request) {
           gold: newGold,
           available_ap: newAp,
           daily_rvs: newDailyRvs,
+          last_penalty_date: safeDate,
           updated_at: new Date().toISOString(),
         };
 

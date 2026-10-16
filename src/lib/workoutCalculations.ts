@@ -1,4 +1,10 @@
-import { EXERCISE_DATABASE, getExerciseScalingStat } from "./exercisesData";
+import {
+  EXERCISE_DATABASE,
+  getExerciseScalingStat,
+  getExerciseMovementType,
+  isExerciseUnilateral,
+  MovementType,
+} from "./exercisesData";
 
 export interface SetRvsParams {
   weight: number;
@@ -6,6 +12,9 @@ export interface SetRvsParams {
   multiplier?: number;
   category?: string;
   equipment?: string;
+  exerciseName?: string;
+  movementType?: MovementType;
+  isUnilateral?: boolean;
   userWeightKg?: number;
   userStr?: number;
   userAgi?: number;
@@ -13,7 +22,8 @@ export interface SetRvsParams {
 
 /**
  * Calculates RVS (Real Volume Score) for an individual set based on
- * weight lifted, repetitions, bodyweight ratio, exercise coefficient, and hero stats.
+ * weight lifted, repetitions, bodyweight ratio, exercise coefficient, movement category (compound vs isolation),
+ * and hero stats.
  */
 export function calculateSetRvs({
   weight,
@@ -21,6 +31,9 @@ export function calculateSetRvs({
   multiplier = 1.0,
   category = "Chest",
   equipment = "Barbell",
+  exerciseName = "",
+  movementType,
+  isUnilateral,
   userWeightKg = 75,
   userStr = 85,
   userAgi = 70,
@@ -37,14 +50,56 @@ export function calculateSetRvs({
 
   const scalingStat = getExerciseScalingStat({ category, equipment });
   const isAgilityEx = scalingStat === "AGI";
-
-  const actualWeight = isAgilityEx && safeWeight <= 0 ? safeUserWeight : Math.max(1, safeWeight);
-  const bodyweightRatio = actualWeight / safeUserWeight;
-
   const relevantStat = isAgilityEx ? safeAgi : safeStr;
   const statMultiplier = relevantStat / 50;
 
-  return Math.round(actualWeight * safeReps * bodyweightRatio * 0.1 * safeMultiplier * statMultiplier);
+  // If pure bodyweight calisthenics / agility movement (e.g. push-ups, pull-ups, planks)
+  if (isAgilityEx && safeWeight <= 0) {
+    return Math.round(safeUserWeight * safeReps * 0.12 * safeMultiplier * statMultiplier);
+  }
+
+  const actualWeight = Math.max(1, safeWeight);
+  const resolvedMovementType =
+    movementType || getExerciseMovementType({ category, equipment, name: exerciseName });
+  const resolvedIsUnilateral =
+    typeof isUnilateral === "boolean"
+      ? isUnilateral
+      : isExerciseUnilateral({ name: exerciseName });
+
+  let baseLoadKg: number;
+  let movementMultiplier: number;
+
+  if (resolvedMovementType === "isolation") {
+    if (resolvedIsUnilateral) {
+      // Unilateral isolation (e.g. Dumbbell Hammer Curl 1 hand, Lateral Raise)
+      // Normal baseline ~12% BW (for 56kg BW = ~6.7kg)
+      baseLoadKg = safeUserWeight * 0.12;
+      movementMultiplier = 2.2;
+    } else {
+      // Bilateral isolation (e.g. Barbell Bicep Curl, Leg Extension)
+      // Normal baseline ~25% BW (for 56kg BW = 14kg)
+      baseLoadKg = safeUserWeight * 0.25;
+      movementMultiplier = 1.8;
+    }
+  } else {
+    // Compound movements (e.g. Squat, Bench Press, Deadlift, Overhead Press)
+    // Normal baseline ~75% BW (for 56kg BW = 42kg)
+    baseLoadKg = safeUserWeight * 0.75;
+    movementMultiplier = 1.0;
+  }
+
+  // Intensity ratio clamped to reasonable limits
+  const intensityRatio = Math.max(0.65, Math.min(2.2, actualWeight / Math.max(1, baseLoadKg)));
+
+  return Math.round(
+    actualWeight *
+      safeReps *
+      0.12 *
+      intensityRatio *
+      movementMultiplier *
+      safeMultiplier *
+      statMultiplier
+  );
 }
 
 export interface ExerciseSetLogInput {
@@ -160,6 +215,9 @@ export function calculateWorkoutSessionTotals({
           multiplier,
           category,
           equipment,
+          exerciseName,
+          movementType: def?.movementType,
+          isUnilateral: def?.isUnilateral,
           userWeightKg,
           userStr,
           userAgi,

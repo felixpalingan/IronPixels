@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getExerciseScalingStat, EXERCISE_DATABASE } from "@/lib/exercisesData";
+import { calculateSetRvs } from "@/lib/workoutCalculations";
 
 export interface SetItem {
   set_number: number;
@@ -55,10 +56,6 @@ export async function calculateSessionRVS(userId: string, exercises: ExerciseLog
     const exDef = EXERCISE_DATABASE.find((d) => d.id === ex.exercise_id);
     const coeff = exDef?.rvsMultiplier || 1.0;
     const scalingStat = getExerciseScalingStat(exDef || { category: "Chest", equipment: "Barbell" });
-    const isAgilityEx = scalingStat === "AGI";
-
-    const relevantStat = isAgilityEx ? userAgi : userStr;
-    const statMultiplier = relevantStat / 50;
 
     let exVolume = 0;
     let exRVS = 0;
@@ -70,9 +67,19 @@ export async function calculateSessionRVS(userId: string, exercises: ExerciseLog
       let setRVS = 0;
 
       if (r > 0 && userWeightKg > 0) {
-        const actualWeight = isAgilityEx && w <= 0 ? userWeightKg : Math.max(1, w);
-        const bodyweightRatio = actualWeight / Math.max(40, userWeightKg);
-        setRVS = actualWeight * r * bodyweightRatio * 0.1 * coeff * statMultiplier;
+        setRVS = calculateSetRvs({
+          weight: w,
+          reps: r,
+          multiplier: coeff,
+          category: exDef?.category || "Chest",
+          equipment: exDef?.equipment || "Barbell",
+          exerciseName: exDef?.name || "",
+          movementType: exDef?.movementType,
+          isUnilateral: exDef?.isUnilateral,
+          userWeightKg,
+          userStr,
+          userAgi,
+        });
       }
 
       exVolume += w * r;

@@ -1,3 +1,5 @@
+export type MovementType = "compound" | "isolation";
+
 export interface ExerciseDefinition {
   id: string;
   name: string;
@@ -9,6 +11,8 @@ export interface ExerciseDefinition {
   instructions: string[];
   rvsMultiplier: number;
   scalingStat?: "STR" | "AGI";
+  movementType?: MovementType;
+  isUnilateral?: boolean;
   aliases?: string[];
   isCustom?: boolean;
 }
@@ -19,6 +23,60 @@ export function getExerciseScalingStat(ex: { category?: string; equipment?: stri
     return "AGI";
   }
   return "STR";
+}
+
+export function getExerciseMovementType(ex: {
+  category?: string;
+  movementType?: MovementType;
+  name?: string;
+  equipment?: string;
+}): MovementType {
+  if (ex.movementType) return ex.movementType;
+  const name = (ex.name || "").toLowerCase();
+  const category = (ex.category || "").toLowerCase();
+
+  if (category === "arms") return "isolation";
+  if (
+    name.includes("curl") ||
+    name.includes("extension") ||
+    name.includes("raise") ||
+    name.includes("fly") ||
+    name.includes("flye") ||
+    name.includes("kickback") ||
+    name.includes("calf") ||
+    name.includes("shrug") ||
+    name.includes("crunch") ||
+    name.includes("wrist") ||
+    name.includes("pec deck")
+  ) {
+    return "isolation";
+  }
+
+  return "compound";
+}
+
+export function isExerciseUnilateral(ex: {
+  isUnilateral?: boolean;
+  name?: string;
+}): boolean {
+  if (typeof ex.isUnilateral === "boolean") return ex.isUnilateral;
+  const name = (ex.name || "").toLowerCase();
+  return (
+    name.includes("alternate") ||
+    name.includes("single-arm") ||
+    name.includes("single arm") ||
+    name.includes("one-arm") ||
+    name.includes("one arm") ||
+    name.includes("single-leg") ||
+    name.includes("single leg") ||
+    name.includes("one leg") ||
+    name.includes("one hand") ||
+    name.includes("pistol") ||
+    name.includes("split squat") ||
+    name.includes("split squad") ||
+    name.includes("lunge") ||
+    name.includes("hammer curl")
+  );
 }
 
 export const EXERCISE_DATABASE: ExerciseDefinition[] = [
@@ -443,7 +501,18 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
       "Curl weights up while maintaining neutral palm position.",
       "Squeeze forearms and biceps, then lower down.",
     ],
-    rvsMultiplier: 0.8,
+    rvsMultiplier: 0.85,
+    movementType: "isolation",
+    isUnilateral: true,
+    aliases: [
+      "hammer curl",
+      "hammer curls",
+      "alternate hammer curl",
+      "alternating hammer curl",
+      "standing hammer curl",
+      "db hammer curl",
+      "dumbbell hammer curl"
+    ],
   },
   {
     id: "tricep-rope-pushdown",

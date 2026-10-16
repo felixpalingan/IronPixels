@@ -34,8 +34,13 @@ export async function GET() {
       );
     }
 
-    // Authoritative once-per-day boss penalty check stored in Supabase profiles.last_penalty_date
-    let bossAttackEvent: { damageDealt: number; bossName: string } | null = null;
+    // Authoritative multi-day stacking boss penalty check stored in Supabase profiles.last_penalty_date
+    let bossAttackEvent: {
+      damageDealt: number;
+      bossName: string;
+      missedDays?: number;
+      dailyDamage?: number;
+    } | null = null;
     let effectiveCurrentHp =
       profile.current_hp !== undefined && profile.current_hp !== null ? Number(profile.current_hp) : 1000;
 
@@ -45,42 +50,67 @@ export async function GET() {
       : null;
 
     if (lastPenaltyDateStr !== todayDateStr) {
-      // Check if user account was created today (new operatives get day 1 grace period)
       const profileCreatedAtStr = profile.created_at
         ? String(profile.created_at).split("T")[0]
-        : null;
+        : todayDateStr;
       const isNewAccountToday = profileCreatedAtStr === todayDateStr;
 
-      // Check if user logged workout yesterday or today
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayDateStr = yesterday.toISOString().split("T")[0];
+      if (!isNewAccountToday) {
+        // Base reference date for calculating missed calendar days:
+        // Use last_penalty_date if available, otherwise profile created_at
+        const refDateStr = lastPenaltyDateStr || profileCreatedAtStr;
 
-      const { data: recentSessions } = await supabase
-        .from("workout_sessions")
-        .select("session_id")
-        .eq("user_id", userId)
-        .gte("date", yesterdayDateStr)
-        .limit(1);
+        // Fetch all workout sessions recorded by this user from refDateStr up to today
+        const { data: pastSessions } = await supabase
+          .from("workout_sessions")
+          .select("date")
+          .eq("user_id", userId)
+          .gte("date", refDateStr);
 
-      const hasRecentWorkout = Boolean(recentSessions && recentSessions.length > 0);
+        const workoutDaysSet = new Set<string>();
+        if (Array.isArray(pastSessions)) {
+          for (const s of pastSessions) {
+            if (s.date) workoutDaysSet.add(String(s.date).split("T")[0]);
+          }
+        }
 
-      // Only trigger if not a new account and no workout yesterday/today
-      if (!isNewAccountToday && !hasRecentWorkout) {
-        const userFloor = Math.max(1, Number(profile.max_floor) || 1);
-        const BOSS_PENALTY_DMG = 200 + (userFloor - 1) * 25;
-        effectiveCurrentHp = Math.max(0, effectiveCurrentHp - BOSS_PENALTY_DMG);
+        // Count calendar days between refDate and yesterday that had no workout
+        let missedDays = 0;
+        const curDate = new Date(refDateStr + "T00:00:00Z");
+        curDate.setUTCDate(curDate.getUTCDate() + 1); // Start from day after last penalty/workout
 
-        const stageInfo = DUNGEON_STAGES_CATALOG[userFloor];
-        const bossDisplayName = stageInfo ? stageInfo.name.replace(/^Stage \d+:\s*/, "") : `Floor ${userFloor} Monster`;
+        const todayDate = new Date(todayDateStr + "T00:00:00Z");
 
-        bossAttackEvent = {
-          damageDealt: BOSS_PENALTY_DMG,
-          bossName: bossDisplayName,
-        };
+        while (curDate < todayDate) {
+          const curStr = curDate.toISOString().split("T")[0];
+          if (!workoutDaysSet.has(curStr)) {
+            missedDays += 1;
+          }
+          curDate.setUTCDate(curDate.getUTCDate() + 1);
+        }
+
+        // Cap stacked missed days to a reasonable maximum (e.g. 14 days)
+        missedDays = Math.min(14, missedDays);
+
+        if (missedDays > 0) {
+          const userFloor = Math.max(1, Number(profile.max_floor) || 1);
+          const dailyDamage = 200 + (userFloor - 1) * 25;
+          const totalDamage = missedDays * dailyDamage;
+          effectiveCurrentHp = Math.max(0, effectiveCurrentHp - totalDamage);
+
+          const stageInfo = DUNGEON_STAGES_CATALOG[userFloor];
+          const bossDisplayName = stageInfo ? stageInfo.name.replace(/^Stage \d+:\s*/, "") : `Floor ${userFloor} Monster`;
+
+          bossAttackEvent = {
+            damageDealt: totalDamage,
+            bossName: bossDisplayName,
+            missedDays,
+            dailyDamage,
+          };
+        }
       }
 
-      // Mark today as checked in DB so it can NEVER trigger again today
+      // Mark today as evaluated in DB so it can never duplicate today
       await supabase
         .from("profiles")
         .update({
@@ -278,21 +308,66 @@ export async function PATCH(request: Request) {
       [stat_key]: newStatVal,
     };
 
-    // 2. Atomic CAS update on available_ap
-    const { data: updatedList, error: updateErr } = await supabase
-      .from("profiles")
-      .update({
-        available_ap: newAp,
-        [stat_key]: newStatVal,
-        stats: newStatsObj,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", profile.id)
-      .eq("available_ap", currentAp)
-      .gte("available_ap", upgradeAmount)
-      .select("*");
+    // 2. Atomic CAS update on available_ap with retry mechanism
+    let updatedList = null;
+    let updateErr: any = null;
 
-    if (updateErr) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let activeProfile = profile;
+      let activeAp = currentAp;
+      let activeStatVal = currentStatVal;
+
+      if (attempt > 0) {
+        // Fetch fresh profile state on retry
+        const { data: freshList } = await supabase
+          .from("profiles")
+          .select("*")
+          .or(`id.eq.${userId},user_id.eq.${userId}`);
+
+        if (freshList && freshList.length > 0) {
+          activeProfile = freshList[0];
+          activeAp = Number(activeProfile.available_ap ?? 0);
+          activeStatVal = Number(activeProfile[stat_key] ?? (activeProfile.stats?.[stat_key] || 0));
+
+          if (activeAp < upgradeAmount) {
+            return NextResponse.json(
+              { error: `INSUFFICIENT AP. Required: ${upgradeAmount}, Available: ${activeAp}` },
+              { status: 400 }
+            );
+          }
+        }
+      }
+
+      const resCAS = await supabase
+        .from("profiles")
+        .update({
+          available_ap: activeAp - upgradeAmount,
+          [stat_key]: activeStatVal + upgradeAmount,
+          stats: {
+            ...(activeProfile.stats || {}),
+            [stat_key]: activeStatVal + upgradeAmount,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", activeProfile.id)
+        .eq("available_ap", activeAp)
+        .gte("available_ap", upgradeAmount)
+        .select("*");
+
+      if (resCAS.error) {
+        updateErr = resCAS.error;
+      }
+
+      if (resCAS.data && resCAS.data.length > 0) {
+        updatedList = resCAS.data;
+        break;
+      }
+
+      // Small backoff before retry
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    if (updateErr && (!updatedList || updatedList.length === 0)) {
       return NextResponse.json(
         { error: `Failed to upgrade stat: ${updateErr.message}` },
         { status: 500 }

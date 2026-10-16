@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2, History } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2, History, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat } from "@/lib/exercisesData";
@@ -53,7 +53,33 @@ export function WorkoutTrackerForm({
   heroStats = { str: 85, agi: 70, vit: 60, luk: 50 },
   onFinishSession,
 }: WorkoutTrackerFormProps) {
-  const [loggedExercises, setLoggedExercises] = useState<LoggedExercise[]>([]);
+  // Workout Session State (Idle vs Active)
+  const [isWorkoutActive, setIsWorkoutActive] = useState<boolean>(() => {
+    try {
+      const savedActive = localStorage.getItem("ironpixels_is_workout_active");
+      if (savedActive === "true") return true;
+      const savedDraft = localStorage.getItem("ironpixels_active_workout_draft");
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (Array.isArray(parsed) && parsed.length > 0) return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const [loggedExercises, setLoggedExercises] = useState<LoggedExercise[]>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_active_workout_draft");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
+
   const [customExercises, setCustomExercises] = useState<ExerciseDefinition[]>(() => {
     try {
       const saved = localStorage.getItem("ironpixels_custom_exercises");
@@ -63,7 +89,7 @@ export function WorkoutTrackerForm({
     }
   });
   const [routines, setRoutines] = useState<any[]>([]);
-  const [isRoutinesOpen, setIsRoutinesOpen] = useState<boolean>(true);
+  const [isRoutinesOpen, setIsRoutinesOpen] = useState<boolean>(false);
   const [isSaveRoutineModalOpen, setIsSaveRoutineModalOpen] = useState<boolean>(false);
   const [newRoutineName, setNewRoutineName] = useState<string>("");
   const [newRoutineSplit, setNewRoutineSplit] = useState<string>("Push");
@@ -157,30 +183,64 @@ export function WorkoutTrackerForm({
     }
   });
 
-  // Real Session duration tracking
+  // Real Session duration tracking (Strictly scoped to active session)
   const [sessionStartTime, setSessionStartTime] = useState<number>(() => {
     try {
+      const savedActive = localStorage.getItem("ironpixels_is_workout_active");
       const saved = localStorage.getItem("ironpixels_session_start_time");
-      if (saved) return Number(saved);
-      const now = Date.now();
-      localStorage.setItem("ironpixels_session_start_time", now.toString());
-      return now;
+      if (savedActive === "true" && saved) return Number(saved);
+      return 0;
     } catch (e) {
-      return Date.now();
+      return 0;
     }
   });
 
   const [elapsedSessionSecs, setElapsedSessionSecs] = useState<number>(() => {
-    return Math.max(0, Math.floor((Date.now() - sessionStartTime) / 1000));
+    try {
+      const savedActive = localStorage.getItem("ironpixels_is_workout_active");
+      const saved = localStorage.getItem("ironpixels_session_start_time");
+      if (savedActive === "true" && saved) {
+        return Math.max(0, Math.floor((Date.now() - Number(saved)) / 1000));
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
   });
 
-  // Track session elapsed time
+  // Track session elapsed time (only when workout is active)
   useEffect(() => {
-    const sessionInterval = setInterval(() => {
+    if (!isWorkoutActive || sessionStartTime <= 0) {
+      setElapsedSessionSecs(0);
+      return;
+    }
+
+    const updateSessionElapsed = () => {
       setElapsedSessionSecs(Math.max(0, Math.floor((Date.now() - sessionStartTime) / 1000)));
-    }, 1000);
+    };
+
+    updateSessionElapsed();
+    const sessionInterval = setInterval(updateSessionElapsed, 1000);
     return () => clearInterval(sessionInterval);
-  }, [sessionStartTime]);
+  }, [isWorkoutActive, sessionStartTime]);
+
+  // Auto-save active workout draft
+  useEffect(() => {
+    try {
+      if (isWorkoutActive && loggedExercises.length > 0) {
+        localStorage.setItem("ironpixels_active_workout_draft", JSON.stringify(loggedExercises));
+      } else if (!isWorkoutActive) {
+        localStorage.removeItem("ironpixels_active_workout_draft");
+      }
+    } catch (e) {}
+  }, [loggedExercises, isWorkoutActive]);
+
+  // Register service worker for lockscreen rest timer notifications
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
   // Background-resilient Rest Timer effect
   useEffect(() => {
@@ -200,6 +260,10 @@ export function WorkoutTrackerForm({
         soundEngine.triggerHaptic([100, 50, 100, 50, 150]);
         setRoutineNotice("REST TIMER FINISHED! GET READY FOR YOUR NEXT SET! 🏋️");
         setTimeout(() => setRoutineNotice(null), 5000);
+
+        if (navigator.serviceWorker?.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: "CANCEL_REST_TIMER" });
+        }
       }
     };
 
@@ -238,6 +302,23 @@ export function WorkoutTrackerForm({
     try {
       localStorage.setItem("ironpixels_rest_timer_target", target.toString());
     } catch (e) {}
+
+    // Service Worker lockscreen notification request
+    try {
+      if (typeof window !== "undefined" && "Notification" in window) {
+        if (Notification.permission === "default") {
+          Notification.requestPermission().catch(() => {});
+        }
+      }
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "SCHEDULE_REST_TIMER",
+          targetTimestamp: target,
+          title: "REST TIMER SELESAI! 🏋️",
+          body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
+        });
+      }
+    } catch (e) {}
   };
 
   const handleAdjustTimer = (deltaSecs: number) => {
@@ -256,6 +337,23 @@ export function WorkoutTrackerForm({
         localStorage.removeItem("ironpixels_rest_timer_target");
       }
     } catch (e) {}
+
+    try {
+      if (navigator.serviceWorker?.controller) {
+        if (newSecs > 0) {
+          navigator.serviceWorker.controller.postMessage({
+            type: "SCHEDULE_REST_TIMER",
+            targetTimestamp: newTarget,
+            title: "REST TIMER SELESAI! 🏋️",
+            body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
+          });
+        } else {
+          navigator.serviceWorker.controller.postMessage({
+            type: "CANCEL_REST_TIMER",
+          });
+        }
+      }
+    } catch (e) {}
   };
 
   const handleCancelTimer = () => {
@@ -266,6 +364,59 @@ export function WorkoutTrackerForm({
     try {
       localStorage.removeItem("ironpixels_rest_timer_target");
     } catch (e) {}
+    try {
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: "CANCEL_REST_TIMER",
+        });
+      }
+    } catch (e) {}
+  };
+
+  // Explicit session control: Start workout session
+  const handleStartWorkoutSession = (initialExercises: LoggedExercise[] = []) => {
+    const now = Date.now();
+    soundEngine.play("select");
+    soundEngine.triggerHaptic([100, 50, 100]);
+    setIsWorkoutActive(true);
+    setSessionStartTime(now);
+    setElapsedSessionSecs(0);
+    if (initialExercises.length > 0) {
+      setLoggedExercises(initialExercises);
+    }
+    try {
+      localStorage.setItem("ironpixels_is_workout_active", "true");
+      localStorage.setItem("ironpixels_session_start_time", now.toString());
+      if (initialExercises.length > 0) {
+        localStorage.setItem("ironpixels_active_workout_draft", JSON.stringify(initialExercises));
+      }
+    } catch (e) {}
+    setRoutineNotice("SESI LATIHAN DIMULAI! HAJAR SEMUA SET & KALAHKAN BOSS! ⚔️");
+    setTimeout(() => setRoutineNotice(null), 4000);
+  };
+
+  // Explicit session control: Discard / cancel active workout session
+  const handleDiscardWorkout = () => {
+    soundEngine.play("select");
+    soundEngine.triggerHaptic(50);
+    setIsWorkoutActive(false);
+    setLoggedExercises([]);
+    setSessionStartTime(0);
+    setElapsedSessionSecs(0);
+    setIsTimerActive(false);
+    setTargetEndTime(null);
+    setRestTimerSecs(0);
+    try {
+      localStorage.removeItem("ironpixels_is_workout_active");
+      localStorage.removeItem("ironpixels_session_start_time");
+      localStorage.removeItem("ironpixels_active_workout_draft");
+      localStorage.removeItem("ironpixels_rest_timer_target");
+    } catch (e) {}
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: "CANCEL_REST_TIMER" });
+    }
+    setRoutineNotice("SESI LATIHAN DIBATALKAN. SEMUA DATA RESET KE IDLE.");
+    setTimeout(() => setRoutineNotice(null), 3000);
   };
 
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
@@ -395,7 +546,11 @@ export function WorkoutTrackerForm({
       });
     }
 
-    setLoggedExercises(newLoggedList);
+    if (!isWorkoutActive) {
+      handleStartWorkoutSession(newLoggedList);
+    } else {
+      setLoggedExercises(newLoggedList);
+    }
     setRoutineNotice(`LOADED TEMPLATE: "${routine.routine_name.toUpperCase()}" WITH ${newLoggedList.length} EXERCISES!`);
     setTimeout(() => setRoutineNotice(null), 4000);
   };
@@ -556,7 +711,8 @@ export function WorkoutTrackerForm({
     reps: number,
     multiplier: number = 1.0,
     category: string = "Chest",
-    equipment: string = "Barbell"
+    equipment: string = "Barbell",
+    exerciseName: string = ""
   ) => {
     const canonicalWeight = toCanonicalKg(weight, weightUnit);
     return calculateSetRvsPure({
@@ -565,6 +721,7 @@ export function WorkoutTrackerForm({
       multiplier,
       category,
       equipment,
+      exerciseName,
       userWeightKg,
       userStr: heroStats?.str || 85,
       userAgi: heroStats?.agi || 70,
@@ -586,7 +743,7 @@ export function WorkoutTrackerForm({
         .filter((s) => s.completed)
         .reduce(
           (sum, s) =>
-            sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment),
+            sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment, ex.name),
           0
         );
       return total + exRvs;
@@ -603,7 +760,11 @@ export function WorkoutTrackerForm({
       rvsMultiplier: def.rvsMultiplier,
       sets: [{ set_number: 1, weight: def.equipment === "Bodyweight" ? 0 : 60, reps: 10 }],
     };
-    setLoggedExercises((prev) => [...prev, newEx]);
+    if (!isWorkoutActive) {
+      handleStartWorkoutSession([newEx]);
+    } else {
+      setLoggedExercises((prev) => [...prev, newEx]);
+    }
     setIsPickerOpen(false);
   };
 
@@ -725,7 +886,7 @@ export function WorkoutTrackerForm({
         total +
         ex.completedSets.reduce(
           (sum, s) =>
-            sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment),
+            sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment, ex.name),
           0
         ),
       0
@@ -747,7 +908,7 @@ export function WorkoutTrackerForm({
 
     const realDurationMinutes = Math.max(
       1,
-      Math.round((Date.now() - sessionStartTime) / (1000 * 60))
+      Math.round((Date.now() - (sessionStartTime || Date.now())) / (1000 * 60))
     );
 
     if (onFinishSession) {
@@ -760,12 +921,19 @@ export function WorkoutTrackerForm({
     }
 
     try {
-      const nextStart = Date.now();
-      setSessionStartTime(nextStart);
-      localStorage.setItem("ironpixels_session_start_time", nextStart.toString());
+      localStorage.removeItem("ironpixels_is_workout_active");
+      localStorage.removeItem("ironpixels_session_start_time");
+      localStorage.removeItem("ironpixels_active_workout_draft");
       localStorage.removeItem("ironpixels_rest_timer_target");
     } catch (e) {}
 
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: "CANCEL_REST_TIMER" });
+    }
+
+    setIsWorkoutActive(false);
+    setSessionStartTime(0);
+    setElapsedSessionSecs(0);
     setIsTimerActive(false);
     setTargetEndTime(null);
     setRestTimerSecs(0);
@@ -838,7 +1006,76 @@ export function WorkoutTrackerForm({
   };
 
   return (
-    <div className="space-y-4 font-mono select-none">
+    <div className="space-y-4 font-mono select-none relative">
+      {/* 1. FLOATING REST TIMER OVERLAY (STICKY AT TOP OF SCREEN) */}
+      <AnimatePresence>
+        {isTimerActive && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed top-0 left-0 right-0 z-50 bg-black/95 border-b-2 border-[#00ff41] p-2.5 sm:p-3 shadow-[0_4px_30px_rgba(0,255,65,0.4)] backdrop-blur-md font-mono"
+          >
+            <div className="max-w-[600px] mx-auto space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded border border-[#00ff41] bg-[#00ff41]/20 flex items-center justify-center text-[#00ff41] animate-pulse">
+                    <Timer className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <span>REST TIMER AKTIF</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-ping" />
+                    </div>
+                    <div className="font-headline font-black text-xl sm:text-2xl text-[#00ff41] tracking-wider leading-none">
+                      {Math.floor(restTimerSecs / 60)}:{(restTimerSecs % 60).toString().padStart(2, "0")}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustTimer(-30)}
+                    className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[11px] font-bold text-zinc-300 cursor-pointer transition-colors"
+                  >
+                    -30s
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustTimer(30)}
+                    className="px-2 py-1.5 bg-amber-950/70 border border-amber-500 hover:border-amber-400 text-[11px] font-bold text-amber-300 cursor-pointer shadow-gold-glow transition-colors"
+                  >
+                    +30s
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelTimer}
+                    className="px-3 py-1.5 bg-red-950/80 border border-red-600 hover:border-red-500 text-[11px] font-bold text-red-300 cursor-pointer shadow-red-glow transition-colors"
+                  >
+                    SKIP
+                  </button>
+                </div>
+              </div>
+
+              {/* Shrinking progress bar */}
+              <div className="w-full bg-zinc-900 h-1 overflow-hidden">
+                <div
+                  className="bg-[#00ff41] h-1 transition-all duration-500 ease-linear shadow-neon"
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.max(0, (restTimerSecs / (defaultRestTimerSecs || 90)) * 100)
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
           <div className="flex items-center gap-2">
@@ -891,6 +1128,70 @@ export function WorkoutTrackerForm({
             </div>
           </div>
         </div>
+
+        {/* WORKOUT LIFECYCLE BANNER (IDLE vs ACTIVE SESSION) */}
+        {!isWorkoutActive ? (
+          <div className="border border-pixel-border/80 bg-black/90 p-3.5 space-y-3 shadow-neon">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded border border-amber-400 bg-amber-950/40 text-amber-400 flex items-center justify-center flex-shrink-0">
+                <Dumbbell className="w-4 h-4" />
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="text-xs font-headline font-black text-white uppercase tracking-wider">
+                  STATUS: SESI LATIHAN SIAP (IDLE)
+                </div>
+                <div className="text-[10px] text-zinc-400">
+                  Timer durasi saat ini <span className="text-amber-400 font-bold">BERHENTI (00:00)</span>. Klik tombol untuk menyalakan timer sesi.
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => handleStartWorkoutSession()}
+                className="w-full sm:flex-1 py-3 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer transition-all"
+              >
+                <Play className="w-4 h-4 fill-black" />
+                <span>MULAI SESI LATIHAN (START)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsRoutinesOpen(!isRoutinesOpen)}
+                className="w-full sm:w-auto px-4 py-3 border border-amber-400 bg-amber-950/40 hover:bg-amber-400 hover:text-black text-amber-300 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-gold-glow transition-all"
+              >
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>PILIH DARI TEMPLATE</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-2.5 border border-[#00ff41]/80 bg-[#00ff41]/10 flex items-center justify-between gap-2 shadow-neon">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00ff41] animate-ping flex-shrink-0" />
+              <span className="text-xs font-headline font-bold text-[#00ff41] uppercase tracking-wider">
+                SESI LATIHAN SEDANG BERJALAN ⏱️
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Yakin ingin MEMBATALKAN sesi latihan ini?\n\nSeluruh set yang sudah dicatat akan dihapus dan timer akan dihentikan."
+                  )
+                ) {
+                  handleDiscardWorkout();
+                }
+              }}
+              className="px-2.5 py-1 border border-red-600 bg-red-950/80 hover:bg-red-900 text-red-300 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-colors shadow-red-glow"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>BATALKAN SESI (CANCEL)</span>
+            </button>
+          </div>
+        )}
 
         {routineNotice && (
           <div className="p-2.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-bounce">
@@ -1068,11 +1369,11 @@ export function WorkoutTrackerForm({
           </div>
           <div className="p-2 border border-pixel-border/60 bg-black/60">
             <div className="text-[9px] text-zinc-400 uppercase font-bold flex items-center justify-center gap-1">
-              <Timer className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
+              <Timer className={`w-2.5 h-2.5 ${isWorkoutActive ? "text-amber-400 animate-pulse" : "text-zinc-500"}`} />
               <span>TIME</span>
             </div>
-            <div className="font-headline font-extrabold text-xs sm:text-sm text-amber-300 font-mono">
-              {Math.floor(elapsedSessionSecs / 60)}m {elapsedSessionSecs % 60}s
+            <div className={`font-headline font-extrabold text-xs sm:text-sm font-mono ${isWorkoutActive ? "text-amber-300" : "text-zinc-500"}`}>
+              {isWorkoutActive ? `${Math.floor(elapsedSessionSecs / 60)}m ${elapsedSessionSecs % 60}s` : "00m 00s (IDLE)"}
             </div>
           </div>
           <div className="p-2 border border-pixel-border/60 bg-black/60">
@@ -1105,7 +1406,7 @@ export function WorkoutTrackerForm({
             const exVolume = completedSets.reduce((sum, s) => sum + s.weight * s.reps, 0);
             const exRvs = completedSets.reduce(
               (sum, s) =>
-                sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment),
+                sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment, ex.name),
               0
             );
             const defObj = EXERCISE_DATABASE.find((d) => d.id === ex.definitionId);
@@ -1177,7 +1478,8 @@ export function WorkoutTrackerForm({
                       set.reps,
                       ex.rvsMultiplier,
                       ex.category,
-                      ex.equipment
+                      ex.equipment,
+                      ex.name
                     );
 
                     const isDone = Boolean(set.completed);
@@ -1334,7 +1636,7 @@ export function WorkoutTrackerForm({
         </button>
 
         {loggedExercises.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 pt-1">
             <button
               onClick={() => setIsSaveRoutineModalOpen(true)}
               className="w-full py-2.5 border border-amber-400 bg-amber-950/40 hover:bg-amber-400 hover:text-black text-amber-300 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-gold-glow"
@@ -1343,13 +1645,32 @@ export function WorkoutTrackerForm({
               <span>SAVE CURRENT WORKOUT AS ROUTINE TEMPLATE</span>
             </button>
 
-            <button
-              onClick={handleFinish}
-              className="w-full py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer"
-            >
-              <Check className="w-5 h-5 stroke-[3]" />
-              <span>FINISH SESSION & ATTACK BOSS</span>
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "Yakin ingin MEMBATALKAN sesi latihan ini?\n\nSemua data set yang belum disimpan akan dihapus dan timer akan berhenti."
+                    )
+                  ) {
+                    handleDiscardWorkout();
+                  }
+                }}
+                className="col-span-1 py-4 border border-red-600 bg-red-950/80 hover:bg-red-900 text-red-300 font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-red-glow cursor-pointer transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>BATALKAN</span>
+              </button>
+
+              <button
+                onClick={handleFinish}
+                className="col-span-2 py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer transition-all"
+              >
+                <Check className="w-5 h-5 stroke-[3]" />
+                <span>SELESAIKAN & SERANG BOSS</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1444,9 +1765,9 @@ export function WorkoutTrackerForm({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4"
           >
-            <div className="w-full max-w-lg border-2 border-pixel-border bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,0,0,0.9)] max-h-[90vh] flex flex-col font-mono relative">
+            <div className="w-full max-w-lg border-2 border-pixel-border bg-surface p-4 sm:p-5 space-y-3.5 shadow-[0_0_50px_rgba(0,0,0,0.9)] max-h-[88dvh] flex flex-col font-mono relative overflow-hidden">
               <button
                 onClick={() => setIsPickerOpen(false)}
                 className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
@@ -1510,7 +1831,7 @@ export function WorkoutTrackerForm({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1 pt-1 min-h-[220px]">
+              <div className="flex-1 overflow-y-auto overscroll-contain space-y-3 pr-1 pt-1 min-h-[220px]">
                 {filteredDatabase.length === 0 ? (
                   <div className="p-6 text-center text-xs text-zinc-500 italic border border-dashed border-zinc-800 space-y-3">
                     <p>No exercises match your search query or muscle filter.</p>
@@ -1621,65 +1942,65 @@ export function WorkoutTrackerForm({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4"
           >
-            <div className="w-full max-w-md border-2 border-amber-500 bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(245,158,11,0.4)] font-mono relative">
-              <button
-                onClick={() => setIsCustomModalOpen(false)}
-                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 border border-amber-400 bg-amber-950/60 text-amber-400">
-                    <Sparkles className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-headline font-black text-lg text-white uppercase tracking-wider">
+            <div className="w-full max-w-md max-h-[88dvh] border-2 border-amber-500 bg-surface shadow-[0_0_50px_rgba(245,158,11,0.4)] font-mono flex flex-col overflow-hidden relative">
+              <div className="p-4 pb-2 border-b border-zinc-800 flex items-start justify-between flex-shrink-0">
+                <div className="space-y-0.5 pr-6">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 border border-amber-400 bg-amber-950/60 text-amber-400 flex-shrink-0">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-headline font-black text-base sm:text-lg text-white uppercase tracking-wider">
                       BUAT GERAKAN KUSTOM
                     </h3>
-                    <p className="text-[11px] text-zinc-400">
-                      Tambahkan gerakan baru ke database personalmu. Otomatis tersimpan dan bisa langsung dicatat.
-                    </p>
                   </div>
+                  <p className="text-[10px] text-zinc-400">
+                    Tambahkan gerakan baru ke database personalmu. Otomatis tersimpan dan bisa langsung dicatat.
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomModalOpen(false)}
+                  className="p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer flex-shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* QUICK INSPIRATION PRESETS */}
-              <div className="space-y-1.5 pt-1">
-                <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider flex items-center justify-between">
-                  <span>💡 CONTOH CEPAT (KLIK UNTUK AUTO-FILL):</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { name: "Kettlebell Swing", cat: "Legs" as const, eq: "Dumbbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
-                    { name: "Ring Dips", cat: "Chest" as const, eq: "Bodyweight" as const, diff: "Advanced" as const, mult: 1.2, stat: "AGI" as const },
-                    { name: "Landmine Press", cat: "Shoulders" as const, eq: "Barbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
-                    { name: "Nordic Hamstring Curl", cat: "Legs" as const, eq: "Bodyweight" as const, diff: "Advanced" as const, mult: 1.2, stat: "AGI" as const },
-                    { name: "Farmer's Walk", cat: "Core" as const, eq: "Dumbbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
-                  ].map((preset) => (
-                    <button
-                      key={preset.name}
-                      type="button"
-                      onClick={() => {
-                        setCName(preset.name);
-                        setCCategory(preset.cat);
-                        setCEquipment(preset.eq);
-                        setCDifficulty(preset.diff);
-                        setCMultiplier(preset.mult);
-                        setCScalingStat(preset.stat);
-                      }}
-                      className="px-2 py-1 text-[10px] font-bold border border-zinc-800 bg-black/60 text-zinc-300 hover:text-amber-400 hover:border-amber-400/80 transition-all cursor-pointer truncate"
-                    >
-                      + {preset.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <form onSubmit={handleCreateCustomExercise} className="space-y-4 pt-1">
+              <form onSubmit={handleCreateCustomExercise} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div className="p-4 space-y-3.5 flex-1 overflow-y-auto overscroll-contain">
+                  {/* QUICK INSPIRATION PRESETS */}
+                  <div className="space-y-1.5 pt-0.5">
+                    <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider flex items-center justify-between">
+                      <span>💡 CONTOH CEPAT (KLIK UNTUK AUTO-FILL):</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { name: "Kettlebell Swing", cat: "Legs" as const, eq: "Dumbbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
+                        { name: "Ring Dips", cat: "Chest" as const, eq: "Bodyweight" as const, diff: "Advanced" as const, mult: 1.2, stat: "AGI" as const },
+                        { name: "Landmine Press", cat: "Shoulders" as const, eq: "Barbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
+                        { name: "Nordic Hamstring Curl", cat: "Legs" as const, eq: "Bodyweight" as const, diff: "Advanced" as const, mult: 1.2, stat: "AGI" as const },
+                        { name: "Farmer's Walk", cat: "Core" as const, eq: "Dumbbell" as const, diff: "Intermediate" as const, mult: 1.0, stat: "STR" as const },
+                      ].map((preset) => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => {
+                            setCName(preset.name);
+                            setCCategory(preset.cat);
+                            setCEquipment(preset.eq);
+                            setCDifficulty(preset.diff);
+                            setCMultiplier(preset.mult);
+                            setCScalingStat(preset.stat);
+                          }}
+                          className="px-2 py-1 text-[10px] font-bold border border-zinc-800 bg-black/60 text-zinc-300 hover:text-amber-400 hover:border-amber-400/80 transition-all cursor-pointer truncate"
+                        >
+                          + {preset.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 {/* 1. EXERCISE NAME */}
                 <div className="space-y-1">
                   <label className="text-[10px] text-amber-400 font-bold uppercase flex items-center justify-between">
@@ -1914,12 +2235,14 @@ export function WorkoutTrackerForm({
                   </div>
                 </div>
 
-                {/* MODAL ACTION BUTTONS */}
-                <div className="pt-2 flex gap-2">
+                </div>
+
+                {/* MODAL ACTION BUTTONS - STICKY FOOTER */}
+                <div className="p-3 border-t border-zinc-800 bg-black/95 flex gap-2 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsCustomModalOpen(false)}
-                    className="w-1/3 py-2.5 border border-zinc-700 bg-black text-zinc-400 hover:text-white font-bold text-xs uppercase cursor-pointer transition-colors"
+                    className="w-1/3 py-2.5 border border-zinc-700 bg-zinc-900 text-zinc-300 hover:text-white font-bold text-xs uppercase cursor-pointer transition-colors"
                   >
                     BATAL
                   </button>

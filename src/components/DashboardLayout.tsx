@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Settings, Coins, Swords, Dumbbell, ShieldAlert, HeartPulse, X, Zap, Award, ArrowRight, History, Trophy, Crown, Shield, Users, Sparkles, Skull, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -62,6 +62,8 @@ export function DashboardLayout() {
   const [bossAttackModal, setBossAttackModal] = useState<{
     damageDealt: number;
     bossName: string;
+    missedDays?: number;
+    dailyDamage?: number;
   } | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isTombstoneDismissed, setIsTombstoneDismissed] = useState<boolean>(false);
@@ -291,79 +293,106 @@ export function DashboardLayout() {
   const expPercent = Math.min(100, Math.max(0, (userData.exp / userData.max_exp) * 100));
   const isCriticalHp = !isHeroDead && hpPercent < 20;
 
-  const handleUpgradeStat = async (statKey: "str" | "agi" | "vit" | "luk") => {
-    if (availableAp <= 0) return;
+  const pendingStatUpgradesRef = useRef<{ [key in "str" | "agi" | "vit" | "luk"]?: number }>({});
+  const statUpgradeTimersRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
-    const prevAp = availableAp;
-    const prevProfile = profile;
-    const nextAp = availableAp - 1;
-
-    setAvailableAp(nextAp);
-    try {
-      localStorage.setItem("ironpixels_available_ap", nextAp.toString());
-    } catch (e) {}
-
-    if (profile) {
-      const updatedStats = {
-        ...profile.stats,
-        [statKey]: (profile.stats[statKey] || 0) + 1,
-      };
-      const updatedProf = {
-        ...profile,
-        available_ap: nextAp,
-        stats: updatedStats,
-      };
-      setProfile(updatedProf);
+  const handleUpgradeStat = (statKey: "str" | "agi" | "vit" | "luk") => {
+    soundEngine.play("select");
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
       try {
-        localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
+        navigator.vibrate(15);
       } catch (e) {}
     }
 
-    try {
-      const res = await fetch("/api/user/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stat_key: statKey, amount: 1 }),
-      });
+    if (availableAp <= 0) return;
 
-      if (!res.ok) {
-        setAvailableAp(prevAp);
-        if (prevProfile) {
-          setProfile(prevProfile);
+    // Instant optimistic UI update
+    setAvailableAp((currentAp) => {
+      if (currentAp <= 0) return currentAp;
+      const nextAp = currentAp - 1;
+      try {
+        localStorage.setItem("ironpixels_available_ap", nextAp.toString());
+      } catch (e) {}
+      return nextAp;
+    });
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const updatedStats = {
+        ...prev.stats,
+        [statKey]: (prev.stats[statKey] || 0) + 1,
+      };
+      const updated = {
+        ...prev,
+        available_ap: Math.max(0, (prev.available_ap ?? 1) - 1),
+        stats: updatedStats,
+      };
+      try {
+        localStorage.setItem("ironpixels_profile", JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    // Accumulate clicks into pending batch
+    pendingStatUpgradesRef.current[statKey] = (pendingStatUpgradesRef.current[statKey] || 0) + 1;
+
+    // Debounce the server request (350ms) to bundle rapid clicks into a single batch
+    if (statUpgradeTimersRef.current[statKey]) {
+      clearTimeout(statUpgradeTimersRef.current[statKey]);
+    }
+
+    statUpgradeTimersRef.current[statKey] = setTimeout(async () => {
+      const batchAmount = pendingStatUpgradesRef.current[statKey] || 0;
+      delete pendingStatUpgradesRef.current[statKey];
+      delete statUpgradeTimersRef.current[statKey];
+
+      if (batchAmount <= 0) return;
+
+      try {
+        const res = await fetch("/api/user/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stat_key: statKey, amount: batchAmount }),
+        });
+
+        if (!res.ok) {
+          // In case of conflict or failure, re-sync smoothly from server
+          const freshRes = await fetch("/api/user/profile");
+          if (freshRes.ok) {
+            const freshData = await freshRes.json();
+            setProfile(freshData);
+            if (freshData.available_ap !== undefined) {
+              setAvailableAp(freshData.available_ap);
+            }
+            try {
+              localStorage.setItem("ironpixels_profile", JSON.stringify(freshData));
+              localStorage.setItem(
+                "ironpixels_available_ap",
+                (freshData.available_ap ?? 0).toString()
+              );
+            } catch (e) {}
+          }
+          return;
+        }
+
+        const data = await res.json();
+        if (data && data.profile) {
+          setProfile(data.profile);
+          if (data.profile.available_ap !== undefined) {
+            setAvailableAp(data.profile.available_ap);
+          }
           try {
-            localStorage.setItem("ironpixels_profile", JSON.stringify(prevProfile));
-            localStorage.setItem("ironpixels_available_ap", prevAp.toString());
+            localStorage.setItem("ironpixels_profile", JSON.stringify(data.profile));
+            localStorage.setItem(
+              "ironpixels_available_ap",
+              (data.profile.available_ap ?? 0).toString()
+            );
           } catch (e) {}
         }
-        const errData = await res.json().catch(() => ({}));
-        alert(errData.error || "Failed to allocate stat point.");
-        return;
+      } catch (err) {
+        // Network error: recover profile gracefully on next interaction
       }
-
-      const data = await res.json();
-      if (data && data.profile) {
-        setProfile(data.profile);
-        if (data.profile.available_ap !== undefined) {
-          setAvailableAp(data.profile.available_ap);
-        }
-        try {
-          localStorage.setItem("ironpixels_profile", JSON.stringify(data.profile));
-          localStorage.setItem(
-            "ironpixels_available_ap",
-            (data.profile.available_ap ?? 0).toString()
-          );
-        } catch (e) {}
-      }
-    } catch (err) {
-      setAvailableAp(prevAp);
-      if (prevProfile) {
-        setProfile(prevProfile);
-        try {
-          localStorage.setItem("ironpixels_profile", JSON.stringify(prevProfile));
-          localStorage.setItem("ironpixels_available_ap", prevAp.toString());
-        } catch (e) {}
-      }
-    }
+    }, 350);
   };
 
   const handleClaimQuestReward = (reward: { gold: number; exp: number }) => {
@@ -763,10 +792,14 @@ export function DashboardLayout() {
 
                   <div>
                     <h3 className="font-headline font-extrabold text-2xl text-red-500 uppercase tracking-wider">
-                      DAILY BOSS ATTACK!
+                      {bossAttackModal.missedDays && bossAttackModal.missedDays > 1
+                        ? `MULTI-DAY BOSS ASSAULT! (${bossAttackModal.missedDays} HARI)`
+                        : "DAILY BOSS ATTACK!"}
                     </h3>
                     <p className="text-xs text-gray-300 mt-1">
-                      NO GYM WORKOUT WAS LOGGED YESTERDAY.
+                      {bossAttackModal.missedDays && bossAttackModal.missedDays > 1
+                        ? `KAMU TELAH ABSEN LATIHAN SELAMA ${bossAttackModal.missedDays} HARI BERTURUT-TURUT!`
+                        : "NO GYM WORKOUT WAS LOGGED YESTERDAY."}
                     </p>
                   </div>
 
@@ -775,8 +808,16 @@ export function DashboardLayout() {
                       <span className="text-gray-400">ATTACKER:</span>
                       <span className="text-red-400 font-bold">{bossAttackModal.bossName}</span>
                     </div>
+                    {bossAttackModal.missedDays && bossAttackModal.missedDays > 1 && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-gray-400">HARI ABSEN (STACK):</span>
+                        <span className="text-amber-400 font-bold">
+                          {bossAttackModal.missedDays} Hari ({formatNumber(bossAttackModal.dailyDamage || 0)} HP/hari)
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-xs">
-                      <span className="text-gray-400">HERO DAMAGE TAKEN:</span>
+                      <span className="text-gray-400">TOTAL HERO DAMAGE TAKEN:</span>
                       <span className="text-red-500 font-bold">-{formatNumber(bossAttackModal.damageDealt)} HP</span>
                     </div>
                   </div>
