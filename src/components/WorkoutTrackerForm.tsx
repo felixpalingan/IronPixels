@@ -1820,7 +1820,7 @@ export function WorkoutTrackerForm({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
           >
-            <div className="w-full max-w-md border-2 border-amber-400 bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(251,191,36,0.4)] font-mono relative">
+            <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto border-2 border-amber-400 bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(251,191,36,0.4)] font-mono relative">
               <button
                 onClick={() => setIsSaveRoutineModalOpen(false)}
                 className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
