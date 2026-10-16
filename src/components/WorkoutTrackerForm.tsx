@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2, History, Play } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2, History, Play, Bell, BellOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat, isExerciseUnilateral } from "@/lib/exercisesData";
@@ -245,10 +245,59 @@ export function WorkoutTrackerForm({
     } catch (e) {}
   }, [loggedExercises, isWorkoutActive]);
 
+  const [notificationPermission, setNotificationPermission] = useState<
+    NotificationPermission | "unsupported"
+  >(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      return Notification.permission;
+    }
+    return "unsupported";
+  });
+
+  const postSWMessage = (message: any) => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    try {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage(message);
+      } else if (navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.active?.postMessage(message);
+        });
+      }
+    } catch (e) {}
+  };
+
+  const handleRequestNotificationPermission = async () => {
+    soundEngine.play("select");
+    soundEngine.triggerHaptic(50);
+    if (typeof window !== "undefined" && "Notification" in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setNotificationPermission(perm);
+        if (perm === "granted") {
+          soundEngine.triggerHaptic([100, 50, 100]);
+          postSWMessage({
+            type: "SCHEDULE_REST_TIMER",
+            targetTimestamp: Date.now() + 100,
+            title: "NOTIFIKASI REST AKTIF! 🔔",
+            body: "HP kamu sekarang akan bergetar dan memberi notifikasi saat waktu istirahat set selesai!",
+          });
+        }
+      } catch (e) {}
+    }
+  };
+
   // Register service worker for lockscreen rest timer notifications
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then(() => {
+          if ("Notification" in window) {
+            setNotificationPermission(Notification.permission);
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 
@@ -271,9 +320,7 @@ export function WorkoutTrackerForm({
         setRoutineNotice("REST TIMER FINISHED! GET READY FOR YOUR NEXT SET! 🏋️");
         setTimeout(() => setRoutineNotice(null), 5000);
 
-        if (navigator.serviceWorker?.controller) {
-          navigator.serviceWorker.controller.postMessage({ type: "CANCEL_REST_TIMER" });
-        }
+        postSWMessage({ type: "CANCEL_REST_TIMER" });
       }
     };
 
@@ -322,14 +369,12 @@ export function WorkoutTrackerForm({
           Notification.requestPermission().catch(() => {});
         }
       }
-      if (navigator.serviceWorker?.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: "SCHEDULE_REST_TIMER",
-          targetTimestamp: target,
-          title: "REST TIMER SELESAI! 🏋️",
-          body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
-        });
-      }
+      postSWMessage({
+        type: "SCHEDULE_REST_TIMER",
+        targetTimestamp: target,
+        title: "REST TIMER SELESAI! 🏋️",
+        body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
+      });
     } catch (e) {}
   };
 
@@ -352,19 +397,17 @@ export function WorkoutTrackerForm({
     } catch (e) {}
 
     try {
-      if (navigator.serviceWorker?.controller) {
-        if (newSecs > 0) {
-          navigator.serviceWorker.controller.postMessage({
-            type: "SCHEDULE_REST_TIMER",
-            targetTimestamp: newTarget,
-            title: "REST TIMER SELESAI! 🏋️",
-            body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
-          });
-        } else {
-          navigator.serviceWorker.controller.postMessage({
-            type: "CANCEL_REST_TIMER",
-          });
-        }
+      if (newSecs > 0) {
+        postSWMessage({
+          type: "SCHEDULE_REST_TIMER",
+          targetTimestamp: newTarget,
+          title: "REST TIMER SELESAI! 🏋️",
+          body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
+        });
+      } else {
+        postSWMessage({
+          type: "CANCEL_REST_TIMER",
+        });
       }
     } catch (e) {}
   };
@@ -379,13 +422,9 @@ export function WorkoutTrackerForm({
       localStorage.removeItem("ironpixels_rest_timer_target");
       localStorage.removeItem("ironpixels_rest_timer_total");
     } catch (e) {}
-    try {
-      if (navigator.serviceWorker?.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: "CANCEL_REST_TIMER",
-        });
-      }
-    } catch (e) {}
+    postSWMessage({
+      type: "CANCEL_REST_TIMER",
+    });
   };
 
   // Explicit session control: Start workout session
@@ -1305,6 +1344,37 @@ export function WorkoutTrackerForm({
                 </button>
               </div>
             )}
+
+            {/* MOBILE NOTIFICATION & VIBRATION STATUS BAR */}
+            <div className="pt-2 flex items-center justify-between border-t border-zinc-800/80 gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 text-[9.5px] text-zinc-400 font-mono">
+                <Bell className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span>NOTIFIKASI HP & GETAR:</span>
+              </div>
+
+              {notificationPermission === "granted" ? (
+                <div className="flex items-center gap-1 text-[9px] px-2 py-0.5 border border-[#00ff41]/60 bg-[#00ff41]/15 text-[#00ff41] font-mono font-bold uppercase shadow-neon">
+                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  <span>AKTIF (BERGETAR)</span>
+                </div>
+              ) : notificationPermission === "denied" ? (
+                <div className="flex items-center gap-1 text-[9px] px-2 py-0.5 border border-red-900 bg-red-950/40 text-red-400 font-mono uppercase">
+                  <BellOff className="w-2.5 h-2.5" />
+                  <span>DIBLOKIR BROWSER</span>
+                </div>
+              ) : notificationPermission === "unsupported" ? (
+                <span className="text-zinc-500 font-mono text-[9px]">TIDAK DIDUKUNG</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRequestNotificationPermission}
+                  className="px-2.5 py-1 border border-amber-400 bg-amber-950/60 hover:bg-amber-400 hover:text-black text-amber-300 font-headline font-bold text-[9px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-gold-glow transition-all"
+                >
+                  <Bell className="w-3 h-3 text-amber-400" />
+                  <span>AKTIFKAN GETAR HP</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
