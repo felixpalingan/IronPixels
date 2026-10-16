@@ -183,6 +183,16 @@ export function WorkoutTrackerForm({
     }
   });
 
+  const [restTimerTotalDuration, setRestTimerTotalDuration] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("ironpixels_rest_timer_total");
+      if (saved) return Number(saved);
+      const defaultSecs = localStorage.getItem("ironpixels_default_rest_timer");
+      if (defaultSecs) return Number(defaultSecs);
+    } catch (e) {}
+    return 90;
+  });
+
   // Real Session duration tracking (Strictly scoped to active session)
   const [sessionStartTime, setSessionStartTime] = useState<number>(() => {
     try {
@@ -298,9 +308,11 @@ export function WorkoutTrackerForm({
     const target = Date.now() + secs * 1000;
     setTargetEndTime(target);
     setRestTimerSecs(secs);
+    setRestTimerTotalDuration(secs);
     setIsTimerActive(true);
     try {
       localStorage.setItem("ironpixels_rest_timer_target", target.toString());
+      localStorage.setItem("ironpixels_rest_timer_total", secs.toString());
     } catch (e) {}
 
     // Service Worker lockscreen notification request
@@ -329,6 +341,7 @@ export function WorkoutTrackerForm({
     const newSecs = Math.max(0, Math.ceil((newTarget - Date.now()) / 1000));
     setTargetEndTime(newTarget);
     setRestTimerSecs(newSecs);
+    setRestTimerTotalDuration((prev) => Math.max(prev, newSecs));
     setIsTimerActive(newSecs > 0);
     try {
       if (newSecs > 0) {
@@ -358,11 +371,13 @@ export function WorkoutTrackerForm({
 
   const handleCancelTimer = () => {
     soundEngine.play("select");
+    soundEngine.triggerHaptic(50);
     setIsTimerActive(false);
     setTargetEndTime(null);
     setRestTimerSecs(0);
     try {
       localStorage.removeItem("ironpixels_rest_timer_target");
+      localStorage.removeItem("ironpixels_rest_timer_total");
     } catch (e) {}
     try {
       if (navigator.serviceWorker?.controller) {
@@ -1018,7 +1033,7 @@ export function WorkoutTrackerForm({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -80, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed top-0 left-0 right-0 z-50 bg-black/95 border-b-2 border-[#00ff41] p-2.5 sm:p-3 shadow-[0_4px_30px_rgba(0,255,65,0.4)] backdrop-blur-md font-mono"
+            className="fixed top-0 left-0 right-0 z-50 bg-black/95 border-b-2 border-[#00ff41] px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] shadow-[0_4px_30px_rgba(0,255,65,0.4)] backdrop-blur-md font-mono"
           >
             <div className="max-w-[600px] mx-auto space-y-1.5">
               <div className="flex items-center justify-between gap-2">
@@ -1069,7 +1084,10 @@ export function WorkoutTrackerForm({
                   style={{
                     width: `${Math.min(
                       100,
-                      Math.max(0, (restTimerSecs / (defaultRestTimerSecs || 90)) * 100)
+                      Math.max(
+                        0,
+                        (restTimerSecs / (restTimerTotalDuration || defaultRestTimerSecs || 90)) * 100
+                      )
                     )}%`,
                   }}
                 />
