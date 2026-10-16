@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2, History, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
-import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat } from "@/lib/exercisesData";
+import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat, isExerciseUnilateral } from "@/lib/exercisesData";
 import { calculateSetRvs as calculateSetRvsPure } from "@/lib/workoutCalculations";
 import { soundEngine } from "@/lib/soundEffects";
 import { WeightUnit, kgToLbs, lbsToKg, toDisplayWeight, toCanonicalKg } from "@/lib/unitConversion";
@@ -432,6 +432,7 @@ export function WorkoutTrackerForm({
   const [cDifficulty, setCDifficulty] = useState<ExerciseDefinition["difficultyLabel"]>("Intermediate");
   const [cScalingStat, setCScalingStat] = useState<"STR" | "AGI">("AGI");
   const [cMultiplier, setCMultiplier] = useState<number>(1.0);
+  const [cIsUnilateral, setCIsUnilateral] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchRoutines = async () => {
@@ -673,6 +674,7 @@ export function WorkoutTrackerForm({
         "Fokus pada kontraksi otot target, hembuskan napas saat fase kontraksi / beban puncak.",
       ],
       rvsMultiplier: cleanMultiplier,
+      isUnilateral: cIsUnilateral,
       aliases: [cName.trim().toLowerCase()],
       isCustom: true,
     };
@@ -703,6 +705,7 @@ export function WorkoutTrackerForm({
     setCName("");
     setCMultiplier(1.0);
     setCDifficulty("Intermediate");
+    setCIsUnilateral(false);
     setIsCustomModalOpen(false);
   };
 
@@ -1412,6 +1415,7 @@ export function WorkoutTrackerForm({
             const defObj = EXERCISE_DATABASE.find((d) => d.id === ex.definitionId);
             const scalingStat = getExerciseScalingStat({ category: ex.category, equipment: ex.equipment });
             const isAgilityEx = scalingStat === "AGI";
+            const isUnilateralEx = isExerciseUnilateral({ name: ex.name, isUnilateral: defObj?.isUnilateral });
             const scalingFactor = isAgilityEx
               ? ((heroStats?.agi || 70) / 50).toFixed(2)
               : ((heroStats?.str || 85) / 50).toFixed(2);
@@ -1429,6 +1433,11 @@ export function WorkoutTrackerForm({
                         <span className="text-[9px] px-1.5 py-0.5 border border-zinc-700 bg-black text-zinc-400 font-normal flex-shrink-0">
                           {ex.category}
                         </span>
+                        {isUnilateralEx && (
+                          <span className="text-[9px] px-1.5 py-0.5 border border-sky-400 bg-sky-950/80 text-sky-300 font-bold flex-shrink-0">
+                            ⚡ UNILATERAL (PER SISI)
+                          </span>
+                        )}
                         {isAgilityEx ? (
                           <span className="text-[9px] px-1.5 py-0.5 border border-fuchsia-500/80 bg-fuchsia-950/60 text-fuchsia-300 font-bold flex-shrink-0">
                             🏃 AGI SCALING (x{scalingFactor})
@@ -1463,11 +1472,24 @@ export function WorkoutTrackerForm({
                   </div>
                 </div>
 
+                {isUnilateralEx && (
+                  <div className="flex items-start sm:items-center gap-2 p-2 bg-sky-950/40 border border-sky-500/50 text-sky-200 text-[10.5px] font-mono shadow-sm">
+                    <span className="px-1.5 py-0.5 bg-sky-900 border border-sky-400 text-sky-200 font-extrabold text-[9px] uppercase tracking-wider flex-shrink-0">
+                      💡 TIPS LOG UNILATERAL
+                    </span>
+                    <span className="leading-tight">
+                      Catat <strong>beban 1 dumbbell</strong> &amp; <strong>reps per tangan/kaki</strong> (contoh: 8 reps kiri &amp; 8 reps kanan = ketik <strong>8 reps</strong>, jangan ditotal).
+                    </span>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1.5 text-[9px] text-zinc-400 font-bold uppercase text-center border-b border-pixel-border/30 pb-1.5">
                     <span className="col-span-1">SET</span>
-                    <span className="col-span-3">{weightUnit.toUpperCase()} (WEIGHT)</span>
-                    <span className="col-span-3">REPS</span>
+                    <span className="col-span-3">
+                      {weightUnit.toUpperCase()} {isUnilateralEx ? "(PER DUMBBELL)" : "(WEIGHT)"}
+                    </span>
+                    <span className="col-span-3">{isUnilateralEx ? "REPS / SISI" : "REPS"}</span>
                     <span className="col-span-2">RVS</span>
                     <span className="col-span-3">STATUS / LOG</span>
                   </div>
@@ -1518,6 +1540,8 @@ export function WorkoutTrackerForm({
                                 ? String(toDisplayWeight(prevSet.weight_kg, weightUnit))
                                 : isAgilityEx
                                 ? "0 (BW)"
+                                : isUnilateralEx
+                                ? "Beban 1 sisi"
                                 : "0"
                             }
                           />
@@ -1536,6 +1560,8 @@ export function WorkoutTrackerForm({
                             placeholder={
                               prevSet && prevSet.reps > 0
                                 ? String(prevSet.reps)
+                                : isUnilateralEx
+                                ? "Reps/sisi"
                                 : "0"
                             }
                           />
@@ -1897,6 +1923,11 @@ export function WorkoutTrackerForm({
                             <span className="px-2 py-0.5 border border-amber-500/50 bg-amber-950/30 text-amber-300 text-[9px] font-bold uppercase">
                               {def.equipment}
                             </span>
+                            {isExerciseUnilateral(def) && (
+                              <span className="px-2 py-0.5 border border-sky-400/80 bg-sky-950/60 text-sky-300 text-[9px] font-black uppercase tracking-wider">
+                                ⚡ UNILATERAL (PER SISI)
+                              </span>
+                            )}
                             {isAgilityEx ? (
                               <span className="px-2 py-0.5 border border-fuchsia-500/80 bg-fuchsia-950/60 text-fuchsia-300 text-[9px] font-black uppercase tracking-wider">
                                 🏃 AGI SCALING (x{factorStr})
@@ -2196,6 +2227,27 @@ export function WorkoutTrackerForm({
                   </div>
                 </div>
 
+                {/* UNILATERAL MOVEMENT TOGGLE */}
+                <div className="p-2.5 border border-sky-900/60 bg-sky-950/20 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-sky-300 font-bold uppercase flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={cIsUnilateral}
+                        onChange={(e) => setCIsUnilateral(e.target.checked)}
+                        className="w-4 h-4 accent-[#00ff41] cursor-pointer"
+                      />
+                      <span>GERAKAN UNILATERAL (1 SISI / 1 TANGAN / 1 KAKI)</span>
+                    </label>
+                    <span className="text-[9px] text-sky-400 font-mono font-bold">
+                      {cIsUnilateral ? "AKTIF" : "NONAKTIF"}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-zinc-400 font-mono leading-tight pl-6">
+                    Centang jika gerakan dilakukan bergantian atau satu sisi (contoh: Dumbbell Curl 1 tangan, Split Squat). Pengguna akan diminta mengisi <strong>beban per dumbbell</strong> dan <strong>reps per sisi</strong>.
+                  </p>
+                </div>
+
                 {/* 6. LIVE PREVIEW CARD */}
                 <div className="space-y-1 pt-1">
                   <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
@@ -2222,6 +2274,11 @@ export function WorkoutTrackerForm({
                       <span className="px-2 py-0.5 border border-amber-500/50 bg-amber-950/30 text-amber-300 text-[9px] font-bold uppercase">
                         {cEquipment}
                       </span>
+                      {cIsUnilateral && (
+                        <span className="px-2 py-0.5 border border-sky-400/80 bg-sky-950/60 text-sky-300 text-[9px] font-black uppercase">
+                          ⚡ UNILATERAL (PER SISI)
+                        </span>
+                      )}
                       {cScalingStat === "AGI" ? (
                         <span className="px-2 py-0.5 border border-fuchsia-500/80 bg-fuchsia-950/60 text-fuchsia-300 text-[9px] font-black uppercase">
                           🏃 AGI SCALING ({cMultiplier.toFixed(2)}x)
