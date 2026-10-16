@@ -1072,20 +1072,22 @@ export function WorkoutTrackerForm({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -80, opacity: 0 }}
             transition={{ duration: 0.2 }}
+            role="region"
+            aria-label="Rest Timer Overlay"
             className="fixed top-0 left-0 right-0 z-50 bg-black/95 border-b-2 border-[#00ff41] px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] shadow-[0_4px_30px_rgba(0,255,65,0.4)] backdrop-blur-md font-mono"
           >
             <div className="max-w-[600px] mx-auto space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded border border-[#00ff41] bg-[#00ff41]/20 flex items-center justify-center text-[#00ff41] animate-pulse">
-                    <Timer className="w-4 h-4" />
+                    <Timer className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <div>
                     <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                       <span>REST TIMER AKTIF</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-ping" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-ping" aria-hidden="true" />
                     </div>
-                    <div className="font-headline font-black text-xl sm:text-2xl text-[#00ff41] tracking-wider leading-none">
+                    <div className="font-headline font-black text-xl sm:text-2xl text-[#00ff41] tracking-wider leading-none" aria-live="polite">
                       {Math.floor(restTimerSecs / 60)}:{(restTimerSecs % 60).toString().padStart(2, "0")}
                     </div>
                   </div>
@@ -1095,21 +1097,24 @@ export function WorkoutTrackerForm({
                   <button
                     type="button"
                     onClick={() => handleAdjustTimer(-30)}
-                    className="px-2 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[11px] font-bold text-zinc-300 cursor-pointer transition-colors"
+                    aria-label="Kurangi waktu istirahat 30 detik"
+                    className="min-h-[36px] min-w-[36px] px-2 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-[11px] font-bold text-zinc-300 cursor-pointer transition-colors"
                   >
                     -30s
                   </button>
                   <button
                     type="button"
                     onClick={() => handleAdjustTimer(30)}
-                    className="px-2 py-1.5 bg-amber-950/70 border border-amber-500 hover:border-amber-400 text-[11px] font-bold text-amber-300 cursor-pointer shadow-gold-glow transition-colors"
+                    aria-label="Tambah waktu istirahat 30 detik"
+                    className="min-h-[36px] min-w-[36px] px-2 py-1.5 bg-amber-950/70 border border-amber-500 hover:border-amber-400 text-[11px] font-bold text-amber-300 cursor-pointer shadow-gold-glow transition-colors"
                   >
                     +30s
                   </button>
                   <button
                     type="button"
                     onClick={handleCancelTimer}
-                    className="px-3 py-1.5 bg-red-950/80 border border-red-600 hover:border-red-500 text-[11px] font-bold text-red-300 cursor-pointer shadow-red-glow transition-colors"
+                    aria-label="Lewati waktu istirahat"
+                    className="min-h-[36px] px-3 py-1.5 bg-red-950/80 border border-red-600 hover:border-red-500 text-[11px] font-bold text-red-300 cursor-pointer shadow-red-glow transition-colors"
                   >
                     SKIP
                   </button>
@@ -1820,18 +1825,25 @@ export function WorkoutTrackerForm({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
           >
-            <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto border-2 border-amber-400 bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(251,191,36,0.4)] font-mono relative">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="save-routine-title"
+              className="w-full max-w-md max-h-[88dvh] overflow-y-auto border-2 border-amber-400 bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(251,191,36,0.4)] font-mono relative"
+            >
               <button
+                type="button"
                 onClick={() => setIsSaveRoutineModalOpen(false)}
+                aria-label="Tutup jendela simpan template"
                 className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
 
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
-                  <h3 className="font-headline font-black text-lg text-white uppercase tracking-wider">
+                  <Sparkles className="w-5 h-5 text-amber-400" aria-hidden="true" />
+                  <h3 id="save-routine-title" className="font-headline font-black text-lg text-white uppercase tracking-wider">
                     SAVE ROUTINE TEMPLATE
                   </h3>
                 </div>
@@ -1903,17 +1915,24 @@ export function WorkoutTrackerForm({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4"
           >
-            <div className="w-full max-w-lg border-2 border-pixel-border bg-surface p-4 sm:p-5 space-y-3.5 shadow-[0_0_50px_rgba(0,0,0,0.9)] max-h-[88dvh] flex flex-col font-mono relative overflow-hidden">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="exercise-db-title"
+              className="w-full max-w-lg border-2 border-pixel-border bg-surface p-4 sm:p-5 space-y-3.5 shadow-[0_0_50px_rgba(0,0,0,0.9)] max-h-[88dvh] flex flex-col font-mono relative overflow-hidden"
+            >
               <button
+                type="button"
                 onClick={() => setIsPickerOpen(false)}
+                aria-label="Tutup jendela database latihan"
                 className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
 
               <div className="flex items-start justify-between gap-2 pr-6">
                 <div className="space-y-1">
-                  <h3 className="font-headline font-black text-xl text-white uppercase tracking-wider">
+                  <h3 id="exercise-db-title" className="font-headline font-black text-xl text-white uppercase tracking-wider">
                     EXERCISE DATABASE
                   </h3>
                   <p className="text-xs text-zinc-400">
@@ -2107,14 +2126,19 @@ export function WorkoutTrackerForm({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4"
           >
-            <div className="w-full max-w-md max-h-[88dvh] border-2 border-amber-500 bg-surface shadow-[0_0_50px_rgba(245,158,11,0.4)] font-mono flex flex-col overflow-hidden relative">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="custom-exercise-title"
+              className="w-full max-w-md max-h-[88dvh] border-2 border-amber-500 bg-surface shadow-[0_0_50px_rgba(245,158,11,0.4)] font-mono flex flex-col overflow-hidden relative"
+            >
               <div className="p-4 pb-2 border-b border-zinc-800 flex items-start justify-between flex-shrink-0">
                 <div className="space-y-0.5 pr-6">
                   <div className="flex items-center gap-2">
                     <div className="p-1 border border-amber-400 bg-amber-950/60 text-amber-400 flex-shrink-0">
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-4 h-4" aria-hidden="true" />
                     </div>
-                    <h3 className="font-headline font-black text-base sm:text-lg text-white uppercase tracking-wider">
+                    <h3 id="custom-exercise-title" className="font-headline font-black text-base sm:text-lg text-white uppercase tracking-wider">
                       BUAT GERAKAN KUSTOM
                     </h3>
                   </div>
@@ -2125,9 +2149,10 @@ export function WorkoutTrackerForm({
                 <button
                   type="button"
                   onClick={() => setIsCustomModalOpen(false)}
+                  aria-label="Tutup jendela buat gerakan kustom"
                   className="p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer flex-shrink-0"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
 
@@ -2458,20 +2483,27 @@ export function WorkoutTrackerForm({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
           >
-            <div className="w-full max-w-md border-2 border-[#00ff41] bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,255,65,0.3)] font-mono relative">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="guide-exercise-title"
+              className="w-full max-w-md border-2 border-[#00ff41] bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,255,65,0.3)] font-mono relative"
+            >
               <button
+                type="button"
                 onClick={() => setActiveGuideExercise(null)}
+                aria-label="Tutup panduan gerakan"
                 className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
 
               <div className="space-y-1 border-b border-pixel-border/50 pb-3 pr-6">
                 <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
                   EXECUTION GUIDE & INSTRUCTIONS
                 </span>
-                <h3 className="font-headline font-black text-lg text-white uppercase tracking-wider">
+                <h3 id="guide-exercise-title" className="font-headline font-black text-lg text-white uppercase tracking-wider">
                   {activeGuideExercise.name}
                 </h3>
               </div>

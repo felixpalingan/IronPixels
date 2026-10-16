@@ -691,22 +691,27 @@ export function DashboardLayout() {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleToggleSound}
+              aria-label={isMuted ? "Aktifkan Efek Suara" : "Bisukan Efek Suara"}
               title={isMuted ? "Unmute Sound Effects" : "Mute Sound Effects"}
-              className={`p-1.5 border transition-all cursor-pointer flex items-center justify-center ${
+              className={`min-w-[40px] min-h-[40px] p-2 border transition-all cursor-pointer flex items-center justify-center ${
                 isMuted
                   ? "border-red-500/80 bg-red-950/40 text-red-400 hover:border-red-400"
                   : "border-pixel-border bg-surface hover:border-pixel-green text-pixel-green shadow-neon"
               }`}
             >
-              {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              {isMuted ? <VolumeX className="w-5 h-5" aria-hidden="true" /> : <Volume2 className="w-5 h-5" aria-hidden="true" />}
             </button>
 
             <button
+              type="button"
               onClick={() => setIsSettingsOpen(true)}
-              className="p-1.5 border border-pixel-border bg-surface hover:border-pixel-green transition-colors text-pixel-green cursor-pointer"
+              aria-label="Buka Pengaturan"
+              title="Settings"
+              className="min-w-[40px] min-h-[40px] p-2 border border-pixel-border bg-surface hover:border-pixel-green transition-colors text-pixel-green cursor-pointer flex items-center justify-center"
             >
-              <Settings className="w-5 h-5" />
+              <Settings className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
         </header>
@@ -778,20 +783,27 @@ export function DashboardLayout() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
               >
-                <div className="w-full max-w-sm border-2 border-red-600 bg-surface p-6 text-center space-y-4 shadow-[0_0_50px_rgba(255,0,0,0.6)] font-mono relative">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="boss-attack-title"
+                  className="w-full max-w-sm border-2 border-red-600 bg-surface p-6 text-center space-y-4 shadow-[0_0_50px_rgba(255,0,0,0.6)] font-mono relative"
+                >
                   <button
+                    type="button"
                     onClick={() => setBossAttackModal(null)}
-                    className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white"
+                    aria-label="Tutup pemberitahuan serangan bos"
+                    className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white cursor-pointer"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
 
                   <div className="w-14 h-14 border-2 border-red-600 bg-red-950/60 text-red-500 flex items-center justify-center mx-auto shadow-red-glow animate-bounce">
-                    <ShieldAlert className="w-8 h-8" />
+                    <ShieldAlert className="w-8 h-8" aria-hidden="true" />
                   </div>
 
                   <div>
-                    <h3 className="font-headline font-extrabold text-2xl text-red-500 uppercase tracking-wider">
+                    <h3 id="boss-attack-title" className="font-headline font-extrabold text-2xl text-red-500 uppercase tracking-wider">
                       {bossAttackModal.missedDays && bossAttackModal.missedDays > 1
                         ? `MULTI-DAY BOSS ASSAULT! (${bossAttackModal.missedDays} HARI)`
                         : "DAILY BOSS ATTACK!"}
@@ -845,13 +857,18 @@ export function DashboardLayout() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
               >
-                <div className="w-full max-w-sm border-2 border-pixel-green bg-surface p-6 text-center space-y-4 shadow-neon font-mono">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="gym-victory-title"
+                  className="w-full max-w-sm border-2 border-pixel-green bg-surface p-6 text-center space-y-4 shadow-neon font-mono"
+                >
                   <div className="w-14 h-14 border-2 border-pixel-green bg-pixel-green/20 text-pixel-green flex items-center justify-center mx-auto shadow-neon animate-bounce">
-                    <Swords className="w-8 h-8" />
+                    <Swords className="w-8 h-8" aria-hidden="true" />
                   </div>
 
                   <div>
-                    <h3 className="font-headline font-extrabold text-2xl text-pixel-green uppercase tracking-wider">
+                    <h3 id="gym-victory-title" className="font-headline font-extrabold text-2xl text-pixel-green uppercase tracking-wider">
                       GYM RAID VICTORY!
                     </h3>
                     <p className="text-xs text-gray-300 mt-1">
