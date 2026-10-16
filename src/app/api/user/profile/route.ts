@@ -74,11 +74,9 @@ export async function GET() {
           }
         }
 
-        // Count calendar days between refDate and yesterday that had no workout
+        // Count calendar days from refDateStr up to yesterday that had no workout
         let missedDays = 0;
         const curDate = new Date(refDateStr + "T00:00:00Z");
-        curDate.setUTCDate(curDate.getUTCDate() + 1); // Start from day after last penalty/workout
-
         const todayDate = new Date(todayDateStr + "T00:00:00Z");
 
         while (curDate < todayDate) {
