@@ -336,7 +336,7 @@ export function MultiplayerHub({
               <div className="grid grid-cols-3 gap-1 bg-black border border-pixel-border p-2 text-center">
                 <div>
                   <div className="text-[9px] text-zinc-500 font-bold">MAX FLOOR</div>
-                  <div className="font-headline font-black text-sm text-[#00ff41]">
+                  <div className="font-headline font-black text-sm text-pixel-green">
                     FLOOR {inspectUser.max_floor}
                   </div>
                 </div>
@@ -364,7 +364,7 @@ export function MultiplayerHub({
                 ) : (
                   <button
                     onClick={() => handleFriendAction(inspectUser.user_id, "send_request")}
-                    className="w-full py-2.5 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-neon"
+                    className="w-full py-2.5 border border-pixel-green bg-pixel-green/20 hover:bg-pixel-green text-pixel-green hover:text-black font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-neon"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>ADD FRIEND</span>
@@ -452,7 +452,7 @@ export function MultiplayerHub({
               <div className="grid grid-cols-2 gap-2 bg-black border border-purple-900 p-2.5 text-center">
                 <div>
                   <div className="text-[9px] text-zinc-500 font-bold uppercase">TOTAL PARTY FLOOR</div>
-                  <div className="font-headline font-black text-sm text-[#00ff41]">
+                  <div className="font-headline font-black text-sm text-pixel-green">
                     FLOOR {inspectParty.total_party_floor}
                   </div>
                 </div>
@@ -503,7 +503,7 @@ export function MultiplayerHub({
 
       <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between shadow-neon">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 border border-[#00ff41] bg-[#00ff41]/10 text-[#00ff41] flex items-center justify-center">
+          <div className="w-9 h-9 border border-pixel-green bg-pixel-green/10 text-pixel-green flex items-center justify-center">
             <Trophy className="w-5 h-5" />
           </div>
           <div>
@@ -526,7 +526,7 @@ export function MultiplayerHub({
       </div>
 
       {partyNotice && (
-        <div className="bg-[#00ff41]/20 border border-[#00ff41] p-2.5 text-xs font-bold text-[#00ff41] text-center shadow-neon animate-pulse">
+        <div className="bg-pixel-green/20 border border-pixel-green p-2.5 text-xs font-bold text-pixel-green text-center shadow-neon animate-pulse">
           {partyNotice}
         </div>
       )}
@@ -548,7 +548,7 @@ export function MultiplayerHub({
           onClick={() => setSubTab("friends")}
           className={`py-2 px-1 flex items-center justify-center gap-1.5 font-mono text-[11px] font-bold transition-all relative ${
             subTab === "friends"
-              ? "bg-[#00ff41] text-black shadow-neon"
+              ? "bg-pixel-green text-black shadow-neon"
               : "text-zinc-400 hover:text-white"
           }`}
         >
@@ -588,7 +588,7 @@ export function MultiplayerHub({
                 onClick={() => setLbGroup("user")}
                 className={`py-2 text-xs font-headline font-black uppercase transition-all flex items-center justify-center gap-1.5 ${
                   lbGroup === "user"
-                    ? "bg-[#00ff41] text-black shadow-neon"
+                    ? "bg-pixel-green text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -614,7 +614,7 @@ export function MultiplayerHub({
                 onClick={() => setLbMetric("floor")}
                 className={`py-1.5 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 ${
                   lbMetric === "floor"
-                    ? "bg-[#00ff41] text-black shadow-neon"
+                    ? "bg-pixel-green text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -650,8 +650,8 @@ export function MultiplayerHub({
             <div className="space-y-2 max-h-[440px] overflow-y-auto pr-1">
               {isLoadingLeaderboard && (lbGroup === "party" ? partyLeaderboardList.length === 0 : leaderboardList.length === 0) ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 px-1 text-[10px] text-[#00ff41] font-bold animate-pulse">
-                    <span className="w-1.5 h-1.5 bg-[#00ff41]" />
+                  <div className="flex items-center gap-2 px-1 text-[10px] text-pixel-green font-bold animate-pulse">
+                    <span className="w-1.5 h-1.5 bg-pixel-green" />
                     <span>SYNCHRONIZING {lbGroup === "party" ? "GUILD PARTIES" : "LEADERBOARD"}...</span>
                   </div>
                   <LeaderboardSkeleton count={6} />
@@ -704,7 +704,7 @@ export function MultiplayerHub({
 
                         <div className="text-right">
                           {lbMetric === "floor" && (
-                            <div className="font-headline font-black text-sm text-[#00ff41]">
+                            <div className="font-headline font-black text-sm text-pixel-green">
                               FLOOR {entry.total_party_floor}
                             </div>
                           )}
@@ -738,7 +738,7 @@ export function MultiplayerHub({
                     <div
                       key={entry.user_id}
                       onClick={() => setInspectUser(entry)}
-                      className={`border border-pixel-border bg-surface p-3 flex items-center justify-between transition-all hover:border-[#00ff41] cursor-pointer ${
+                      className={`border border-pixel-border bg-surface p-3 flex items-center justify-between transition-all hover:border-pixel-green cursor-pointer ${
                         rank <= 3 ? "shadow-neon border-pixel-green/60" : ""
                       }`}
                     >
@@ -776,7 +776,7 @@ export function MultiplayerHub({
 
                       <div className="text-right">
                         {lbMetric === "floor" && (
-                          <div className="font-headline font-black text-sm text-[#00ff41]">
+                          <div className="font-headline font-black text-sm text-pixel-green">
                             FLOOR {entry.max_floor}
                           </div>
                         )}
@@ -814,7 +814,7 @@ export function MultiplayerHub({
                 placeholder="Search players by username..."
                 value={searchQuery}
                 onChange={(e) => handleSearchPlayers(e.target.value)}
-                className="w-full bg-black border border-pixel-border focus:border-[#00ff41] px-3 py-2.5 pl-9 text-xs text-white placeholder:text-zinc-600 outline-none transition-colors"
+                className="w-full bg-black border border-pixel-border focus:border-pixel-green px-3 py-2.5 pl-9 text-xs text-white placeholder:text-zinc-600 outline-none transition-colors"
               />
               <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
               {searchQuery && (
@@ -832,7 +832,7 @@ export function MultiplayerHub({
                 <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center justify-between">
                   <span>SEARCH RESULTS ({searchResults.length})</span>
                   {isSearchLoading && (
-                    <span className="text-[#00ff41] animate-pulse">SEARCHING DATABASE...</span>
+                    <span className="text-pixel-green animate-pulse">SEARCHING DATABASE...</span>
                   )}
                 </div>
                 {isSearchLoading && searchResults.length === 0 ? (
@@ -882,7 +882,7 @@ export function MultiplayerHub({
                       </div>
 
                       {user.status === "friend" ? (
-                        <div className="px-2.5 py-1 bg-[#00ff41]/20 border border-[#00ff41] text-[#00ff41] font-bold text-[10px] uppercase flex items-center gap-1">
+                        <div className="px-2.5 py-1 bg-pixel-green/20 border border-pixel-green text-pixel-green font-bold text-[10px] uppercase flex items-center gap-1">
                           <UserCheck className="w-3 h-3" />
                           <span>FRIEND</span>
                         </div>
@@ -893,7 +893,7 @@ export function MultiplayerHub({
                       ) : (
                         <button
                           onClick={() => handleFriendAction(user.user_id, "send_request")}
-                          className="px-2.5 py-1 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black font-bold text-[10px] uppercase flex items-center gap-1 transition-all cursor-pointer shadow-neon"
+                          className="px-2.5 py-1 border border-pixel-green bg-pixel-green/20 hover:bg-pixel-green text-pixel-green hover:text-black font-bold text-[10px] uppercase flex items-center gap-1 transition-all cursor-pointer shadow-neon"
                         >
                           <UserPlus className="w-3 h-3" />
                           <span>ADD</span>
@@ -929,7 +929,7 @@ export function MultiplayerHub({
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => handleFriendAction(req.user_id, "accept_request")}
-                            className="px-2 py-1 bg-[#00ff41] text-black font-bold text-[10px] uppercase shadow-neon cursor-pointer flex items-center gap-1"
+                            className="px-2 py-1 bg-pixel-green text-black font-bold text-[10px] uppercase shadow-neon cursor-pointer flex items-center gap-1"
                           >
                             <Check className="w-3 h-3" />
                             <span>ACCEPT</span>
@@ -947,15 +947,15 @@ export function MultiplayerHub({
                 )}
 
                 <div className="space-y-2">
-                  <div className="text-[10px] text-[#00ff41] font-bold uppercase tracking-wider flex items-center justify-between">
+                  <div className="text-[10px] text-pixel-green font-bold uppercase tracking-wider flex items-center justify-between">
                     <span>MY FRIENDS LIST ({friendsData.friends.length})</span>
                     <span className="text-zinc-500 text-[9px]">ACTIVE WARRIORS</span>
                   </div>
 
                   {isLoadingFriends && friendsData.friends.length === 0 ? (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 px-1 text-[10px] text-[#00ff41] font-bold animate-pulse">
-                        <span className="w-1.5 h-1.5 bg-[#00ff41]" />
+                      <div className="flex items-center gap-2 px-1 text-[10px] text-pixel-green font-bold animate-pulse">
+                        <span className="w-1.5 h-1.5 bg-pixel-green" />
                         <span>SYNCHRONIZING FRIENDS LIST...</span>
                       </div>
                       {[...Array(3)].map((_, i) => (
@@ -986,7 +986,7 @@ export function MultiplayerHub({
                     friendsData.friends.map((friend) => (
                       <div
                         key={friend.user_id}
-                        className="border border-pixel-border bg-surface p-3 flex items-center justify-between hover:border-[#00ff41] transition-all"
+                        className="border border-pixel-border bg-surface p-3 flex items-center justify-between hover:border-pixel-green transition-all"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 bg-black border border-pixel-border p-0.5 flex items-center justify-center">
@@ -1000,7 +1000,7 @@ export function MultiplayerHub({
                           <div>
                             <div className="font-bold text-xs text-white flex items-center gap-2">
                               <span>{friend.username}</span>
-                              <span className="text-[9px] bg-[#00ff41]/20 border border-[#00ff41]/60 text-[#00ff41] px-1 py-0.2 font-extrabold">
+                              <span className="text-[9px] bg-pixel-green/20 border border-pixel-green/60 text-pixel-green px-1 py-0.2 font-extrabold">
                                 ONLINE
                               </span>
                             </div>
@@ -1158,7 +1158,7 @@ export function MultiplayerHub({
                 <div className="grid grid-cols-2 gap-2 bg-black border border-purple-900 p-3 text-center">
                   <div>
                     <div className="text-[9px] text-zinc-500 font-bold uppercase">COMBINED PARTY CP</div>
-                    <div className="font-headline font-black text-base text-[#00ff41]">
+                    <div className="font-headline font-black text-base text-pixel-green">
                       {formatNumber(party.total_party_cp)} CP
                     </div>
                   </div>
@@ -1239,7 +1239,7 @@ export function MultiplayerHub({
                             </div>
                           )}
 
-                          <div className="text-[10px] text-[#00ff41] font-bold">
+                          <div className="text-[10px] text-pixel-green font-bold">
                             ONLINE
                           </div>
                         </div>

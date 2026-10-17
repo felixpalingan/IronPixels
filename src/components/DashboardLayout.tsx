@@ -883,14 +883,14 @@ export function DashboardLayout() {
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">HERO HEAL RECOVERED:</span>
-                      <span className="text-[#00ff41] font-bold flex items-center gap-1">
+                      <span className="text-pixel-green font-bold flex items-center gap-1">
                         <HeartPulse className="w-3.5 h-3.5" />
                         +{formatNumber(sessionVictoryModal.healedHp)} HP
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">TOTAL VOLUME LIFTED:</span>
-                      <span className="text-[#00ff41] font-bold">{formatNumber(sessionVictoryModal.totalVolume)} KG</span>
+                      <span className="text-pixel-green font-bold">{formatNumber(sessionVictoryModal.totalVolume)} KG</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-gray-400">GOLD LOOT REWARD:</span>
@@ -980,7 +980,7 @@ export function DashboardLayout() {
                             className={`h-full transition-all duration-300 ${
                               isHeroDead || isCriticalHp
                                 ? "bg-health-red shadow-red-glow animate-pulse"
-                                : "bg-[#00ff41] shadow-neon"
+                                : "bg-pixel-green shadow-neon"
                             }`}
                             style={{ width: `${Math.round((userData.current_hp / Math.max(1, userData.max_hp)) * 100)}%` }}
                           />
@@ -1016,7 +1016,7 @@ export function DashboardLayout() {
                     </div>
                     <div className="p-2 border border-pixel-border/60 bg-black/60">
                       <div className="text-[9px] text-zinc-400 uppercase font-bold">DAILY RVS POWER</div>
-                      <div className="font-headline font-black text-[#00ff41] text-sm">+{formatNumber(dailyRvs)} RVS</div>
+                      <div className="font-headline font-black text-pixel-green text-sm">+{formatNumber(dailyRvs)} RVS</div>
                     </div>
                   </div>
                 </div>
@@ -1080,7 +1080,7 @@ export function DashboardLayout() {
                     </div>
                     <button
                       onClick={() => setActiveTab("multiplayer")}
-                      className="text-[10px] text-[#00ff41] font-bold uppercase hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] text-pixel-green font-bold uppercase hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <span>VIEW ALL 6 RANKINGS</span>
                       <ArrowRight className="w-3 h-3" />
@@ -1090,7 +1090,7 @@ export function DashboardLayout() {
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <div className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <Users className="w-3 h-3 text-[#00ff41]" />
+                        <Users className="w-3 h-3 text-pixel-green" />
                         <span>TOP SOLO WARRIORS (CLICK TO INSPECT)</span>
                       </div>
 
@@ -1109,7 +1109,7 @@ export function DashboardLayout() {
                           <div
                             key={usr.user_id || idx}
                             onClick={() => setActiveTab("multiplayer")}
-                            className="p-2 border border-amber-500/40 bg-black flex items-center justify-between text-xs hover:border-[#00ff41] cursor-pointer transition-all"
+                            className="p-2 border border-amber-500/40 bg-black flex items-center justify-between text-xs hover:border-pixel-green cursor-pointer transition-all"
                           >
                             <div className="flex items-center gap-2">
                               {idx === 0 ? (
@@ -1122,7 +1122,7 @@ export function DashboardLayout() {
                                 <div className="text-[9px] text-zinc-400">{usr.character_class} &bull; Lv.{usr.level}</div>
                               </div>
                             </div>
-                            <div className="font-headline font-black text-xs text-[#00ff41]">
+                            <div className="font-headline font-black text-xs text-pixel-green">
                               FLOOR {usr.max_floor}
                             </div>
                           </div>
@@ -1163,7 +1163,7 @@ export function DashboardLayout() {
                                 <div className="text-[9px] text-zinc-400">{prt.member_count} Members &bull; Leader: {prt.leader_name}</div>
                               </div>
                             </div>
-                            <div className="font-headline font-black text-xs text-[#00ff41]">
+                            <div className="font-headline font-black text-xs text-pixel-green">
                               FLOOR {prt.total_party_floor}
                             </div>
                           </div>

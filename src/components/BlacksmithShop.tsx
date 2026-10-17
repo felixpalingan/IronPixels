@@ -45,10 +45,10 @@ const CHEST_OPTIONS: ChestOption[] = [
     name: "Silver Cache",
     rarityTag: "RARE & EPIC GEAR",
     price: 2000,
-    borderColor: "border-[#00ff41]",
+    borderColor: "border-pixel-green",
     glowColor: "shadow-[0_0_25px_rgba(0,255,65,0.4)]",
     bgGradient: "bg-[#141416]",
-    accentBadge: "bg-[#00ff41]/20 text-[#00ff41] border-[#00ff41]/50",
+    accentBadge: "bg-pixel-green/20 text-pixel-green border-pixel-green/50",
     cardDisplayFrame: "/assets/dungeon/chests/chest_full_open_anim_f2.png",
     openPrefix: "chest_full_open_anim",
   },
@@ -258,13 +258,13 @@ export function BlacksmithShop({
       </div>
 
       {potionNotice && (
-        <div className="bg-[#00ff41]/20 border border-[#00ff41] p-2.5 text-xs font-bold text-[#00ff41] text-center shadow-neon animate-pulse flex items-center justify-center gap-2">
+        <div className="bg-pixel-green/20 border border-pixel-green p-2.5 text-xs font-bold text-pixel-green text-center shadow-neon animate-pulse flex items-center justify-center gap-2">
           <Check className="w-4 h-4" />
           <span>{potionNotice}</span>
         </div>
       )}
 
-      <div className="border border-[#00ff41]/60 bg-surface p-3.5 flex items-center justify-between shadow-neon">
+      <div className="border border-pixel-green/60 bg-surface p-3.5 flex items-center justify-between shadow-neon">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 border-2 border-red-500 bg-red-950/40 text-red-400 flex items-center justify-center shadow-red-glow">
             <HeartPulse className="w-6 h-6 animate-pulse" />
@@ -287,7 +287,7 @@ export function BlacksmithShop({
           disabled={userGold < 800}
           className={`px-3 py-2 border font-headline font-extrabold text-xs uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
             userGold >= 800
-              ? "border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black shadow-neon"
+              ? "border-pixel-green bg-pixel-green/20 hover:bg-pixel-green text-pixel-green hover:text-black shadow-neon"
               : "border-zinc-800 bg-black/40 text-zinc-600 cursor-not-allowed"
           }`}
         >
@@ -329,7 +329,7 @@ export function BlacksmithShop({
                 disabled={!canAfford || isOpening}
                 className={`w-full mt-3 py-2 border font-headline font-extrabold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${
                   canAfford && !isOpening
-                    ? "border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black shadow-neon"
+                    ? "border-pixel-green bg-pixel-green/20 hover:bg-pixel-green text-pixel-green hover:text-black shadow-neon"
                     : "border-zinc-800 bg-black/40 text-zinc-600 cursor-not-allowed"
                 }`}
               >
@@ -424,7 +424,7 @@ export function BlacksmithShop({
                   animate={{ scale: 1, opacity: 1 }}
                   className="space-y-4 py-2"
                 >
-                  <div className="w-28 h-28 mx-auto bg-black border-2 border-[#00ff41] p-3 flex flex-col items-center justify-center shadow-neon">
+                  <div className="w-28 h-28 mx-auto bg-black border-2 border-pixel-green p-3 flex flex-col items-center justify-center shadow-neon">
                     <img
                       src={drawnResult.item.image_url}
                       alt={drawnResult.item.item_name}
@@ -459,7 +459,7 @@ export function BlacksmithShop({
                       <div className="text-sky-400 font-bold">+ {drawnResult.item.bonus_agi} AGI</div>
                     )}
                     {drawnResult.item.bonus_vit > 0 && (
-                      <div className="text-[#00ff41] font-bold">+ {drawnResult.item.bonus_vit} VIT</div>
+                      <div className="text-pixel-green font-bold">+ {drawnResult.item.bonus_vit} VIT</div>
                     )}
                     {drawnResult.item.bonus_hp > 0 && (
                       <div className="text-red-400 font-bold">+ {drawnResult.item.bonus_hp} MAX HP</div>
@@ -472,7 +472,7 @@ export function BlacksmithShop({
                       setActiveChest(null);
                       setDrawnResult(null);
                     }}
-                    className="w-full py-3 bg-[#00ff41] text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
+                    className="w-full py-3 bg-pixel-green text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
                   >
                     CLAIM & ADD TO VAULT
                   </button>

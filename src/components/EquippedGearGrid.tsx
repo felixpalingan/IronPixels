@@ -70,7 +70,7 @@ export function EquippedGearGrid({ gear }: EquippedGearGridProps) {
             )}
           </div>
           <div className="flex flex-col min-w-0">
-            <span className="font-mono text-[9px] text-[#00ff41] uppercase tracking-wider font-extrabold">
+            <span className="font-mono text-[9px] text-pixel-green uppercase tracking-wider font-extrabold">
               WEAPON (HIGH DMG)
             </span>
             <span className="font-headline font-bold text-xs text-white truncate">

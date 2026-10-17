@@ -17,7 +17,7 @@ export function StatRadarChart({ stats, availableAp = 0, onUpgradeStat }: StatRa
   const statList: Array<{ key: "str" | "agi" | "vit" | "luk"; label: string; color: string; val: number }> = [
     { key: "str", label: "STR (STRENGTH)", color: "text-amber-400", val: stats.str },
     { key: "agi", label: "AGI (AGILITY)", color: "text-fuchsia-400", val: stats.agi },
-    { key: "vit", label: "VIT (VITALITY)", color: "text-[#00ff41]", val: stats.vit },
+    { key: "vit", label: "VIT (VITALITY)", color: "text-pixel-green", val: stats.vit },
     { key: "luk", label: "LUK (LUCK)", color: "text-sky-400", val: stats.luk },
   ];
 
@@ -28,7 +28,7 @@ export function StatRadarChart({ stats, availableAp = 0, onUpgradeStat }: StatRa
           HERO ATTRIBUTE STATS
         </span>
         {availableAp > 0 && (
-          <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-wider animate-pulse">
+          <span className="text-[10px] text-pixel-green font-bold uppercase tracking-wider animate-pulse">
             AVAILABLE AP: {availableAp} POINTS
           </span>
         )}
@@ -48,7 +48,7 @@ export function StatRadarChart({ stats, availableAp = 0, onUpgradeStat }: StatRa
             {availableAp > 0 && onUpgradeStat && (
               <button
                 onClick={() => onUpgradeStat(st.key)}
-                className="w-7 h-7 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] text-[#00ff41] hover:text-black flex items-center justify-center font-bold transition-all shadow-neon cursor-pointer"
+                className="w-7 h-7 border border-pixel-green bg-pixel-green/20 hover:bg-pixel-green text-pixel-green hover:text-black flex items-center justify-center font-bold transition-all shadow-neon cursor-pointer"
                 title={`Upgrade ${st.label}`}
               >
                 <Plus className="w-4 h-4" />

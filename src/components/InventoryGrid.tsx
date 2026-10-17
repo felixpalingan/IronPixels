@@ -50,10 +50,10 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
   };
 
   return (
-    <div className="space-y-5 selection:bg-[#00ff41] selection:text-black font-mono">
+    <div className="space-y-5 selection:bg-pixel-green selection:text-black font-mono">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div className="flex items-center gap-2">
-          <Package className="w-5 h-5 text-[#00ff41]" />
+          <Package className="w-5 h-5 text-pixel-green" />
           <span className="font-headline font-black text-lg tracking-wider text-white uppercase">
             VAULT INVENTORY
           </span>
@@ -70,7 +70,7 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
             onClick={() => setFilter(t)}
             className={`py-2 uppercase font-bold text-[10px] sm:text-xs transition-colors cursor-pointer ${
               filter === t
-                ? "bg-[#00ff41] text-black shadow-[0_0_10px_rgba(0,255,65,0.3)]"
+                ? "bg-pixel-green text-black shadow-[0_0_10px_rgba(0,255,65,0.3)]"
                 : "text-zinc-400 hover:text-white"
             }`}
           >
@@ -82,7 +82,7 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
       {isLoading && inventory.length === 0 ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold uppercase tracking-wider animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-[#00ff41] animate-ping" />
+            <span className="w-2 h-2 rounded-full bg-pixel-green animate-ping" />
             <span>MEMUAT ITEM VAULT (SYNCHRONIZING ITEMS)...</span>
           </div>
           <InventoryGridSkeleton />
@@ -105,7 +105,7 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
                 key={inventory_id}
                 className={`border p-4 bg-[#141416] space-y-3 flex flex-col justify-between transition-all ${
                   is_equipped
-                    ? "border-[#00ff41] shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+                    ? "border-pixel-green shadow-[0_0_15px_rgba(0,255,65,0.2)]"
                     : "border-zinc-800 hover:border-zinc-700"
                 }`}
               >
@@ -124,7 +124,7 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
                         ) : item.type === "accessory" ? (
                           <Heart className="w-6 h-6 text-fuchsia-400" />
                         ) : (
-                          <Swords className="w-6 h-6 text-[#00ff41]" />
+                          <Swords className="w-6 h-6 text-pixel-green" />
                         )}
                       </div>
                       <div>
@@ -143,7 +143,7 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
                     </div>
 
                     {is_equipped && (
-                      <span className="bg-[#00ff41]/20 border border-[#00ff41] text-[#00ff41] text-[9px] px-1.5 py-0.5 font-bold uppercase flex items-center gap-1">
+                      <span className="bg-pixel-green/20 border border-pixel-green text-pixel-green text-[9px] px-1.5 py-0.5 font-bold uppercase flex items-center gap-1">
                         <Check className="w-3 h-3" />
                         EQUIPPED
                       </span>
@@ -158,12 +158,12 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
                     <div className="grid grid-cols-2 gap-1 font-bold text-[11px]">
                       {item.bonus_str > 0 && <span className="text-amber-400">+ {item.bonus_str} STR</span>}
                       {item.bonus_agi > 0 && <span className="text-fuchsia-400">+ {item.bonus_agi} AGI</span>}
-                      {item.bonus_vit > 0 && <span className="text-[#00ff41]">+ {item.bonus_vit} VIT</span>}
+                      {item.bonus_vit > 0 && <span className="text-pixel-green">+ {item.bonus_vit} VIT</span>}
                       {item.bonus_hp > 0 && <span className="text-sky-400">+ {item.bonus_hp} MAX HP</span>}
                     </div>
 
                     {item.granted_skill_name && (
-                      <div className="text-[#00ff41] text-[10px] font-bold pt-1 border-t border-zinc-800 flex items-center gap-1">
+                      <div className="text-pixel-green text-[10px] font-bold pt-1 border-t border-zinc-800 flex items-center gap-1">
                         <Sparkles className="w-3 h-3" />
                         <span>SKILL: {item.granted_skill_name}</span>
                       </div>
@@ -177,7 +177,7 @@ export function InventoryGrid({ inventory, isLoading = false, onToggleEquip, onS
                     className={`py-2.5 border font-mono font-bold text-xs uppercase transition-all cursor-pointer ${
                       is_equipped
                         ? "border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-white"
-                        : "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] hover:bg-[#00ff41] hover:text-black"
+                        : "border-pixel-green bg-pixel-green/20 text-pixel-green hover:bg-pixel-green hover:text-black"
                     }`}
                   >
                     {is_equipped ? "UNEQUIP" : "EQUIP"}

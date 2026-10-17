@@ -182,7 +182,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
       <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-3">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 border border-[#00ff41] bg-[#00ff41]/20 flex items-center justify-center text-[#00ff41]">
+            <div className="w-9 h-9 border border-pixel-green bg-pixel-green/20 flex items-center justify-center text-pixel-green">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
@@ -191,7 +191,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
                 <span className={`px-1.5 py-0.2 border text-[8px] font-bold uppercase ${
                   !isDbLoaded
                     ? "border-amber-400/80 bg-amber-950/40 text-amber-300 animate-pulse"
-                    : "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41]"
+                    : "border-pixel-green bg-pixel-green/20 text-pixel-green"
                 }`}>
                   {!isDbLoaded ? "SYNCHRONIZING..." : "LIVE DB SYNC"}
                 </span>
@@ -233,7 +233,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
               </div>
               <div className="p-2 border border-pixel-border/60 bg-black/60">
                 <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL VOLUME</div>
-                <div className="font-headline font-black text-[#00ff41] text-sm">{formatNumber(totalVolumeKg)} KG</div>
+                <div className="font-headline font-black text-pixel-green text-sm">{formatNumber(totalVolumeKg)} KG</div>
               </div>
               <div className="p-2 border border-pixel-border/60 bg-black/60">
                 <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL RVS DEALT</div>
@@ -248,7 +248,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
       <div className="border border-pixel-border bg-surface p-4 space-y-3">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#00ff41]" />
+            <Calendar className="w-4 h-4 text-pixel-green" />
             <h4 className="font-headline font-bold text-xs text-white uppercase tracking-wider">
               28-DAY WORKOUT CONSISTENCY HEATMAP
             </h4>
@@ -262,7 +262,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
               key={idx}
               className={`h-9 border flex flex-col items-center justify-center relative transition-all ${
                 tile.hasWorkout
-                  ? "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] shadow-neon"
+                  ? "border-pixel-green bg-pixel-green/20 text-pixel-green shadow-neon"
                   : "border-zinc-800 bg-black/80 text-zinc-600"
               }`}
               title={`${tile.dateStr}: ${
@@ -271,7 +271,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
             >
               <span className="text-[10px] font-bold">{tile.dayNum}</span>
               {tile.hasWorkout && (
-                <div className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-pulse mt-0.5" />
+                <div className="w-1.5 h-1.5 rounded-full bg-pixel-green animate-pulse mt-0.5" />
               )}
             </div>
           ))}
@@ -281,8 +281,8 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
           <span>REST DAY (BLACK)</span>
           <div className="flex items-center gap-1">
             <div className="w-2.5 h-2.5 border border-zinc-800 bg-black" />
-            <div className="w-2.5 h-2.5 border border-[#00ff41]/50 bg-[#00ff41]/20" />
-            <div className="w-2.5 h-2.5 border border-[#00ff41] bg-[#00ff41]" />
+            <div className="w-2.5 h-2.5 border border-pixel-green/50 bg-pixel-green/20" />
+            <div className="w-2.5 h-2.5 border border-pixel-green bg-pixel-green" />
           </div>
           <span>WORKOUT LOGGED (NEON GREEN)</span>
         </div>
@@ -304,7 +304,7 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
           <select
             value={selectedExerciseId}
             onChange={(e) => setSelectedExerciseId(e.target.value)}
-            className="w-full bg-black border border-pixel-border px-3 py-2 text-xs font-bold text-white focus:border-[#00ff41] outline-none uppercase"
+            className="w-full bg-black border border-pixel-border px-3 py-2 text-xs font-bold text-white focus:border-pixel-green outline-none uppercase"
           >
             {EXERCISE_DATABASE.map((ex) => (
               <option key={ex.id} value={ex.id}>
@@ -328,9 +328,9 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
               const heightPct = Math.max(15, Math.round((t.est1RM / maxChart1RM) * 100));
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                  <span className="text-[9px] font-bold text-[#00ff41]">{t.est1RM}kg</span>
+                  <span className="text-[9px] font-bold text-pixel-green">{t.est1RM}kg</span>
                   <div
-                    className="w-full bg-gradient-to-t from-[#00ff41]/20 to-[#00ff41] border-t-2 border-[#00ff41] transition-all"
+                    className="w-full bg-gradient-to-t from-pixel-green/20 to-pixel-green border-t-2 border-pixel-green transition-all"
                     style={{ height: `${heightPct}%` }}
                   />
                   <span className="text-[9px] text-zinc-400 font-bold truncate max-w-[45px]">{t.label}</span>

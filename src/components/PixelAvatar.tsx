@@ -47,7 +47,7 @@ export function PixelAvatar({
       className={`relative border-2 ${
         isCritical
           ? "border-red-500 bg-red-950/50 shadow-[0_0_25px_rgba(255,59,48,0.8)]"
-          : "border-[#00ff41]/80 bg-surface shadow-neon"
+          : "border-pixel-green/80 bg-surface shadow-neon"
       } p-1.5 flex items-center justify-center overflow-hidden ${className}`}
       animate={{
         y: [0, -3, 0],
@@ -69,7 +69,7 @@ export function PixelAvatar({
 
       <div
         className={`absolute bottom-1 right-1 w-2.5 h-2.5 rounded-none z-30 ${
-          isCritical ? "bg-red-500 animate-ping" : "bg-[#00ff41] animate-pulse shadow-neon"
+          isCritical ? "bg-red-500 animate-ping" : "bg-pixel-green animate-pulse shadow-neon"
         }`}
       />
     </motion.div>

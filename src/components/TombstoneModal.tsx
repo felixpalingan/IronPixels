@@ -116,20 +116,20 @@ export function TombstoneModal({
             {/* OPTION 1: Free Workout Revival */}
             <div
               onClick={handleChooseWorkout}
-              className="p-3.5 border-2 border-[#00ff41] bg-black/80 hover:bg-[#00ff41]/10 transition-all cursor-pointer group space-y-2 shadow-neon relative"
+              className="p-3.5 border-2 border-pixel-green bg-black/80 hover:bg-pixel-green/10 transition-all cursor-pointer group space-y-2 shadow-neon relative"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[9px] px-1.5 py-0.5 border border-[#00ff41] bg-[#00ff41] text-black font-extrabold uppercase tracking-wider">
+                <span className="text-[9px] px-1.5 py-0.5 border border-pixel-green bg-pixel-green text-black font-extrabold uppercase tracking-wider">
                   RECOMMENDED &bull; FREE
                 </span>
-                <span className="text-[10px] text-[#00ff41] font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                <span className="text-[10px] text-pixel-green font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                   <span>LOG WORKOUT</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 border border-pixel-green bg-pixel-green/20 text-pixel-green flex items-center justify-center flex-shrink-0">
                   <Dumbbell className="w-5 h-5" />
                 </div>
                 <div>

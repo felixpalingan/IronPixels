@@ -131,7 +131,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
           <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
             VOLUME LIFTED ({weightUnit.toUpperCase()})
           </div>
-          <div className="font-headline font-black text-lg text-[#00ff41]">
+          <div className="font-headline font-black text-lg text-pixel-green">
             {formatNumber(
               weightUnit === "lbs"
                 ? kgToLbs(totalLifetimeVolume)
@@ -152,7 +152,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
       <div className="border border-pixel-border bg-surface p-4 space-y-3">
         <div className="flex items-center justify-between border-b border-pixel-border/60 pb-2">
           <div className="flex items-center gap-2">
-            <History className="w-4 h-4 text-[#00ff41]" />
+            <History className="w-4 h-4 text-pixel-green" />
             <span className="font-headline font-extrabold text-sm text-white uppercase tracking-wider">
               WORKOUT LOG HISTORY
             </span>
@@ -171,7 +171,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                 }}
                 className={`px-1.5 py-0.5 text-[8.5px] font-bold uppercase transition-all cursor-pointer ${
                   weightUnit === "kg"
-                    ? "bg-[#00ff41] text-black shadow-neon"
+                    ? "bg-pixel-green text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
                 title="View in Kilograms (KG)"
@@ -189,7 +189,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                 }}
                 className={`px-1.5 py-0.5 text-[8.5px] font-bold uppercase transition-all cursor-pointer ${
                   weightUnit === "lbs"
-                    ? "bg-[#00ff41] text-black shadow-neon"
+                    ? "bg-pixel-green text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
                 title="View in Pounds (LBS)"
@@ -212,7 +212,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
         {loading && sessions.length === 0 ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold uppercase tracking-wider animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-[#00ff41] animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-pixel-green animate-ping" />
               <span>MEMUAT RIWAYAT WORKOUT (SYNCHRONIZING LOGS)...</span>
             </div>
             <WorkoutHistorySkeleton />
@@ -239,7 +239,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                   key={session.session_id}
                   className={`border transition-all ${
                     isExpanded
-                      ? "border-[#00ff41] bg-black shadow-[0_0_15px_rgba(0,255,65,0.15)]"
+                      ? "border-pixel-green bg-black shadow-[0_0_15px_rgba(0,255,65,0.15)]"
                       : "border-pixel-border/60 bg-black/60 hover:border-pixel-border"
                   }`}
                 >
@@ -248,7 +248,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                     className="p-3 flex items-center justify-between cursor-pointer"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 border border-pixel-border bg-surface flex items-center justify-center text-[#00ff41] font-bold text-xs">
+                      <div className="w-9 h-9 border border-pixel-border bg-surface flex items-center justify-center text-pixel-green font-bold text-xs">
                         <Dumbbell className="w-4 h-4" />
                       </div>
 
@@ -261,7 +261,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                         </div>
 
                         <div className="text-[10px] text-zinc-400 flex items-center gap-2 mt-0.5 font-bold">
-                          <span className="text-[#00ff41]">
+                          <span className="text-pixel-green">
                             {formatNumber(
                               weightUnit === "lbs"
                                 ? kgToLbs(session.total_volume_kg)
@@ -354,7 +354,7 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
               </p>
               <div className="border border-zinc-800 bg-black p-2.5 text-[11px] space-y-1">
                 <div className="text-white font-bold">📅 DATE: {sessionToDelete.date}</div>
-                <div className="text-[#00ff41]">
+                <div className="text-pixel-green">
                   ⚡ VOLUME: {formatNumber(sessionToDelete.total_volume_kg)} KG
                 </div>
                 <div className="text-amber-400">

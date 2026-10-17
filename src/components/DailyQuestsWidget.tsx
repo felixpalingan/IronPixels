@@ -100,7 +100,7 @@ export function DailyQuestsWidget({
   const getQuestIcon = (iconType: string) => {
     switch (iconType) {
       case "gym":
-        return <Dumbbell className="w-5 h-5 text-[#00ff41]" />;
+        return <Dumbbell className="w-5 h-5 text-pixel-green" />;
       case "boss":
         return <Swords className="w-5 h-5 text-health-red" />;
       case "survival":
@@ -136,7 +136,7 @@ export function DailyQuestsWidget({
                 isClaimed
                   ? "border-zinc-800 bg-black/40 opacity-60"
                   : isComplete
-                  ? "border-[#00ff41]/60 bg-[#00ff41]/5 shadow-[0_0_15px_rgba(0,255,65,0.1)]"
+                  ? "border-pixel-green/60 bg-pixel-green/5 shadow-[0_0_15px_rgba(0,255,65,0.1)]"
                   : "border-pixel-border/60 bg-black/60"
               }`}
             >
@@ -174,7 +174,7 @@ export function DailyQuestsWidget({
                 ) : isComplete ? (
                   <button
                     onClick={() => handleClaim(quest)}
-                    className="px-3 py-1 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-[10px] uppercase tracking-wider shadow-neon cursor-pointer animate-pulse"
+                    className="px-3 py-1 bg-pixel-green hover:bg-pixel-green/90 text-black font-headline font-black text-[10px] uppercase tracking-wider shadow-neon cursor-pointer animate-pulse"
                   >
                     CLAIM
                   </button>

@@ -223,7 +223,7 @@ export function TacticalSkillBar({
 
       <div className="flex items-center justify-between border-b border-pixel-border/50 pb-1.5 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
         <div className="flex items-center gap-1">
-          <Zap className="w-3.5 h-3.5 text-[#00ff41]" />
+          <Zap className="w-3.5 h-3.5 text-pixel-green" />
           <span>EQUIPPED GEAR SKILLS ({mode.toUpperCase()} COOLDOWNS)</span>
         </div>
         <span className="text-zinc-500 text-[9px]">4 SLOTS MAX</span>
@@ -248,7 +248,7 @@ export function TacticalSkillBar({
                 isHeroDead
                   ? "border-red-900 bg-red-950/30 text-red-400/80 cursor-pointer hover:border-red-500"
                   : skill.is_ready
-                  ? "border-[#00ff41] bg-black hover:bg-[#00ff41]/10 text-white cursor-pointer shadow-neon hover:scale-102"
+                  ? "border-pixel-green bg-black hover:bg-pixel-green/10 text-white cursor-pointer shadow-neon hover:scale-102"
                   : "border-zinc-800 bg-black/60 text-zinc-600 cursor-not-allowed"
               }`}
             >
@@ -266,7 +266,7 @@ export function TacticalSkillBar({
                 />
 
                 {isSlotExecuting && (
-                  <div className="absolute inset-0 bg-[#00ff41]/40 animate-ping" />
+                  <div className="absolute inset-0 bg-pixel-green/40 animate-ping" />
                 )}
               </div>
 
@@ -285,7 +285,7 @@ export function TacticalSkillBar({
                     DEFEATED
                   </div>
                 ) : skill.is_ready ? (
-                  <div className="bg-[#00ff41]/20 border border-[#00ff41]/60 text-[#00ff41] text-[8px] font-extrabold uppercase py-0.5 text-center shadow-neon">
+                  <div className="bg-pixel-green/20 border border-pixel-green/60 text-pixel-green text-[8px] font-extrabold uppercase py-0.5 text-center shadow-neon">
                     READY
                   </div>
                 ) : (

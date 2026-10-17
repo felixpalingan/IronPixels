@@ -1061,7 +1061,7 @@ export function WorkoutTrackerForm({
       case "Cardio":
         return "border-pink-500 bg-pink-950/40 text-pink-400 font-bold shadow-neon";
       default:
-        return "border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] font-bold shadow-neon";
+        return "border-pixel-green bg-pixel-green/20 text-pixel-green font-bold shadow-neon";
     }
   };
 
@@ -1080,7 +1080,7 @@ export function WorkoutTrackerForm({
       <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 border border-[#00ff41] bg-[#00ff41]/20 flex items-center justify-center text-[#00ff41]">
+            <div className="w-7 h-7 border border-pixel-green bg-pixel-green/20 flex items-center justify-center text-pixel-green">
               <Dumbbell className="w-4 h-4" />
             </div>
             <div>
@@ -1100,7 +1100,7 @@ export function WorkoutTrackerForm({
                 onClick={() => handleToggleWeightUnit("kg")}
                 className={`px-2 py-0.5 text-[9px] font-bold uppercase transition-all cursor-pointer ${
                   weightUnit === "kg"
-                    ? "bg-[#00ff41] text-black shadow-neon"
+                    ? "bg-pixel-green text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
                 title="Switch weight unit to Kilograms (KG)"
@@ -1112,7 +1112,7 @@ export function WorkoutTrackerForm({
                 onClick={() => handleToggleWeightUnit("lbs")}
                 className={`px-2 py-0.5 text-[9px] font-bold uppercase transition-all cursor-pointer ${
                   weightUnit === "lbs"
-                    ? "bg-[#00ff41] text-black shadow-neon"
+                    ? "bg-pixel-green text-black shadow-neon"
                     : "text-zinc-400 hover:text-white"
                 }`}
                 title="Switch weight unit to Pounds (LBS)"
@@ -1123,7 +1123,7 @@ export function WorkoutTrackerForm({
 
             <div className="text-right">
               <div className="text-[9px] text-zinc-400 uppercase font-bold">LIVE RVS POWER</div>
-              <div className="font-headline font-black text-lg text-[#00ff41] animate-pulse">
+              <div className="font-headline font-black text-lg text-pixel-green animate-pulse">
                 +{formatNumber(calculateTotalRvs())} RVS
               </div>
             </div>
@@ -1151,7 +1151,7 @@ export function WorkoutTrackerForm({
               <button
                 type="button"
                 onClick={() => handleStartWorkoutSession()}
-                className="w-full sm:flex-1 py-3 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer transition-all"
+                className="w-full sm:flex-1 py-3 bg-pixel-green hover:bg-pixel-green/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer transition-all"
               >
                 <Play className="w-4 h-4 fill-black" />
                 <span>MULAI SESI LATIHAN (START)</span>
@@ -1168,11 +1168,11 @@ export function WorkoutTrackerForm({
             </div>
           </div>
         ) : (
-          <div className="p-2.5 border border-[#00ff41]/80 bg-[#00ff41]/10 flex items-center justify-between gap-2 shadow-neon">
+          <div className="p-2.5 border border-pixel-green/80 bg-pixel-green/10 flex items-center justify-between gap-2 shadow-neon">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#00ff41] animate-ping flex-shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-pixel-green animate-ping flex-shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-headline font-bold text-[#00ff41] uppercase tracking-wider truncate">
+                <span className="text-xs font-headline font-bold text-pixel-green uppercase tracking-wider truncate">
                   SESI LATIHAN SEDANG BERJALAN ⏱️
                 </span>
                 <span className="text-[9px] text-zinc-300 font-mono truncate">
@@ -1200,23 +1200,23 @@ export function WorkoutTrackerForm({
         )}
 
         {routineNotice && (
-          <div className="p-2.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-bounce">
+          <div className="p-2.5 border border-pixel-green bg-pixel-green/20 text-pixel-green text-xs font-bold uppercase tracking-wider flex items-center gap-2 animate-bounce">
             <Sparkles className="w-4 h-4 flex-shrink-0" />
             <span>{routineNotice}</span>
           </div>
         )}
 
         {/* REST TIMER & HAPTIC ALARM WIDGET */}
-        <div className="border border-[#00ff41]/60 bg-black/80 p-3 space-y-2 shadow-neon">
+        <div className="border border-pixel-green/60 bg-black/80 p-3 space-y-2 shadow-neon">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Timer className="w-4 h-4 text-[#00ff41]" />
+              <Timer className="w-4 h-4 text-pixel-green" />
               <span className="font-headline font-bold text-xs text-white uppercase tracking-wider">
                 AUTO REST TIMER (LIFTOFF STYLE)
               </span>
             </div>
             {isTimerActive ? (
-              <span className="font-headline font-black text-sm text-[#00ff41] animate-pulse">
+              <span className="font-headline font-black text-sm text-pixel-green animate-pulse">
                 REST: {Math.floor(restTimerSecs / 60)}:{(restTimerSecs % 60).toString().padStart(2, "0")}
               </span>
             ) : (
@@ -1248,7 +1248,7 @@ export function WorkoutTrackerForm({
                     className={`min-h-[36px] sm:min-h-0 px-3 sm:px-2 py-1.5 sm:py-1 border text-[10px] sm:text-[9px] font-extrabold uppercase transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
                       isDefault
                         ? "border-amber-400 bg-amber-500 text-black shadow-gold-glow"
-                        : "border-zinc-800 bg-black text-zinc-400 hover:border-[#00ff41] hover:text-white"
+                        : "border-zinc-800 bg-black text-zinc-400 hover:border-pixel-green hover:text-white"
                     }`}
                   >
                     {isDefault ? "★ " : ""}{item.label}
@@ -1294,7 +1294,7 @@ export function WorkoutTrackerForm({
               </div>
 
               {notificationPermission === "granted" ? (
-                <div className="flex items-center gap-1 text-[9px] px-2 py-0.5 border border-[#00ff41]/60 bg-[#00ff41]/15 text-[#00ff41] font-mono font-bold uppercase shadow-neon">
+                <div className="flex items-center gap-1 text-[9px] px-2 py-0.5 border border-pixel-green/60 bg-pixel-green/15 text-pixel-green font-mono font-bold uppercase shadow-neon">
                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                   <span>AKTIF (BERGETAR)</span>
                 </div>
@@ -1415,7 +1415,7 @@ export function WorkoutTrackerForm({
           </div>
           <div className="p-2 border border-pixel-border/60 bg-black/60">
             <div className="text-[9px] text-zinc-400 uppercase font-bold">EXERCISES</div>
-            <div className="font-headline font-extrabold text-xs sm:text-sm text-[#00ff41]">
+            <div className="font-headline font-extrabold text-xs sm:text-sm text-pixel-green">
               {loggedExercises.length} LOGGED
             </div>
           </div>
@@ -1458,7 +1458,7 @@ export function WorkoutTrackerForm({
               <div key={ex.id} className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
                 <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                    <span className="w-5 h-5 bg-[#00ff41] text-black font-bold text-xs flex items-center justify-center font-headline flex-shrink-0">
+                    <span className="w-5 h-5 bg-pixel-green text-black font-bold text-xs flex items-center justify-center font-headline flex-shrink-0">
                       {exIdx + 1}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -1489,10 +1489,10 @@ export function WorkoutTrackerForm({
                     {defObj && (
                       <button
                         onClick={() => setActiveGuideExercise(defObj)}
-                        className="p-1 border border-zinc-700 bg-black text-zinc-400 hover:text-white hover:border-[#00ff41]"
+                        className="p-1 border border-zinc-700 bg-black text-zinc-400 hover:text-white hover:border-pixel-green"
                         title="View Guide & Form Instructions"
                       >
-                        <Info className="w-3.5 h-3.5 text-[#00ff41]" />
+                        <Info className="w-3.5 h-3.5 text-pixel-green" />
                       </button>
                     )}
 
@@ -1568,7 +1568,7 @@ export function WorkoutTrackerForm({
                 <div className="flex items-center justify-between pt-2 border-t border-pixel-border/40 text-[10px]">
                   <button
                     onClick={() => handleAddSet(ex.id)}
-                    className="min-h-[38px] px-3 py-2 sm:py-1 border border-pixel-border bg-black hover:border-[#00ff41] text-[#00ff41] font-bold text-[11px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    className="min-h-[38px] px-3 py-2 sm:py-1 border border-pixel-border bg-black hover:border-pixel-green text-pixel-green font-bold text-[11px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>ADD SET</span>
@@ -1579,7 +1579,7 @@ export function WorkoutTrackerForm({
                       {completedSets.length}/{ex.sets.length} DONE
                     </span>
                     <span>VOL: {formatNumber(exVolume)} KG</span>
-                    <span className="text-[#00ff41]">RVS: +{formatNumber(exRvs)}</span>
+                    <span className="text-pixel-green">RVS: +{formatNumber(exRvs)}</span>
                   </div>
                 </div>
               </div>
@@ -1589,7 +1589,7 @@ export function WorkoutTrackerForm({
 
         <button
           onClick={() => setIsPickerOpen(true)}
-          className="w-full py-4 border-2 border-dashed border-[#00ff41] bg-black/60 hover:bg-[#00ff41]/10 text-[#00ff41] font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-neon"
+          className="w-full py-4 border-2 border-dashed border-pixel-green bg-black/60 hover:bg-pixel-green/10 text-pixel-green font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-neon"
         >
           <Plus className="w-4 h-4" />
           <span>CHOOSE EXERCISE FROM DATABASE ({EXERCISE_DATABASE.length} EXERCISES)</span>
@@ -1642,7 +1642,7 @@ export function WorkoutTrackerForm({
 
               <button
                 onClick={handleFinish}
-                className="col-span-2 py-4 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer transition-all"
+                className="col-span-2 py-4 bg-pixel-green hover:bg-pixel-green/90 text-black font-headline font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-neon cursor-pointer transition-all"
               >
                 <Check className="w-5 h-5 stroke-[3]" />
                 <span>SELESAIKAN & SERANG BOSS</span>
@@ -1781,7 +1781,7 @@ export function WorkoutTrackerForm({
                     if (searchQuery.trim()) setCName(searchQuery.trim());
                     setIsCustomModalOpen(true);
                   }}
-                  className="px-2.5 py-1.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] hover:bg-[#00ff41] hover:text-black font-mono font-bold text-[10px] uppercase transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-neon"
+                  className="px-2.5 py-1.5 border border-pixel-green bg-pixel-green/20 text-pixel-green hover:bg-pixel-green hover:text-black font-mono font-bold text-[10px] uppercase transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer shadow-neon"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>+ CREATE CUSTOM</span>
@@ -1795,7 +1795,7 @@ export function WorkoutTrackerForm({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name, muscle (quads, lats...)"
-                  className="w-full bg-black border border-pixel-border pl-9 pr-3 py-2 text-xs font-bold text-white focus:border-[#00ff41] outline-none"
+                  className="w-full bg-black border border-pixel-border pl-9 pr-3 py-2 text-xs font-bold text-white focus:border-pixel-green outline-none"
                 />
               </div>
 
@@ -1831,7 +1831,7 @@ export function WorkoutTrackerForm({
                         if (searchQuery.trim()) setCName(searchQuery.trim());
                         setIsCustomModalOpen(true);
                       }}
-                      className="px-3 py-1.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] font-bold uppercase text-[10px] inline-flex items-center gap-1 cursor-pointer"
+                      className="px-3 py-1.5 border border-pixel-green bg-pixel-green/20 text-pixel-green font-bold uppercase text-[10px] inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>CREATE "{searchQuery || "CUSTOM"}" EXERCISE</span>
@@ -1848,7 +1848,7 @@ export function WorkoutTrackerForm({
                     return (
                       <div
                         key={def.id}
-                        className={`p-3 border bg-black/80 hover:border-[#00ff41] transition-all space-y-3 ${
+                        className={`p-3 border bg-black/80 hover:border-pixel-green transition-all space-y-3 ${
                           def.isCustom ? "border-amber-500/80 shadow-gold-glow" : "border-pixel-border/60"
                         }`}
                       >
@@ -1907,7 +1907,7 @@ export function WorkoutTrackerForm({
                           <div className="flex flex-col gap-1.5 w-full pt-1">
                             <button
                               onClick={() => handleAddExerciseFromPicker(def)}
-                              className="w-full py-2 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer flex items-center justify-center gap-1"
+                              className="w-full py-2 bg-pixel-green hover:bg-pixel-green/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer flex items-center justify-center gap-1"
                             >
                               <Plus className="w-4 h-4 stroke-[3]" />
                               <span>ADD EXERCISE</span>
@@ -1915,9 +1915,9 @@ export function WorkoutTrackerForm({
 
                             <button
                               onClick={() => setActiveGuideExercise(def)}
-                              className="w-full py-1.5 border border-zinc-700 bg-surface hover:bg-black text-zinc-300 hover:text-[#00ff41] hover:border-[#00ff41] text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer"
+                              className="w-full py-1.5 border border-zinc-700 bg-surface hover:bg-black text-zinc-300 hover:text-pixel-green hover:border-pixel-green text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer"
                             >
-                              <Info className="w-3.5 h-3.5 text-[#00ff41]" />
+                              <Info className="w-3.5 h-3.5 text-pixel-green" />
                               <span>VIEW EXECUTION GUIDE & INSTRUCTIONS</span>
                             </button>
                           </div>
@@ -1943,7 +1943,7 @@ export function WorkoutTrackerForm({
                     if (searchQuery.trim()) setCName(searchQuery.trim());
                     setIsCustomModalOpen(true);
                   }}
-                  className="px-3.5 py-2 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41] hover:text-black text-[#00ff41] font-mono font-bold text-xs uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-neon"
+                  className="px-3.5 py-2 border border-pixel-green bg-pixel-green/20 hover:bg-pixel-green hover:text-black text-pixel-green font-mono font-bold text-xs uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-neon"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>+ BUAT GERAKAN KUSTOM</span>
@@ -2228,7 +2228,7 @@ export function WorkoutTrackerForm({
                         type="checkbox"
                         checked={cIsUnilateral}
                         onChange={(e) => setCIsUnilateral(e.target.checked)}
-                        className="w-4 h-4 accent-[#00ff41] cursor-pointer"
+                        className="w-4 h-4 accent-pixel-green cursor-pointer"
                       />
                       <span>GERAKAN UNILATERAL (1 SISI / 1 TANGAN / 1 KAKI)</span>
                     </label>
