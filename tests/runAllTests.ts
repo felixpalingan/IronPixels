@@ -1,5 +1,6 @@
 import { runWorkoutCalculationsTests } from "./workoutCalculations.test";
 import { runUnitConversionTests } from "./unitConversion.test";
+import { runRateLimitTests } from "./rateLimit.test";
 
 function main() {
   console.log("==================================================");
@@ -19,6 +20,11 @@ function main() {
   const res2 = runUnitConversionTests();
   totalPassed += res2.passed;
   totalFailed += res2.failed;
+
+  // 3. Run Rate Limiter & API Security tests
+  const res3 = runRateLimitTests();
+  totalPassed += res3.passed;
+  totalFailed += res3.failed;
 
   const duration = Date.now() - startTime;
 

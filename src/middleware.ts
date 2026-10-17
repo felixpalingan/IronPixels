@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { checkRateLimit, getRouteRateLimitTier } from "@/lib/rateLimit";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -34,7 +35,6 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   if (
-    path.startsWith("/api") ||
     path === "/sitemap.xml" ||
     path === "/robots.txt" ||
     path === "/manifest.webmanifest" ||
@@ -45,11 +45,69 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Allow local and CI test runners in non-production environments
-  if (
+  const isTestRunner =
     process.env.NODE_ENV !== "production" &&
-    request.cookies.get("ironpixels_e2e_test")?.value === "1"
-  ) {
+    request.cookies.get("ironpixels_e2e_test")?.value === "1";
+
+  // Centralized API Security & Rate Limiting (Fase 5)
+  if (path.startsWith("/api")) {
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      request.headers.get("x-real-ip") ||
+      "127.0.0.1";
+
+    // 1. Rate Limiting Check
+    if (!isTestRunner) {
+      const { limit, windowSecs } = getRouteRateLimitTier(path);
+      const rateLimitKey = `${clientIp}:${path.split("/")[2] || "general"}`;
+      const rateCheck = checkRateLimit(rateLimitKey, limit, windowSecs);
+
+      if (!rateCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: "Too many requests. Please slow down, Operative.",
+            retryAfter: rateCheck.resetInSeconds,
+          },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(rateCheck.resetInSeconds),
+              "X-RateLimit-Limit": String(rateCheck.limit),
+              "X-RateLimit-Remaining": "0",
+              "X-RateLimit-Reset": String(rateCheck.resetInSeconds),
+            },
+          }
+        );
+      }
+    }
+
+    // 2. Public API route whitelist
+    const isPublicApiRoute =
+      path.startsWith("/api/cron") ||
+      path === "/api/exercises" ||
+      path === "/api/multiplayer/leaderboard";
+
+    if (isPublicApiRoute || isTestRunner) {
+      return response;
+    }
+
+    // 3. Centralized API Authentication Enforcement
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized. Authentication required." },
+        { status: 401 }
+      );
+    }
+
+    return response;
+  }
+
+  // Allow local and CI test runners for page routes
+  if (isTestRunner) {
     return response;
   }
 
