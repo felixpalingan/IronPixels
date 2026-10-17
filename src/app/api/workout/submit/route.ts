@@ -73,105 +73,154 @@ export async function POST(request: Request) {
 
     let updatedProfile = null;
 
+    // Resolve party ID if user is in an active party
+    let resolvedPartyId: string | null = null;
     try {
+      const { data: memberRec } = await supabase
+        .from("Party_Members")
+        .select("party_id")
+        .eq("user_id", userId)
+        .limit(1);
+      if (memberRec && memberRec.length > 0) {
+        resolvedPartyId = memberRec[0].party_id;
+      }
+    } catch (e) {}
+
+    // Calculate progression values
+    const p = existingProfile;
+    const earnedGold = Math.round(serverVolume / 10);
+    const healAmount = Math.round(serverRvs * 1.5);
+
+    let newExp = (p?.exp || 0) + serverRvs;
+    let newLevel = p?.level || 1;
+    let newMaxExp = p?.max_exp || 1000;
+    let newAp = p?.available_ap || 0;
+
+    while (newExp >= newMaxExp) {
+      newExp -= newMaxExp;
+      newLevel += 1;
+      newMaxExp = Math.round(newMaxExp * 1.5);
+      newAp += 5;
+    }
+
+    const { data: equippedRows } = await supabase
+      .from("user_inventory")
+      .select("item_id")
+      .eq("user_id", userId)
+      .eq("is_equipped", true);
+
+    let gearBonusHp = 0;
+    if (equippedRows && equippedRows.length > 0) {
+      for (const eq of equippedRows) {
+        const itemConfig = EQUIPMENT_DICTIONARY.find((i) => i.item_id === eq.item_id);
+        if (itemConfig?.bonus_hp) {
+          gearBonusHp += itemConfig.bonus_hp;
+        }
+      }
+    }
+
+    const effectiveMaxHp = (p?.max_hp || 1000) + gearBonusHp;
+    const newHp = effectiveMaxHp;
+    const newGold = (p?.gold || 0) + earnedGold;
+    const newDailyRvs = Number(p?.daily_rvs || 0) + serverRvs;
+
+    // 1. Attempt atomic database stored procedure RPC
+    let rpcSucceeded = false;
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        "submit_workout_transaction",
+        {
+          p_user_id: userId,
+          p_session_id: sessionId,
+          p_date: safeDate,
+          p_duration_minutes: safeDuration,
+          p_total_rvs: serverRvs,
+          p_total_volume_kg: serverVolume,
+          p_exercises_log: recalculated.sanitizedExercisesLog,
+          p_earned_gold: earnedGold,
+          p_new_exp: newExp,
+          p_new_max_exp: newMaxExp,
+          p_new_level: newLevel,
+          p_new_ap: newAp,
+          p_new_hp: newHp,
+          p_safe_date: safeDate,
+          p_party_id: resolvedPartyId,
+        }
+      );
+
+      if (!rpcError && rpcData?.success) {
+        updatedProfile = rpcData.profile;
+        rpcSucceeded = true;
+      }
+    } catch (rpcErr) {
+      console.warn("RPC submit_workout_transaction unavailable, executing resilient fallback:", rpcErr);
+    }
+
+    // 2. Strict sequential fallback with transaction compensation (rollback):
+    if (!rpcSucceeded) {
+      // Step A: Insert workout session. If it fails, abort immediately (do NOT award gold/exp without a valid session!).
       const { error: wsErr } = await supabase.from("workout_sessions").insert(sessionRecord);
       if (wsErr) {
-        console.error("Error inserting workout session:", wsErr);
+        console.error("Critical: failed to insert workout session:", wsErr);
+        return NextResponse.json(
+          { error: "Database transaction failed: could not record workout session." },
+          { status: 500 }
+        );
       }
 
-      if (existingProfile) {
-        const p = existingProfile;
-        const earnedGold = Math.round(serverVolume / 10);
-        const healAmount = Math.round(serverRvs * 1.5);
+      // Step B: Update profile progression.
+      const updatePayload = {
+        current_hp: newHp,
+        exp: newExp,
+        max_exp: newMaxExp,
+        level: newLevel,
+        gold: newGold,
+        available_ap: newAp,
+        daily_rvs: newDailyRvs,
+        last_penalty_date: safeDate,
+        updated_at: new Date().toISOString(),
+      };
 
-        let newExp = (p.exp || 0) + serverRvs;
-        let newLevel = p.level || 1;
-        let newMaxExp = p.max_exp || 1000;
-        let newAp = p.available_ap || 0;
+      const { data: profUpdate, error: profErr } = await supabase
+        .from("profiles")
+        .update(updatePayload)
+        .or(`id.eq.${userId},user_id.eq.${userId}`)
+        .select("*");
 
-        while (newExp >= newMaxExp) {
-          newExp -= newMaxExp;
-          newLevel += 1;
-          newMaxExp = Math.round(newMaxExp * 1.5);
-          newAp += 5;
-        }
+      if (profErr || !profUpdate || profUpdate.length === 0) {
+        console.error("Critical: failed to update profile, rolling back session:", profErr);
+        // Compensating transaction: roll back the inserted session to prevent orphan record
+        await supabase.from("workout_sessions").delete().eq("session_id", sessionId);
+        return NextResponse.json(
+          { error: "Database transaction failed: could not commit hero profile progression." },
+          { status: 500 }
+        );
+      }
 
-        const { data: equippedRows } = await supabase
-          .from("user_inventory")
-          .select("item_id")
-          .eq("user_id", userId)
-          .eq("is_equipped", true);
+      updatedProfile = profUpdate[0];
 
-        let gearBonusHp = 0;
-        if (equippedRows && equippedRows.length > 0) {
-          for (const eq of equippedRows) {
-            const itemConfig = EQUIPMENT_DICTIONARY.find((i) => i.item_id === eq.item_id);
-            if (itemConfig?.bonus_hp) {
-              gearBonusHp += itemConfig.bonus_hp;
-            }
-          }
-        }
-
-        const effectiveMaxHp = (p.max_hp || 1000) + gearBonusHp;
-        // Workout completed instantly restores hero HP back to 100% full health!
-        const newHp = effectiveMaxHp;
-        const newGold = (p.gold || 0) + earnedGold;
-        const newDailyRvs = Number(p.daily_rvs || 0) + serverRvs;
-
-        const updatePayload = {
-          current_hp: newHp,
-          exp: newExp,
-          max_exp: newMaxExp,
-          level: newLevel,
-          gold: newGold,
-          available_ap: newAp,
-          daily_rvs: newDailyRvs,
-          last_penalty_date: safeDate,
-          updated_at: new Date().toISOString(),
-        };
-
-        const { data: profUpdate } = await supabase
-          .from("profiles")
-          .update(updatePayload)
-          .or(`id.eq.${userId},user_id.eq.${userId}`)
-          .select("*");
-
-        if (profUpdate && profUpdate.length > 0) {
-          updatedProfile = profUpdate[0];
-        }
-
-        // Contribute workout RVS to Party stats if member of a party
+      // Step C: Update Party RVS if in a party
+      if (resolvedPartyId) {
         try {
-          const { data: memberRec } = await supabase
-            .from("Party_Members")
-            .select("party_id")
-            .eq("user_id", userId)
-            .limit(1);
+          const { data: partyRec } = await supabase
+            .from("Party")
+            .select("total_party_rvs")
+            .eq("party_id", resolvedPartyId)
+            .single();
 
-          if (memberRec && memberRec.length > 0) {
-            const pId = memberRec[0].party_id;
-            const { data: partyRec } = await supabase
+          if (partyRec) {
+            await supabase
               .from("Party")
-              .select("total_party_rvs")
-              .eq("party_id", pId)
-              .single();
-
-            if (partyRec) {
-              await supabase
-                .from("Party")
-                .update({
-                  total_party_rvs: (partyRec.total_party_rvs || 0) + serverRvs,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("party_id", pId);
-            }
+              .update({
+                total_party_rvs: (partyRec.total_party_rvs || 0) + serverRvs,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("party_id", resolvedPartyId);
           }
         } catch (partyErr) {
           console.error("Failed to update party RVS:", partyErr);
         }
       }
-    } catch (dbErr) {
-      console.error("Database workout submission error:", dbErr);
     }
 
     return NextResponse.json({
