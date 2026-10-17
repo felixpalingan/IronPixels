@@ -31,6 +31,7 @@ import { DungeonStageMap } from "@/components/DungeonStageMap";
 import { HeroSprite } from "@/components/HeroSprite";
 import { EnemySprite } from "@/components/EnemySprite";
 import { supabase } from "@/lib/supabaseClient";
+import { formatNumber } from "@/lib/formatters";
 
 export type Lang = "en" | "id";
 
@@ -1071,7 +1072,7 @@ export default function AboutPage() {
               <div className="bg-black border border-[#48484A] p-3.5 space-y-2 text-xs">
                 <div className="flex justify-between text-zinc-400">
                   <span>{t.totalVolume}</span>
-                  <span className="text-white font-bold">{totalVolume.toLocaleString()} KG</span>
+                  <span className="text-white font-bold">{formatNumber(totalVolume)} KG</span>
                 </div>
                 <div className="flex justify-between text-zinc-400">
                   <span>{t.bwRatio}</span>
@@ -1079,7 +1080,7 @@ export default function AboutPage() {
                 </div>
                 <div className="flex justify-between border-t border-[#48484A] pt-2 text-[#00ff41]">
                   <span className="font-bold">{t.estDamage}</span>
-                  <span className="font-bold text-base">+{calculatedRvs.toLocaleString()} DMG</span>
+                  <span className="font-bold text-base">+{formatNumber(calculatedRvs)} DMG</span>
                 </div>
               </div>
 
@@ -1115,7 +1116,7 @@ export default function AboutPage() {
                     <span>{t.bossTargetTag}</span>
                   </span>
                   <span className="text-zinc-300 text-[11px] font-bold">
-                    {monsterCurrentHp.toLocaleString()} / {monsterMaxHp.toLocaleString()} HP
+                    {formatNumber(monsterCurrentHp)} / {formatNumber(monsterMaxHp)} HP
                   </span>
                 </div>
                 <div className="w-full h-3 bg-black border border-[#48484A] overflow-hidden">
@@ -1176,7 +1177,7 @@ export default function AboutPage() {
                       </span>
                     )}
                     <span className={floatingDamage.isCrit ? "text-yellow-300" : "text-red-400"}>
-                      -{floatingDamage.value.toLocaleString()} DMG
+                      -{formatNumber(floatingDamage.value)} DMG
                     </span>
                   </motion.div>
                 )}

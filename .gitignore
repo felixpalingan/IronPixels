@@ -38,5 +38,9 @@ AI_HANDOVER*.md
 *REQUIREMENT*.md
 DESIGN.md
 ROADMAP.md
+
+# Playwright Test Artifacts
+playwright-report/
+test-results/
 /image.png
 scratch/

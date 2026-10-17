@@ -45,6 +45,14 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Allow local and CI test runners in non-production environments
+  if (
+    process.env.NODE_ENV !== "production" &&
+    request.cookies.get("ironpixels_e2e_test")?.value === "1"
+  ) {
+    return response;
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
 
   const isAuthOnlyRoute = path === "/login" || path === "/register";
