@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, ShieldCheck, Sparkles, Timer, Volume2, History, Play, Bell, BellOff } from "lucide-react";
+import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, Timer, Volume2, History, Play, Bell, BellOff, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat, isExerciseUnilateral } from "@/lib/exercisesData";
 import { calculateSetRvs as calculateSetRvsPure } from "@/lib/workoutCalculations";
 import { soundEngine } from "@/lib/soundEffects";
 import { WeightUnit, kgToLbs, lbsToKg, toDisplayWeight, toCanonicalKg } from "@/lib/unitConversion";
+import { WorkoutSetRow } from "@/components/workout/WorkoutSetRow";
+import { FloatingRestTimer } from "@/components/workout/FloatingRestTimer";
+import { ExerciseGuideModal } from "@/components/workout/ExerciseGuideModal";
 
 interface ExerciseSet {
   set_number: number;
@@ -1065,81 +1068,14 @@ export function WorkoutTrackerForm({
   return (
     <div className="space-y-4 font-mono select-none relative">
       {/* 1. FLOATING REST TIMER OVERLAY (STICKY AT TOP OF SCREEN) */}
-      <AnimatePresence>
-        {isTimerActive && (
-          <motion.div
-            initial={{ y: -80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -80, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            role="region"
-            aria-label="Rest Timer Overlay"
-            className="fixed top-0 left-0 right-0 z-50 bg-black/95 border-b-2 border-[#00ff41] px-3 pb-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] shadow-[0_4px_30px_rgba(0,255,65,0.4)] backdrop-blur-md font-mono"
-          >
-            <div className="max-w-[600px] mx-auto space-y-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded border border-[#00ff41] bg-[#00ff41]/20 flex items-center justify-center text-[#00ff41] animate-pulse">
-                    <Timer className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                      <span>REST TIMER AKTIF</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00ff41] animate-ping" aria-hidden="true" />
-                    </div>
-                    <div className="font-headline font-black text-xl sm:text-2xl text-[#00ff41] tracking-wider leading-none" aria-live="polite">
-                      {Math.floor(restTimerSecs / 60)}:{(restTimerSecs % 60).toString().padStart(2, "0")}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleAdjustTimer(-30)}
-                    aria-label="Kurangi waktu istirahat 30 detik"
-                    className="min-h-[42px] min-w-[42px] sm:min-h-[36px] sm:min-w-[36px] px-2.5 py-1.5 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-xs sm:text-[11px] font-bold text-zinc-300 cursor-pointer transition-colors flex items-center justify-center active:scale-95"
-                  >
-                    -30s
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAdjustTimer(30)}
-                    aria-label="Tambah waktu istirahat 30 detik"
-                    className="min-h-[42px] min-w-[42px] sm:min-h-[36px] sm:min-w-[36px] px-2.5 py-1.5 bg-amber-950/70 border border-amber-500 hover:border-amber-400 text-xs sm:text-[11px] font-bold text-amber-300 cursor-pointer shadow-gold-glow transition-colors flex items-center justify-center active:scale-95"
-                  >
-                    +30s
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelTimer}
-                    aria-label="Lewati waktu istirahat"
-                    className="min-h-[42px] px-3.5 py-1.5 sm:min-h-[36px] bg-red-950/80 border border-red-600 hover:border-red-500 text-xs sm:text-[11px] font-bold text-red-300 cursor-pointer shadow-red-glow transition-colors flex items-center justify-center active:scale-95"
-                  >
-                    SKIP
-                  </button>
-                </div>
-              </div>
-
-              {/* Shrinking progress bar */}
-              <div className="w-full bg-zinc-900 h-1 overflow-hidden">
-                <div
-                  className="bg-[#00ff41] h-1 transition-all duration-500 ease-linear shadow-neon"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        (restTimerSecs / (restTimerTotalDuration || defaultRestTimerSecs || 90)) * 100
-                      )
-                    )}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <FloatingRestTimer
+        isTimerActive={isTimerActive}
+        restTimerSecs={restTimerSecs}
+        restTimerTotalDuration={restTimerTotalDuration}
+        defaultRestTimerSecs={defaultRestTimerSecs}
+        onAdjustTimer={handleAdjustTimer}
+        onCancelTimer={handleCancelTimer}
+      />
 
       <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
@@ -1602,7 +1538,6 @@ export function WorkoutTrackerForm({
                       ex.name
                     );
 
-                    const isDone = Boolean(set.completed);
                     const exKey = ex.name.toLowerCase().trim();
                     const defKey = ex.definitionId ? ex.definitionId.toLowerCase().trim() : "";
                     const prevSets = previousLogsMap[exKey] || (defKey ? previousLogsMap[defKey] : undefined);
@@ -1611,125 +1546,21 @@ export function WorkoutTrackerForm({
                       : null;
 
                     return (
-                      <div
+                      <WorkoutSetRow
                         key={setIdx}
-                        className={`grid grid-cols-12 gap-1.5 items-center text-xs p-1 transition-all ${
-                          isDone
-                            ? "border border-[#00ff41]/50 bg-[#00ff41]/10"
-                            : "border border-zinc-800/80 bg-black/40"
-                        }`}
-                      >
-                        <div className="col-span-1 text-center font-bold text-zinc-400 text-[11px]">
-                          #{set.set_number}
-                        </div>
-
-                        <div className="col-span-3">
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            step="any"
-                            value={set.weight || ""}
-                            onChange={(e) =>
-                              handleUpdateSet(ex.id, setIdx, "weight", Number(e.target.value))
-                            }
-                            className={`w-full bg-black border px-2 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-center font-bold outline-none text-base sm:text-xs ${
-                              isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
-                            }`}
-                            placeholder={
-                              prevSet && prevSet.weight_kg > 0
-                                ? String(toDisplayWeight(prevSet.weight_kg, weightUnit))
-                                : isAgilityEx
-                                ? "0 (BW)"
-                                : isUnilateralEx
-                                ? "Beban 1 sisi"
-                                : "0"
-                            }
-                          />
-                        </div>
-
-                        <div className="col-span-3">
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={set.reps || ""}
-                            onChange={(e) =>
-                              handleUpdateSet(ex.id, setIdx, "reps", Number(e.target.value))
-                            }
-                            className={`w-full bg-black border px-2 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-center font-bold outline-none text-base sm:text-xs ${
-                              isDone ? "border-[#00ff41] text-[#00ff41]" : "border-pixel-border text-white focus:border-[#00ff41]"
-                            }`}
-                            placeholder={
-                              prevSet && prevSet.reps > 0
-                                ? String(prevSet.reps)
-                                : isUnilateralEx
-                                ? "Reps/sisi"
-                                : "0"
-                            }
-                          />
-                        </div>
-
-                        <div className="col-span-2 text-center">
-                          <span className="font-bold text-[#00ff41] text-[10px]">+{setRvs}</span>
-                        </div>
-
-                        <div className="col-span-3 flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleCompleteSet(ex.id, setIdx)}
-                            className={`flex-1 min-h-[40px] sm:min-h-[32px] py-2 sm:py-1 px-1.5 border text-[10px] sm:text-[9px] font-extrabold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer truncate active:scale-95 ${
-                              isDone
-                                ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
-                                : "border-zinc-700 bg-surface text-zinc-300 hover:border-[#00ff41] hover:text-[#00ff41]"
-                            }`}
-                            title={isDone ? "Click to uncheck set" : "Click to complete set & start 90s Rest Timer"}
-                          >
-                            <Check className={`w-3.5 h-3.5 sm:w-3 sm:h-3 ${isDone ? "stroke-[3]" : "opacity-40"}`} />
-                            <span>{isDone ? "DONE" : "LOG SET"}</span>
-                          </button>
-
-                          {ex.sets.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveSet(ex.id, setIdx)}
-                              aria-label={`Hapus set #${set.set_number}`}
-                              className="min-h-[40px] min-w-[32px] text-zinc-600 hover:text-red-500 p-1 font-bold cursor-pointer flex-shrink-0 flex items-center justify-center active:scale-90"
-                              title="Delete Set"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-
-                        {prevSet && (
-                          <div className="col-span-12 flex items-center justify-between px-2 py-1.5 text-[9.5px] sm:text-[9px] bg-zinc-950/80 border-t border-zinc-900/80 text-zinc-400 font-mono">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-zinc-500 font-semibold flex items-center gap-1">
-                                <History className="w-2.5 h-2.5 text-zinc-400" />
-                                <span>LAST:</span>
-                              </span>
-                              <span className="text-zinc-300 font-bold">
-                                {toDisplayWeight(prevSet.weight_kg, weightUnit)} {weightUnit.toUpperCase()} × {prevSet.reps} reps
-                              </span>
-                            </div>
-                            {!isDone && (!set.weight || !set.reps) && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  soundEngine.play("select");
-                                  soundEngine.triggerHaptic(40);
-                                  handleUpdateSet(ex.id, setIdx, "weight", toDisplayWeight(prevSet.weight_kg, weightUnit));
-                                  handleUpdateSet(ex.id, setIdx, "reps", prevSet.reps);
-                                }}
-                                className="px-2 py-1 border border-[#00ff41]/40 bg-[#00ff41]/10 text-[#00ff41] hover:text-[#5cff87] hover:bg-[#00ff41]/20 cursor-pointer flex items-center gap-1 font-bold text-[9px] uppercase tracking-wider transition-colors active:scale-95"
-                                title="Copy previous weight and reps to this set"
-                              >
-                                <span>⚡ AUTOFILL</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                        exerciseId={ex.id}
+                        setIndex={setIdx}
+                        set={set}
+                        setRvs={setRvs}
+                        weightUnit={weightUnit}
+                        isAgilityEx={isAgilityEx}
+                        isUnilateralEx={isUnilateralEx}
+                        canDelete={ex.sets.length > 1}
+                        prevSet={prevSet}
+                        onUpdateSet={handleUpdateSet}
+                        onToggleCompleteSet={handleToggleCompleteSet}
+                        onRemoveSet={handleRemoveSet}
+                      />
                     );
                   })}
                 </div>
@@ -2480,76 +2311,10 @@ export function WorkoutTrackerForm({
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {activeGuideExercise && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3"
-          >
-            <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="guide-exercise-title"
-              className="w-full max-w-md border-2 border-[#00ff41] bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,255,65,0.3)] font-mono relative"
-            >
-              <button
-                type="button"
-                onClick={() => setActiveGuideExercise(null)}
-                aria-label="Tutup panduan gerakan"
-                className="absolute top-4 right-4 p-1 text-zinc-400 hover:text-white border border-zinc-700 bg-black cursor-pointer"
-              >
-                <X className="w-4 h-4" aria-hidden="true" />
-              </button>
-
-              <div className="space-y-1 border-b border-pixel-border/50 pb-3 pr-6">
-                <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                  EXECUTION GUIDE & INSTRUCTIONS
-                </span>
-                <h3 id="guide-exercise-title" className="font-headline font-black text-lg text-white uppercase tracking-wider">
-                  {activeGuideExercise.name}
-                </h3>
-              </div>
-
-              <div className="space-y-3 text-xs max-h-[60vh] overflow-y-auto pr-1">
-                <div className="p-2.5 border border-pixel-border/60 bg-black/80 space-y-1">
-                  <div className="text-[10px] text-zinc-400 font-bold uppercase">TARGET MUSCLE GROUPS</div>
-                  <div className="flex flex-wrap gap-1 text-white font-bold">
-                    {activeGuideExercise.targetMuscles.map((m) => (
-                      <span key={m} className="px-1.5 py-0.5 bg-zinc-800 text-[10px] uppercase">
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-3 border border-pixel-border/60 bg-black/80 space-y-2">
-                  <div className="text-[10px] text-[#00ff41] font-bold uppercase tracking-wider flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    FORM & MOVEMENT STEPS:
-                  </div>
-                  <ol className="list-decimal list-inside space-y-2 text-zinc-300 text-[11px] leading-relaxed">
-                    {activeGuideExercise.instructions.map((step, idx) => (
-                      <li key={idx} className="pl-1">
-                        {step}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setActiveGuideExercise(null)}
-                className="w-full py-2.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
-              >
-                GOT IT
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ExerciseGuideModal
+        activeExercise={activeGuideExercise}
+        onClose={() => setActiveGuideExercise(null)}
+      />
     </div>
   );
 }
