@@ -191,6 +191,11 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{if(localStorage.getItem('ironpixels_high_contrast')==='true'){document.documentElement.classList.add('high-contrast');}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="antialiased bg-[#0A0A0A] text-[#e5e2e1]">
         {children}

@@ -692,7 +692,7 @@ export function CombatArena({
                   <div className="text-amber-400 flex items-center justify-center gap-1">
                     <span>🪙 +{formatNumber(victoryLoot.goldEarned || 0)} GOLD</span>
                   </div>
-                  <div className="text-[#00ff41] flex items-center justify-center gap-1">
+                  <div className="text-pixel-green flex items-center justify-center gap-1">
                     <span>⚡ +{formatNumber(victoryLoot.expEarned || 0)} EXP</span>
                   </div>
                 </div>
@@ -743,7 +743,7 @@ export function CombatArena({
           onClick={() => setActiveMode("solo")}
           className={`py-2 px-3 flex items-center justify-center gap-2 font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
             activeMode === "solo"
-              ? "bg-[#00ff41] text-black shadow-neon"
+              ? "bg-pixel-green text-black shadow-neon"
               : "text-zinc-400 hover:text-white"
           }`}
         >
@@ -796,7 +796,7 @@ export function CombatArena({
       {activeMode === "party" && partyMembers.length > 0 && (
         <div className="flex items-center justify-between text-[10px] px-3 py-1.5 border border-purple-800/80 bg-purple-950/40 text-purple-300 font-mono shadow-[0_0_15px_rgba(168,85,247,0.2)]">
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${isRealtimeConnected ? "bg-[#00ff41] shadow-neon animate-pulse" : "bg-amber-400"}`} />
+            <span className={`w-2 h-2 rounded-full ${isRealtimeConnected ? "bg-pixel-green shadow-neon animate-pulse" : "bg-amber-400"}`} />
             <span className="font-extrabold uppercase tracking-wider">
               {isRealtimeConnected ? "REALTIME CO-OP SYNC ACTIVE" : "CONNECTING TO PARTY SHRINE..."}
             </span>
@@ -807,11 +807,11 @@ export function CombatArena({
         </div>
       )}
 
-      <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between text-xs font-bold border-l-4 border-l-[#00ff41] shadow-neon">
+      <div className="border border-pixel-border bg-surface p-3 flex items-center justify-between text-xs font-bold border-l-4 border-l-pixel-green shadow-neon">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[#00ff41]" />
+          <Zap className="w-4 h-4 text-pixel-green" />
           <span>BASE COMBAT POWER:</span>
-          <span className="text-[#00ff41] text-sm">{formatNumber(baseCombatPower)} DMG</span>
+          <span className="text-pixel-green text-sm">{formatNumber(baseCombatPower)} DMG</span>
         </div>
       </div>
 

@@ -20,6 +20,7 @@ import {
   Sliders,
   Sparkles,
   ExternalLink,
+  Sun,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
@@ -70,6 +71,7 @@ export function SettingsModal({
 
   // System & FX State
   const [hapticsEnabled, setHapticsEnabled] = useState<boolean>(() => soundEngine.getIsHapticsEnabled());
+  const [highContrastEnabled, setHighContrastEnabled] = useState<boolean>(false);
   const [testAudioNotice, setTestAudioNotice] = useState<string | null>(null);
 
   // Security State
@@ -86,6 +88,10 @@ export function SettingsModal({
 
   // Sync initial props whenever modal opens or userData changes
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setHighContrastEnabled(localStorage.getItem("ironpixels_high_contrast") === "true");
+    }
+
     if (isOpen && userData) {
       setUsernameInput(userData.username || "");
       setWeightInput(userData.weight_kg || 75);
@@ -172,6 +178,23 @@ export function SettingsModal({
     setHapticsEnabled(nextVal);
     if (nextVal) {
       soundEngine.triggerHaptic([50, 40, 50]);
+    }
+  };
+
+  const handleToggleHighContrast = () => {
+    const nextVal = !highContrastEnabled;
+    setHighContrastEnabled(nextVal);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ironpixels_high_contrast", String(nextVal));
+      if (nextVal) {
+        document.documentElement.classList.add("high-contrast");
+      } else {
+        document.documentElement.classList.remove("high-contrast");
+      }
+    }
+    soundEngine.play("select");
+    if (hapticsEnabled) {
+      soundEngine.triggerHaptic([40, 30]);
     }
   };
 
@@ -279,7 +302,7 @@ export function SettingsModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 selection:bg-[#00ff41] selection:text-black"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 selection:bg-pixel-green selection:text-black"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -290,7 +313,7 @@ export function SettingsModal({
             {/* Header */}
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-3">
               <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-[#00ff41]" />
+                <Shield className="w-5 h-5 text-pixel-green" />
                 <div>
                   <h2 className="font-headline font-extrabold text-sm sm:text-base tracking-wider text-white uppercase">
                     GUILD HQ // ACCOUNT SETTINGS
@@ -318,7 +341,7 @@ export function SettingsModal({
                 onClick={() => handleTabChange("profile")}
                 className={`py-1.5 px-1 text-center transition-all flex flex-col items-center gap-1 ${
                   activeTab === "profile"
-                    ? "bg-[#00ff41]/20 text-[#00ff41] border border-[#00ff41]/60 shadow-neon"
+                    ? "bg-pixel-green/20 text-pixel-green border border-pixel-green/60 shadow-neon"
                     : "text-zinc-500 hover:text-zinc-300 border border-transparent"
                 }`}
               >
@@ -331,7 +354,7 @@ export function SettingsModal({
                 onClick={() => handleTabChange("system")}
                 className={`py-1.5 px-1 text-center transition-all flex flex-col items-center gap-1 ${
                   activeTab === "system"
-                    ? "bg-[#00ff41]/20 text-[#00ff41] border border-[#00ff41]/60 shadow-neon"
+                    ? "bg-pixel-green/20 text-pixel-green border border-pixel-green/60 shadow-neon"
                     : "text-zinc-500 hover:text-zinc-300 border border-transparent"
                 }`}
               >
@@ -344,7 +367,7 @@ export function SettingsModal({
                 onClick={() => handleTabChange("security")}
                 className={`py-1.5 px-1 text-center transition-all flex flex-col items-center gap-1 ${
                   activeTab === "security"
-                    ? "bg-[#00ff41]/20 text-[#00ff41] border border-[#00ff41]/60 shadow-neon"
+                    ? "bg-pixel-green/20 text-pixel-green border border-pixel-green/60 shadow-neon"
                     : "text-zinc-500 hover:text-zinc-300 border border-transparent"
                 }`}
               >
@@ -357,7 +380,7 @@ export function SettingsModal({
                 onClick={() => handleTabChange("sync")}
                 className={`py-1.5 px-1 text-center transition-all flex flex-col items-center gap-1 ${
                   activeTab === "sync"
-                    ? "bg-[#00ff41]/20 text-[#00ff41] border border-[#00ff41]/60 shadow-neon"
+                    ? "bg-pixel-green/20 text-pixel-green border border-pixel-green/60 shadow-neon"
                     : "text-zinc-500 hover:text-zinc-300 border border-transparent"
                 }`}
               >
@@ -375,11 +398,11 @@ export function SettingsModal({
                   <div className="bg-[#0a0a0c] border border-zinc-800 p-3 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="p-2 bg-zinc-900 border border-zinc-700">
-                        <Swords className="w-5 h-5 text-[#00ff41]" />
+                        <Swords className="w-5 h-5 text-pixel-green" />
                       </div>
                       <div>
                         <div className="text-[10px] text-zinc-500 uppercase tracking-wider">SPECIALIZATION</div>
-                        <div className="text-xs font-bold text-[#00ff41] uppercase tracking-wide">
+                        <div className="text-xs font-bold text-pixel-green uppercase tracking-wide">
                           {userData?.character_class || "WARRIOR"}
                         </div>
                       </div>
@@ -397,7 +420,7 @@ export function SettingsModal({
                   {/* Username Codename */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-[#00ff41]" />
+                      <User className="w-3.5 h-3.5 text-pixel-green" />
                       OPERATIVE CODENAME
                     </label>
                     <input
@@ -405,7 +428,7 @@ export function SettingsModal({
                       value={usernameInput}
                       onChange={(e) => setUsernameInput(e.target.value)}
                       maxLength={25}
-                      className="w-full bg-black border border-zinc-800 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#00ff41] transition-colors"
+                      className="w-full bg-black border border-zinc-800 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-pixel-green transition-colors"
                       placeholder="Enter operative name..."
                     />
                   </div>
@@ -414,7 +437,7 @@ export function SettingsModal({
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Scale className="w-3.5 h-3.5 text-[#00ff41]" />
+                        <Scale className="w-3.5 h-3.5 text-pixel-green" />
                         BODY MASS & METRICS
                       </label>
                       <div className="flex border border-zinc-800 bg-black">
@@ -423,7 +446,7 @@ export function SettingsModal({
                           onClick={() => setWeightUnit("kg")}
                           className={`px-2 py-0.5 text-[10px] font-bold uppercase transition-all ${
                             weightUnit === "kg"
-                              ? "bg-[#00ff41] text-black"
+                              ? "bg-pixel-green text-black"
                               : "text-zinc-500 hover:text-white"
                           }`}
                         >
@@ -434,7 +457,7 @@ export function SettingsModal({
                           onClick={() => setWeightUnit("lbs")}
                           className={`px-2 py-0.5 text-[10px] font-bold uppercase transition-all ${
                             weightUnit === "lbs"
-                              ? "bg-[#00ff41] text-black"
+                              ? "bg-pixel-green text-black"
                               : "text-zinc-500 hover:text-white"
                           }`}
                         >
@@ -447,7 +470,7 @@ export function SettingsModal({
                       <button
                         type="button"
                         onClick={() => setWeightInput((prev) => Math.max(20, Math.round((prev - 1) * 10) / 10))}
-                        className="w-9 h-9 border border-zinc-800 bg-black hover:border-[#00ff41] text-zinc-300 font-bold flex items-center justify-center transition-colors cursor-pointer"
+                        className="w-9 h-9 border border-zinc-800 bg-black hover:border-pixel-green text-zinc-300 font-bold flex items-center justify-center transition-colors cursor-pointer"
                       >
                         -
                       </button>
@@ -458,12 +481,12 @@ export function SettingsModal({
                         max="350"
                         value={weightInput}
                         onChange={(e) => setWeightInput(Number(e.target.value))}
-                        className="flex-1 bg-black border border-zinc-800 px-3 py-2 text-center text-xs font-mono font-bold text-white focus:outline-none focus:border-[#00ff41] transition-colors"
+                        className="flex-1 bg-black border border-zinc-800 px-3 py-2 text-center text-xs font-mono font-bold text-white focus:outline-none focus:border-pixel-green transition-colors"
                       />
                       <button
                         type="button"
                         onClick={() => setWeightInput((prev) => Math.min(350, Math.round((prev + 1) * 10) / 10))}
-                        className="w-9 h-9 border border-zinc-800 bg-black hover:border-[#00ff41] text-zinc-300 font-bold flex items-center justify-center transition-colors cursor-pointer"
+                        className="w-9 h-9 border border-zinc-800 bg-black hover:border-pixel-green text-zinc-300 font-bold flex items-center justify-center transition-colors cursor-pointer"
                       >
                         +
                       </button>
@@ -476,7 +499,7 @@ export function SettingsModal({
                   {/* Gender / Avatar Presentation */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#00ff41]" />
+                      <Sparkles className="w-3.5 h-3.5 text-pixel-green" />
                       AVATAR LINEAGE
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -485,7 +508,7 @@ export function SettingsModal({
                         onClick={() => setGenderInput("m")}
                         className={`py-2 px-3 border text-xs font-bold text-left transition-all ${
                           genderInput === "m"
-                            ? "border-[#00ff41] bg-[#00ff41]/10 text-[#00ff41] shadow-neon"
+                            ? "border-pixel-green bg-pixel-green/10 text-pixel-green shadow-neon"
                             : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700"
                         }`}
                       >
@@ -496,7 +519,7 @@ export function SettingsModal({
                         onClick={() => setGenderInput("f")}
                         className={`py-2 px-3 border text-xs font-bold text-left transition-all ${
                           genderInput === "f"
-                            ? "border-[#00ff41] bg-[#00ff41]/10 text-[#00ff41] shadow-neon"
+                            ? "border-pixel-green bg-pixel-green/10 text-pixel-green shadow-neon"
                             : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700"
                         }`}
                       >
@@ -509,7 +532,7 @@ export function SettingsModal({
                     <div
                       className={`p-2.5 border text-xs flex items-center gap-2 ${
                         profileFeedback.type === "success"
-                          ? "border-[#00ff41]/60 bg-[#00ff41]/10 text-[#00ff41]"
+                          ? "border-pixel-green/60 bg-pixel-green/10 text-pixel-green"
                           : "border-red-500/60 bg-red-950/30 text-red-400"
                       }`}
                     >
@@ -525,7 +548,7 @@ export function SettingsModal({
                   <button
                     type="submit"
                     disabled={savingProfile}
-                    className="w-full h-11 border border-[#00ff41] bg-[#00ff41]/20 hover:bg-[#00ff41]/30 text-[#00ff41] font-mono font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-neon disabled:opacity-50 cursor-pointer"
+                    className="w-full h-11 border border-pixel-green bg-pixel-green/20 hover:bg-pixel-green/30 text-pixel-green font-mono font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-neon disabled:opacity-50 cursor-pointer"
                   >
                     {savingProfile ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -548,7 +571,7 @@ export function SettingsModal({
                           {isMuted ? (
                             <VolumeX className="w-4 h-4 text-red-400" />
                           ) : (
-                            <Volume2 className="w-4 h-4 text-[#00ff41]" />
+                            <Volume2 className="w-4 h-4 text-pixel-green" />
                           )}
                           8-BIT RETRO SFX AUDIO
                         </div>
@@ -563,7 +586,7 @@ export function SettingsModal({
                         className={`px-3 py-1.5 text-xs font-bold uppercase border transition-all cursor-pointer ${
                           isMuted
                             ? "border-red-500/60 bg-red-950/40 text-red-400 hover:bg-red-900/60 shadow-[0_0_10px_rgba(239,68,68,0.2)]"
-                            : "border-[#00ff41]/60 bg-[#00ff41]/20 text-[#00ff41] hover:bg-[#00ff41]/30 shadow-neon"
+                            : "border-pixel-green/60 bg-pixel-green/20 text-pixel-green hover:bg-pixel-green/30 shadow-neon"
                         }`}
                       >
                         {isMuted ? "MUTED (OFF)" : "ACTIVE (ON)"}
@@ -575,7 +598,7 @@ export function SettingsModal({
                       <button
                         type="button"
                         onClick={handleTestSound}
-                        className="px-2.5 py-1 border border-zinc-700 bg-black hover:border-[#00ff41] text-[10px] text-zinc-300 font-bold uppercase transition-colors"
+                        className="px-2.5 py-1 border border-zinc-700 bg-black hover:border-pixel-green text-[10px] text-zinc-300 font-bold uppercase transition-colors"
                       >
                         PLAY TEST SOUND
                       </button>
@@ -620,6 +643,41 @@ export function SettingsModal({
                     </div>
                   </div>
 
+                  {/* High-Contrast Gym / Outdoor Profile */}
+                  <div className="bg-[#0a0a0c] border border-zinc-800 p-3.5 space-y-3">
+                    <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5">
+                      <div>
+                        <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <Sun className={`w-4 h-4 ${highContrastEnabled ? "text-yellow-400" : "text-zinc-400"}`} />
+                          HIGH-CONTRAST GYM / OUTDOOR
+                        </div>
+                        <div className="text-[10px] text-zinc-500">
+                          Sunlight readability boost &amp; sharp high-vis borders
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleToggleHighContrast}
+                        aria-pressed={highContrastEnabled}
+                        className={`px-3 py-1.5 text-xs font-bold uppercase border transition-all cursor-pointer ${
+                          highContrastEnabled
+                            ? "border-yellow-400/80 bg-yellow-400/20 text-yellow-300 shadow-[0_0_10px_rgba(253,224,71,0.25)]"
+                            : "border-zinc-700 bg-black text-zinc-500 hover:text-zinc-300"
+                        }`}
+                      >
+                        {highContrastEnabled ? "ACTIVE (ON)" : "DISABLED"}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-zinc-400">OUTDOOR PROFILE</span>
+                      <span className={`text-[10px] font-bold uppercase ${highContrastEnabled ? "text-yellow-400" : "text-zinc-500"}`}>
+                        {highContrastEnabled ? "⚡ OUTDOOR VISIBILITY MAX" : "STANDARD ARCADE MODE"}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Engine Specs */}
                   <div className="border border-zinc-800 bg-black/40 p-3 text-[10px] text-zinc-500 space-y-1">
                     <div className="text-zinc-400 font-bold uppercase">AUDIO SYNTHESIS ARCHITECTURE:</div>
@@ -631,7 +689,7 @@ export function SettingsModal({
                     <motion.div
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-2 border border-[#00ff41]/60 bg-[#00ff41]/10 text-[#00ff41] text-xs text-center font-bold"
+                      className="p-2 border border-pixel-green/60 bg-pixel-green/10 text-pixel-green text-xs text-center font-bold"
                     >
                       {testAudioNotice}
                     </motion.div>
@@ -643,10 +701,10 @@ export function SettingsModal({
                       href="/about"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full py-2.5 px-3 border border-zinc-700 bg-zinc-900 hover:border-[#00ff41] text-zinc-200 hover:text-white text-xs font-mono font-bold uppercase flex items-center justify-between transition-colors"
+                      className="w-full py-2.5 px-3 border border-zinc-700 bg-zinc-900 hover:border-pixel-green text-zinc-200 hover:text-white text-xs font-mono font-bold uppercase flex items-center justify-between transition-colors"
                     >
                       <span className="flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-[#00ff41]" />
+                        <Sparkles className="w-3.5 h-3.5 text-pixel-green" />
                         <span>TENTANG IRONPIXELS &amp; PANDUAN PUBLIK</span>
                       </span>
                       <ExternalLink className="w-3.5 h-3.5 text-zinc-400" />
@@ -673,7 +731,7 @@ export function SettingsModal({
                   <form onSubmit={handleUpdatePassword} className="space-y-3">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Lock className="w-3.5 h-3.5 text-[#00ff41]" />
+                        <Lock className="w-3.5 h-3.5 text-pixel-green" />
                         NEW GUILD PASSKEY
                       </label>
                       <input
@@ -681,7 +739,7 @@ export function SettingsModal({
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Minimum 6 characters"
-                        className="w-full bg-black border border-zinc-800 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#00ff41] transition-colors"
+                        className="w-full bg-black border border-zinc-800 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-pixel-green transition-colors"
                       />
                     </div>
 
@@ -694,7 +752,7 @@ export function SettingsModal({
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Repeat new passkey"
-                        className="w-full bg-black border border-zinc-800 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#00ff41] transition-colors"
+                        className="w-full bg-black border border-zinc-800 px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-pixel-green transition-colors"
                       />
                     </div>
 
@@ -702,7 +760,7 @@ export function SettingsModal({
                       <div
                         className={`p-2.5 border text-xs flex items-center gap-2 ${
                           passwordFeedback.type === "success"
-                            ? "border-[#00ff41]/60 bg-[#00ff41]/10 text-[#00ff41]"
+                            ? "border-pixel-green/60 bg-pixel-green/10 text-pixel-green"
                             : "border-red-500/60 bg-red-950/30 text-red-400"
                         }`}
                       >
@@ -718,7 +776,7 @@ export function SettingsModal({
                     <button
                       type="submit"
                       disabled={updatingPassword || !newPassword}
-                      className="w-full h-11 border border-zinc-700 bg-black hover:border-[#00ff41] hover:text-[#00ff41] text-zinc-200 font-mono font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+                      className="w-full h-11 border border-zinc-700 bg-black hover:border-pixel-green hover:text-pixel-green text-zinc-200 font-mono font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
                     >
                       {updatingPassword ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -741,7 +799,7 @@ export function SettingsModal({
                       <button
                         type="button"
                         onClick={handleCopyUserId}
-                        className="text-zinc-400 hover:text-[#00ff41] flex items-center gap-1 text-[10px] cursor-pointer"
+                        className="text-zinc-400 hover:text-pixel-green flex items-center gap-1 text-[10px] cursor-pointer"
                       >
                         <Copy className="w-3 h-3" />
                         <span>{copiedId ? "COPIED!" : "COPY"}</span>
@@ -756,7 +814,7 @@ export function SettingsModal({
                   <div className="bg-[#0a0a0c] border border-zinc-800 p-3.5 space-y-2.5">
                     <div>
                       <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <RefreshCw className="w-3.5 h-3.5 text-[#00ff41]" />
+                        <RefreshCw className="w-3.5 h-3.5 text-pixel-green" />
                         CLOUD DATA RE-SYNCHRONIZATION
                       </div>
                       <div className="text-[10px] text-zinc-500">
@@ -768,15 +826,15 @@ export function SettingsModal({
                       type="button"
                       onClick={handleForceCloudSync}
                       disabled={syncingData}
-                      className="w-full py-2.5 border border-zinc-700 bg-black hover:border-[#00ff41] text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                      className="w-full py-2.5 border border-zinc-700 bg-black hover:border-pixel-green text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${syncingData ? "animate-spin text-[#00ff41]" : ""}`} />
+                      <RefreshCw className={`w-3.5 h-3.5 ${syncingData ? "animate-spin text-pixel-green" : ""}`} />
                       <span>{syncingData ? "SYNCHRONIZING..." : "FORCE CLOUD RE-SYNC"}</span>
                     </button>
                   </div>
 
                   {syncFeedback && (
-                    <div className="p-2.5 border border-[#00ff41]/60 bg-[#00ff41]/10 text-[#00ff41] text-xs flex items-center gap-2">
+                    <div className="p-2.5 border border-pixel-green/60 bg-pixel-green/10 text-pixel-green text-xs flex items-center gap-2">
                       <Check className="w-4 h-4 shrink-0" />
                       <span>{syncFeedback}</span>
                     </div>

@@ -27,7 +27,7 @@ export const ExerciseGuideModal = memo<ExerciseGuideModalProps>(function Exercis
             role="dialog"
             aria-modal="true"
             aria-labelledby="guide-exercise-title"
-            className="w-full max-w-md border-2 border-[#00ff41] bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,255,65,0.3)] font-mono relative"
+            className="w-full max-w-md border-2 border-pixel-green bg-surface p-5 space-y-4 shadow-[0_0_50px_rgba(0,255,65,0.3)] font-mono relative"
           >
             <button
               type="button"
@@ -39,7 +39,7 @@ export const ExerciseGuideModal = memo<ExerciseGuideModalProps>(function Exercis
             </button>
 
             <div className="space-y-1 border-b border-pixel-border/50 pb-3 pr-6">
-              <span className="text-[10px] text-[#00ff41] font-bold uppercase tracking-widest flex items-center gap-1">
+              <span className="text-[10px] text-pixel-green font-bold uppercase tracking-widest flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
                 EXECUTION GUIDE & INSTRUCTIONS
               </span>
@@ -61,7 +61,7 @@ export const ExerciseGuideModal = memo<ExerciseGuideModalProps>(function Exercis
               </div>
 
               <div className="p-3 border border-pixel-border/60 bg-black/80 space-y-2">
-                <div className="text-[10px] text-[#00ff41] font-bold uppercase tracking-wider flex items-center gap-1">
+                <div className="text-[10px] text-pixel-green font-bold uppercase tracking-wider flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   FORM & MOVEMENT STEPS:
                 </div>
@@ -77,7 +77,7 @@ export const ExerciseGuideModal = memo<ExerciseGuideModalProps>(function Exercis
 
             <button
               onClick={onClose}
-              className="w-full py-2.5 bg-[#00ff41] hover:bg-[#00ff41]/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
+              className="w-full py-2.5 bg-pixel-green hover:bg-pixel-green/90 text-black font-headline font-black text-xs uppercase tracking-wider shadow-neon cursor-pointer"
             >
               GOT IT
             </button>

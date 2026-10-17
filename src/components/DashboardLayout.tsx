@@ -273,7 +273,7 @@ export function DashboardLayout() {
       return { label: "SHADOW NINJA PERK", perk: "+20% Critical Hit Chance (AGI)", color: "text-fuchsia-400 border-fuchsia-400/40 bg-fuchsia-950/20" };
     }
     if (nameUpper.includes("PALADIN") || nameUpper.includes("VANGUARD") || nameUpper.includes("LIZARD")) {
-      return { label: "IRON VANGUARD PERK", perk: "+250 MAX HP & Defensive Shield", color: "text-[#00ff41] border-[#00ff41]/40 bg-[#00ff41]/10" };
+      return { label: "IRON VANGUARD PERK", perk: "+250 MAX HP & Defensive Shield", color: "text-pixel-green border-pixel-green/40 bg-pixel-green/10" };
     }
     return { label: "TITAN BERSERKER PERK", perk: "+20% Extra Gold & Exp Loot", color: "text-sky-400 border-sky-400/40 bg-sky-950/20" };
   };
@@ -931,7 +931,7 @@ export function DashboardLayout() {
                           <h2 className="font-headline font-black text-lg text-white uppercase tracking-wider truncate">
                             {userData.username}
                           </h2>
-                          <span className="px-2 py-0.5 border border-[#00ff41] bg-[#00ff41]/20 text-[#00ff41] font-headline font-black text-xs uppercase shadow-neon">
+                          <span className="px-2 py-0.5 border border-pixel-green bg-pixel-green/20 text-pixel-green font-headline font-black text-xs uppercase shadow-neon">
                             LVL.{userData.level}
                           </span>
                         </div>
@@ -946,7 +946,7 @@ export function DashboardLayout() {
                         <span className="px-1.5 py-0.2 border border-zinc-700 bg-black text-zinc-300">
                           {userData.gender === "f" ? "FEMALE" : "MALE"} {userData.character_class}
                         </span>
-                        <span className="text-[#00ff41] truncate">{classPerk.perk}</span>
+                        <span className="text-pixel-green truncate">{classPerk.perk}</span>
                       </div>
 
                       {/* HP METER BAR */}
@@ -1027,16 +1027,16 @@ export function DashboardLayout() {
                       setActiveTab("quests");
                       setSubView("workout");
                     }}
-                    className="p-3 border border-[#00ff41]/80 bg-surface hover:bg-[#00ff41]/10 text-white flex items-center justify-between group transition-all cursor-pointer shadow-neon"
+                    className="p-3 border border-pixel-green/80 bg-surface hover:bg-pixel-green/10 text-white flex items-center justify-between group transition-all cursor-pointer shadow-neon"
                   >
                     <div className="flex items-center gap-2">
-                      <Dumbbell className="w-5 h-5 text-[#00ff41]" />
+                      <Dumbbell className="w-5 h-5 text-pixel-green" />
                       <div className="text-left">
                         <div className="font-headline font-extrabold text-xs uppercase">WORKOUT TRACKER</div>
                         <div className="text-[9px] text-zinc-400">LOG GYM SETS</div>
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-[#00ff41] group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-4 h-4 text-pixel-green group-hover:translate-x-1 transition-transform" />
                   </button>
 
                   <button

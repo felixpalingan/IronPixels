@@ -47,7 +47,7 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
     <div
       className={`grid grid-cols-12 gap-1.5 items-center text-xs p-1 transition-all ${
         isDone
-          ? "border border-[#00ff41]/50 bg-[#00ff41]/10"
+          ? "border border-pixel-green/50 bg-pixel-green/10"
           : "border border-zinc-800/80 bg-black/40"
       }`}
     >
@@ -66,8 +66,8 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
           }
           className={`w-full bg-black border px-2 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-center font-bold outline-none text-base sm:text-xs ${
             isDone
-              ? "border-[#00ff41] text-[#00ff41]"
-              : "border-pixel-border text-white focus:border-[#00ff41]"
+              ? "border-pixel-green text-pixel-green"
+              : "border-pixel-border text-white focus:border-pixel-green"
           }`}
           placeholder={
             prevSet && prevSet.weight_kg > 0
@@ -92,8 +92,8 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
           }
           className={`w-full bg-black border px-2 py-2 sm:py-1 min-h-[40px] sm:min-h-0 text-center font-bold outline-none text-base sm:text-xs ${
             isDone
-              ? "border-[#00ff41] text-[#00ff41]"
-              : "border-pixel-border text-white focus:border-[#00ff41]"
+              ? "border-pixel-green text-pixel-green"
+              : "border-pixel-border text-white focus:border-pixel-green"
           }`}
           placeholder={
             prevSet && prevSet.reps > 0
@@ -106,7 +106,7 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
       </div>
 
       <div className="col-span-2 text-center">
-        <span className="font-bold text-[#00ff41] text-[10px]">+{setRvs}</span>
+        <span className="font-bold text-pixel-green text-[10px]">+{setRvs}</span>
       </div>
 
       <div className="col-span-3 flex items-center gap-1">
@@ -115,8 +115,8 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
           onClick={() => onToggleCompleteSet(exerciseId, setIndex)}
           className={`flex-1 min-h-[40px] sm:min-h-[32px] py-2 sm:py-1 px-1.5 border text-[10px] sm:text-[9px] font-extrabold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer truncate active:scale-95 ${
             isDone
-              ? "border-[#00ff41] bg-[#00ff41] text-black shadow-neon"
-              : "border-zinc-700 bg-surface text-zinc-300 hover:border-[#00ff41] hover:text-[#00ff41]"
+              ? "border-pixel-green bg-pixel-green text-black shadow-neon"
+              : "border-zinc-700 bg-surface text-zinc-300 hover:border-pixel-green hover:text-pixel-green"
           }`}
           title={isDone ? "Click to uncheck set" : "Click to complete set & start 90s Rest Timer"}
         >
@@ -157,7 +157,7 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
                 onUpdateSet(exerciseId, setIndex, "weight", toDisplayWeight(prevSet.weight_kg, weightUnit));
                 onUpdateSet(exerciseId, setIndex, "reps", prevSet.reps);
               }}
-              className="px-2 py-1 border border-[#00ff41]/40 bg-[#00ff41]/10 text-[#00ff41] hover:text-[#5cff87] hover:bg-[#00ff41]/20 cursor-pointer flex items-center gap-1 font-bold text-[9px] uppercase tracking-wider transition-colors active:scale-95"
+              className="px-2 py-1 border border-pixel-green/40 bg-pixel-green/10 text-pixel-green hover:text-[#5cff87] hover:bg-pixel-green/20 cursor-pointer flex items-center gap-1 font-bold text-[9px] uppercase tracking-wider transition-colors active:scale-95"
               title="Copy previous weight and reps to this set"
             >
               <span>⚡ AUTOFILL</span>

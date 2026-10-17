@@ -91,3 +91,66 @@ canvas,
   animation: shimmer-wave 1.75s ease-in-out infinite;
 }
 
+/* ==========================================================================
+   High-Contrast Gym / Outdoor Profile (Daylight Visibility Enhancement)
+   ========================================================================== */
+html.high-contrast {
+  --background: #000000;
+  --foreground: #ffffff;
+}
+
+html.high-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Crisp, high-contrast borders for outdoor daylight legibility */
+html.high-contrast .border-zinc-800,
+html.high-contrast .border-zinc-700,
+html.high-contrast .border-pixel-border {
+  border-color: #d4d4d8 !important;
+}
+
+/* Elevate low-contrast muted text to pass WCAG AAA in sunlight */
+html.high-contrast .text-zinc-500,
+html.high-contrast .text-zinc-600 {
+  color: #d4d4d8 !important;
+}
+
+html.high-contrast .text-zinc-400 {
+  color: #f4f4f5 !important;
+}
+
+/* Input fields with crisp white borders & deep black background */
+html.high-contrast input,
+html.high-contrast select,
+html.high-contrast textarea {
+  border-color: #ffffff !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* High contrast interactive elements */
+html.high-contrast button {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+html.high-contrast .text-pixel-green,
+html.high-contrast .text-\[\#00ff41\] {
+  color: #00ff41 !important;
+  font-weight: 800;
+  text-shadow: 0 0 2px rgba(0, 255, 65, 0.8);
+}
+
+html.high-contrast .border-pixel-green,
+html.high-contrast .border-\[\#00ff41\] {
+  border-color: #00ff41 !important;
+}
+
+html.high-contrast .text-gold-loot,
+html.high-contrast .text-\[\#FFD60A\] {
+  color: #ffd60a !important;
+  font-weight: 800;
+}
+

@@ -20,6 +20,7 @@ const config: Config = {
         "gold-loot": "#FFD60A",
         "health-red": "#ff3b30",
         "mana-purple": "#e9b3ff",
+        "crit-red": "#FF0055",
       },
       fontFamily: {
         mono: ["var(--font-jetbrains)", "JetBrains Mono", "monospace"],
