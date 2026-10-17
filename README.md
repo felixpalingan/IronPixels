@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./public/icon.png" alt="IronPixels Logo" width="120" style="image-rendering: pixelated;" />
+  <img src="./icon.png" alt="IronPixels Logo" width="120" style="image-rendering: pixelated;" />
 </p>
 
 <h1 align="center">⚔️ IronPixels</h1>
@@ -25,7 +25,8 @@
   <a href="https://tailwindcss.com/">
     <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
   </a>
-  <img src="https://img.shields.io/badge/Tests-18%2F18_Passing-brightgreen?style=for-the-badge" alt="Tests Status" />
+  <img src="https://img.shields.io/badge/Unit_Tests-33%2F33_Passing-brightgreen?style=for-the-badge" alt="Unit Tests Status" />
+  <img src="https://img.shields.io/badge/Playwright_E2E-18%2F18_Passing-brightgreen?style=for-the-badge&logo=playwright&logoColor=white" alt="Playwright E2E Status" />
 </p>
 
 <p align="center">
@@ -99,9 +100,11 @@ graph TD
 | **Frontend UI** | **React 19 & TailwindCSS 3.4** | Modern reactive state management, CSS subpixel budgeting, and retro dark-mode design tokens. |
 | **Animation & FX** | **Framer Motion 12 & Canvas 2D** | Fluid state transitions coupled with high-performance floating damage particle engines. |
 | **Database & Auth** | **Supabase (PostgreSQL 15)** | Row Level Security (RLS), atomic Compare-And-Swap (CAS) functions, and relational integrity. |
+| **Transactions** | **Supabase RPC (`submit_workout_transaction`)** | Atomic multi-table database operations ensuring rollback safety across sessions, bosses, and profiles. |
 | **Networking** | **Supabase Realtime WebSockets** | Zero-latency pub/sub broadcast channels for multi-device Co-Op boss raids. |
 | **Type Safety** | **TypeScript 5.7 & Strict Typecheck** | End-to-end data safety across database models, calculation engines, and client interfaces. |
-| **Testing** | **Node.js Native Test Suite + tsx** | Ultra-fast unit testing covering server RVS calculations and unit conversions. |
+| **Unit Testing** | **Node.js Native Test Suite + tsx** | Ultra-fast unit testing (33/33 specs) covering server RVS calculations, stats, and unit conversions. |
+| **E2E Automation** | **Playwright 1.58** | Cross-viewport browser integration tests (18/18 specs) for Desktop and Mobile viewports. |
 
 ---
 
@@ -139,6 +142,13 @@ graph TD
 ### 6. 💰 Economy, Blacksmith & Inventory
 - **Atomic Gacha Chests**: Compare-And-Swap transactional chest opening for Regular and Void Chests preventing duplicate exploits.
 - **Equipment Inventory**: Equip weapons, armor, and dual accessory slots; sell surplus gear for Gold.
+
+### 7. ☀️ High-Contrast Outdoor Profile & Accessibility
+- **Sunlight Legibility**: Toggleable outdoor visibility profile optimized for open-air calisthenics parks and bright gym windows with obsidian backgrounds, vibrant neon borders, and enlarged touch targets.
+- **A11y Standards**: Strict WCAG contrast compliance, semantic ARIA landmarks, and keyboard navigable controls across all tabs.
+
+### 8. 🛡️ Sliding-Window Rate Limiting & Anti-Abuse
+- **API Defense**: Edge-ready in-memory sliding-window rate limiter protecting `/api/combat/*`, `/api/shop/gacha`, and `/api/profile/*` against replay exploits and automated request spam.
 
 ---
 
@@ -219,9 +229,13 @@ CRON_SECRET=your-secure-cron-secret
 ```
 
 ### 3. Run Automated Tests
-Execute the built-in mathematical engine test suite:
+Execute the built-in mathematical engine test suite and Playwright end-to-end integration tests:
 ```bash
+# Run 33 server-authoritative unit tests
 npm test
+
+# Run 18 Playwright cross-viewport E2E tests
+npx playwright test
 ```
 
 ### 4. Start Development Server
@@ -234,9 +248,10 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🧪 Quality Assurance & Build Verification
 
-The application maintains zero-warning production compilation:
-- **Build**: `npm run build` generates optimized static pages and standalone PWA artifacts.
-- **Unit Testing**: Tests cover authoritative RVS calculation bounds, completed set filtering, and precision metric conversion.
+The application maintains zero-warning production compilation and strict test coverage:
+- **Build**: `npm run build` compiles 30+ static pages, edge functions, and standalone PWA artifacts with zero lint or type errors.
+- **Unit Testing (33/33 Passing)**: Validates authoritative RVS formulas, tier multipliers, equipment stat bonuses, anti-cheat damage bounds, and metric unit conversions.
+- **E2E Integration Testing (18/18 Passing)**: Automates real user journeys with Playwright across Desktop and Mobile viewports, validating gym tracking, autofill, CAS gacha transactions, and co-op social interfaces.
 
 ---
 
