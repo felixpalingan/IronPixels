@@ -36,8 +36,8 @@ export function runWorkoutCalculationsTests(): { passed: number; failed: number 
     userWeightKg: 80,
     userStr: 100,
   });
-  // actualWeight = 80, reps = 10, bodyweightRatio = 80/80 = 1.0, 80 * 10 * 1.0 * 0.1 * 1.0 * (100/50 = 2) = 160
-  assert(benchRvs === 160, `Bench Press RVS expected 160, received ${benchRvs}`);
+  // actualWeight = 80kg, reps = 10, baseLoad = 80*0.75 = 60kg, intensityRatio = 1.333, strMultiplier = 2.0 -> 80 * 10 * 0.12 * 1.333 * 2.0 = 256 RVS
+  assert(benchRvs === 256, `Bench Press RVS expected 256, received ${benchRvs}`);
 
   // Test 3: Bodyweight exercise with 0 weight uses bodyweight
   const pullupRvs = calculateSetRvs({
