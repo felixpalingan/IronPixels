@@ -149,22 +149,30 @@ export async function POST(request: Request) {
       }
     }
 
-    // 1. Resolve current floor
+    // 1. Resolve current floor & authoritatively saved enemy HP
     let currentFloor = 1;
+    let savedEnemyHp: number | null = null;
+
     if (mode === "party" && resolvedPartyId) {
       const { data: partyRec } = await supabase
         .from("Party")
-        .select("total_party_floor")
+        .select("total_party_floor, current_boss_hp")
         .eq("party_id", resolvedPartyId)
         .single();
       currentFloor = partyRec?.total_party_floor || 1;
+      if (partyRec?.current_boss_hp !== undefined && partyRec?.current_boss_hp !== null) {
+        savedEnemyHp = Number(partyRec.current_boss_hp);
+      }
     } else {
       const { data: profRec } = await supabase
         .from("profiles")
-        .select("max_floor")
+        .select("max_floor, dungeon_enemy_hp")
         .or(`id.eq.${currentUserId},user_id.eq.${currentUserId}`)
         .single();
       currentFloor = profRec?.max_floor || 1;
+      if (profRec?.dungeon_enemy_hp !== undefined && profRec?.dungeon_enemy_hp !== null) {
+        savedEnemyHp = Number(profRec.dungeon_enemy_hp);
+      }
     }
 
     // 2. Fetch canonical current enemy from dungeon_bosses
@@ -177,13 +185,35 @@ export async function POST(request: Request) {
     const currentEnemy = stageRows?.[0] || buildFloorEnemy(currentFloor, mode);
     const maxHp = Number(mode === "party" ? currentEnemy.max_hp * 2 : currentEnemy.max_hp);
 
+    // SERVER-AUTHORITATIVE HP:
+    // Determine the true starting HP from the server database ONLY.
+    // If savedEnemyHp is null or not found, the enemy starts at full maxHp.
+    // Client-supplied body.current_hp is strictly ignored to prevent cheat injection.
+    const prevHp = savedEnemyHp !== null ? Math.min(maxHp, Math.max(0, savedEnemyHp)) : maxHp;
+
+    if (prevHp <= 0) {
+      return NextResponse.json({
+        success: true,
+        boss_id: currentEnemy.boss_id || (currentEnemy as any).enemy_id || `floor-${currentFloor}`,
+        boss_name: currentEnemy.boss_name || (currentEnemy as any).display_name,
+        boss_type: currentEnemy.sprite_config?.spriteKey || "imp",
+        stage: currentFloor,
+        rvs_damage_dealt: 0,
+        current_hp: 0,
+        max_hp: maxHp,
+        is_defeated: true,
+        status: "Defeated",
+        category: currentEnemy.category || "mob",
+        sprite_config: currentEnemy.sprite_config,
+        mode,
+        attacker_username: attackerUsername,
+        message: "Enemy already defeated on this floor.",
+      });
+    }
+
     // Security bounds: cap single attack damage to prevent arbitrary client payload manipulation
-    const MAX_SINGLE_HIT_DAMAGE = 50000;
+    const MAX_SINGLE_HIT_DAMAGE = 25000;
     const dmg = Math.min(MAX_SINGLE_HIT_DAMAGE, Math.max(1, Math.round(Number(rvs_damage) || 0)));
-    const prevHp =
-      body.current_hp !== undefined && !isNaN(Number(body.current_hp))
-        ? Math.min(maxHp, Math.max(0, Number(body.current_hp)))
-        : maxHp;
     const newHp = Math.max(0, prevHp - dmg);
     const isDefeated = newHp === 0;
 
