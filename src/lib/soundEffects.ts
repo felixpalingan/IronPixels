@@ -7,6 +7,9 @@ class SoundEngine {
   private audioCache: Map<string, HTMLAudioElement> = new Map();
   private isMuted: boolean = false;
   private isHapticsEnabled: boolean = true;
+  private audioCtx: AudioContext | null = null;
+  private keepAliveOsc: OscillatorNode | null = null;
+  private keepAliveGain: GainNode | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -17,6 +20,67 @@ class SoundEngine {
         this.isHapticsEnabled = savedHaptics !== "false";
       } catch (e) {}
       this.preload();
+    }
+  }
+
+  private getOrCreateAudioContext(): AudioContext | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!this.audioCtx || this.audioCtx.state === "closed") {
+        this.audioCtx = new AudioCtx();
+      }
+      if (this.audioCtx.state === "suspended") {
+        this.audioCtx.resume().catch(() => {});
+      }
+      return this.audioCtx;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Starts a sub-audible (-100dB) Web Audio oscillator while the rest timer is active.
+   * This prevents mobile & desktop browsers from freezing the background tab or Service Worker
+   * when the user switches to another app or locks their screen during rest intervals.
+   */
+  public startTimerKeepAlive() {
+    if (typeof window === "undefined") return;
+    try {
+      const ctx = this.getOrCreateAudioContext();
+      if (!ctx) return;
+      if (this.keepAliveOsc) return; // Already active
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(1, ctx.currentTime); // 1 Hz sub-audible
+      gain.gain.setValueAtTime(0.00001, ctx.currentTime); // Virtually zero volume (-100dB)
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+
+      this.keepAliveOsc = osc;
+      this.keepAliveGain = gain;
+    } catch (e) {}
+  }
+
+  public stopTimerKeepAlive() {
+    try {
+      if (this.keepAliveOsc) {
+        this.keepAliveOsc.stop();
+        this.keepAliveOsc.disconnect();
+        this.keepAliveOsc = null;
+      }
+      if (this.keepAliveGain) {
+        this.keepAliveGain.disconnect();
+        this.keepAliveGain = null;
+      }
+    } catch (e) {
+      this.keepAliveOsc = null;
+      this.keepAliveGain = null;
     }
   }
 
@@ -71,6 +135,9 @@ class SoundEngine {
   public play(effect: SoundEffectType) {
     if (this.isMuted || typeof window === "undefined") return;
 
+    // Ensure shared AudioContext is unlocked during user gestures
+    this.getOrCreateAudioContext();
+
     try {
       const cached = this.audioCache.get(effect);
       if (cached) {
@@ -101,9 +168,8 @@ class SoundEngine {
 
   private synthesizeWebAudio(effect: SoundEffectType) {
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
+      const ctx = this.getOrCreateAudioContext();
+      if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -121,13 +187,14 @@ class SoundEngine {
         osc.start(now);
         osc.stop(now + 0.15);
       } else if (effect === "timer") {
-        osc.type = "sine";
+        osc.type = "square";
         osc.frequency.setValueAtTime(880, now);
-        osc.frequency.setValueAtTime(1760, now + 0.1);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.frequency.setValueAtTime(1318.5, now + 0.12);
+        osc.frequency.setValueAtTime(1760, now + 0.24);
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.45);
         osc.start(now);
-        osc.stop(now + 0.3);
+        osc.stop(now + 0.45);
       } else if (effect === "chest") {
         osc.type = "triangle";
         osc.frequency.setValueAtTime(523.25, now);

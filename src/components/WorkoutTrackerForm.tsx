@@ -263,11 +263,60 @@ export function WorkoutTrackerForm({
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage(message);
       } else if (navigator.serviceWorker.ready) {
-        navigator.serviceWorker.ready.then((reg) => {
-          reg.active?.postMessage(message);
-        });
+        navigator.serviceWorker.ready
+          .then((reg) => {
+            reg.active?.postMessage(message);
+          })
+          .catch(() => {});
       }
     } catch (e) {}
+  };
+
+  const triggerDirectNotificationFallback = (
+    timerId: number,
+    title: string,
+    body: string
+  ) => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    // Only use direct fallback if Service Worker controller is not actively handling it
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      return;
+    }
+
+    if ("serviceWorker" in navigator && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready
+        .then((reg) =>
+          reg.showNotification(title, {
+            body,
+            icon: "/icon.png",
+            badge: "/icon.png",
+            vibrate: [300, 100, 300, 100, 500],
+            tag: "ironpixels-rest-timer",
+            renotify: true,
+            requireInteraction: true,
+            data: { url: "/", timerId },
+          } as any)
+        )
+        .catch(() => {
+          try {
+            new Notification(title, {
+              body,
+              icon: "/icon.png",
+              tag: "ironpixels-rest-timer",
+            });
+          } catch (e) {}
+        });
+    } else {
+      try {
+        new Notification(title, {
+          body,
+          icon: "/icon.png",
+          tag: "ironpixels-rest-timer",
+        });
+      } catch (e) {}
+    }
   };
 
   const handleRequestNotificationPermission = async () => {
@@ -279,12 +328,19 @@ export function WorkoutTrackerForm({
         setNotificationPermission(perm);
         if (perm === "granted") {
           soundEngine.triggerHaptic([100, 50, 100]);
+          const testId = Date.now();
           postSWMessage({
             type: "SCHEDULE_REST_TIMER",
-            targetTimestamp: Date.now() + 100,
+            timerId: testId,
+            targetTimestamp: testId + 100,
             title: "NOTIFIKASI REST AKTIF! 🔔",
             body: "HP kamu sekarang akan bergetar dan memberi notifikasi saat waktu istirahat set selesai!",
           });
+          triggerDirectNotificationFallback(
+            testId,
+            "NOTIFIKASI REST AKTIF! 🔔",
+            "HP kamu sekarang akan bergetar dan memberi notifikasi saat waktu istirahat set selesai!"
+          );
         }
       } catch (e) {}
     }
@@ -295,7 +351,8 @@ export function WorkoutTrackerForm({
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker
         .register("/sw.js")
-        .then(() => {
+        .then((reg) => {
+          reg.update().catch(() => {});
           if ("Notification" in window) {
             setNotificationPermission(Notification.permission);
           }
@@ -304,42 +361,147 @@ export function WorkoutTrackerForm({
     }
   }, []);
 
-  // Background-resilient Rest Timer effect
+  // Background-resilient Rest Timer effect (Web Worker + SW Keep-Alive + Wall-Clock Sync)
   useEffect(() => {
     if (!isTimerActive || !targetEndTime) return;
 
+    let hasFinished = false;
+    const notifTitle = "REST TIMER SELESAI! 🏋️";
+    const notifBody =
+      "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!";
+
+    // Re-sync schedule with Service Worker on mount/effect start
+    postSWMessage({
+      type: "KEEP_ALIVE_PING",
+      timerId: targetEndTime,
+      targetTimestamp: targetEndTime,
+      title: notifTitle,
+      body: notifBody,
+    });
+
+    const completeTimer = () => {
+      if (hasFinished) return;
+      hasFinished = true;
+
+      setIsTimerActive(false);
+      setTargetEndTime(null);
+      setRestTimerSecs(0);
+      try {
+        localStorage.removeItem("ironpixels_rest_timer_target");
+      } catch (e) {}
+
+      soundEngine.play("timer");
+      soundEngine.stopTimerKeepAlive();
+      soundEngine.triggerHaptic([200, 100, 200, 100, 400]);
+      setRoutineNotice("REST TIMER FINISHED! GET READY FOR YOUR NEXT SET! 🏋️");
+      setTimeout(() => setRoutineNotice(null), 5000);
+
+      // Trigger notification immediately via Service Worker (deduplicated by timerId)
+      postSWMessage({
+        type: "TRIGGER_REST_TIMER_NOW",
+        timerId: targetEndTime,
+        targetTimestamp: targetEndTime,
+        title: notifTitle,
+        body: notifBody,
+      });
+
+      if (document.visibilityState !== "visible" || !document.hasFocus()) {
+        triggerDirectNotificationFallback(targetEndTime, notifTitle, notifBody);
+      }
+    };
+
     const updateTimer = () => {
+      if (hasFinished) return;
       const remainingSecs = Math.max(0, Math.ceil((targetEndTime - Date.now()) / 1000));
       setRestTimerSecs(remainingSecs);
 
       if (remainingSecs <= 0) {
-        setIsTimerActive(false);
-        setTargetEndTime(null);
-        try {
-          localStorage.removeItem("ironpixels_rest_timer_target");
-        } catch (e) {}
-        soundEngine.play("timer");
-        soundEngine.triggerHaptic([100, 50, 100, 50, 150]);
-        setRoutineNotice("REST TIMER FINISHED! GET READY FOR YOUR NEXT SET! 🏋️");
-        setTimeout(() => setRoutineNotice(null), 5000);
-
-        postSWMessage({ type: "CANCEL_REST_TIMER" });
+        completeTimer();
       }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 500);
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+    // Dedicated background Web Worker to resist background tab timer throttling
+    let worker: Worker | null = null;
+    let workerBlobUrl: string | null = null;
+    try {
+      const workerCode = `
+        let tickCount = 0;
+        const id = setInterval(() => {
+          tickCount++;
+          self.postMessage({ type: "TICK", sendKeepAlive: tickCount % 6 === 0 });
+        }, 500);
+        self.onmessage = (e) => {
+          if (e.data === "STOP") clearInterval(id);
+        };
+      `;
+      const blob = new Blob([workerCode], { type: "application/javascript" });
+      workerBlobUrl = URL.createObjectURL(blob);
+      worker = new Worker(workerBlobUrl);
+      worker.onmessage = (e) => {
         updateTimer();
+        if (!hasFinished && e.data?.sendKeepAlive) {
+          postSWMessage({
+            type: "KEEP_ALIVE_PING",
+            timerId: targetEndTime,
+            targetTimestamp: targetEndTime,
+            title: notifTitle,
+            body: notifBody,
+          });
+        }
+      };
+    } catch (e) {}
+
+    const handleVisibilityOrFocus = () => {
+      updateTimer();
+      if (!hasFinished && Date.now() < targetEndTime) {
+        postSWMessage({
+          type: "KEEP_ALIVE_PING",
+          timerId: targetEndTime,
+          targetTimestamp: targetEndTime,
+          title: notifTitle,
+          body: notifBody,
+        });
       }
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const handleSWMessage = (event: MessageEvent) => {
+      if (
+        event.data?.type === "REST_TIMER_FIRED" &&
+        event.data?.timerId === targetEndTime
+      ) {
+        completeTimer();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    window.addEventListener("pageshow", handleVisibilityOrFocus);
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleSWMessage);
+    }
 
     return () => {
       clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (worker) {
+        try {
+          worker.postMessage("STOP");
+          worker.terminate();
+        } catch (e) {}
+      }
+      if (workerBlobUrl) {
+        try {
+          URL.revokeObjectURL(workerBlobUrl);
+        } catch (e) {}
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      window.removeEventListener("pageshow", handleVisibilityOrFocus);
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", handleSWMessage);
+      }
     };
   }, [isTimerActive, targetEndTime]);
 
@@ -354,6 +516,7 @@ export function WorkoutTrackerForm({
 
   const handleStartRestTimer = (secs: number) => {
     soundEngine.play("select");
+    soundEngine.startTimerKeepAlive();
     soundEngine.triggerHaptic(50);
     const target = Date.now() + secs * 1000;
     setTargetEndTime(target);
@@ -365,19 +528,38 @@ export function WorkoutTrackerForm({
       localStorage.setItem("ironpixels_rest_timer_total", secs.toString());
     } catch (e) {}
 
-    // Service Worker lockscreen notification request
+    const notifTitle = "REST TIMER SELESAI! 🏋️";
+    const notifBody =
+      "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!";
+
+    // Service Worker lockscreen & background notification request
     try {
-      if (typeof window !== "undefined" && "Notification" in window) {
-        if (Notification.permission === "default") {
-          Notification.requestPermission().catch(() => {});
-        }
-      }
       postSWMessage({
         type: "SCHEDULE_REST_TIMER",
+        timerId: target,
         targetTimestamp: target,
-        title: "REST TIMER SELESAI! 🏋️",
-        body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
+        title: notifTitle,
+        body: notifBody,
       });
+
+      if (typeof window !== "undefined" && "Notification" in window) {
+        if (Notification.permission === "default") {
+          Notification.requestPermission()
+            .then((perm) => {
+              setNotificationPermission(perm);
+              if (perm === "granted") {
+                postSWMessage({
+                  type: "SCHEDULE_REST_TIMER",
+                  timerId: target,
+                  targetTimestamp: target,
+                  title: notifTitle,
+                  body: notifBody,
+                });
+              }
+            })
+            .catch(() => {});
+        }
+      }
     } catch (e) {}
   };
 
@@ -387,7 +569,7 @@ export function WorkoutTrackerForm({
     const currentTarget = targetEndTime || Date.now() + restTimerSecs * 1000;
     const newTarget = Math.max(Date.now(), currentTarget + deltaSecs * 1000);
     const newSecs = Math.max(0, Math.ceil((newTarget - Date.now()) / 1000));
-    setTargetEndTime(newTarget);
+    setTargetEndTime(newSecs > 0 ? newTarget : null);
     setRestTimerSecs(newSecs);
     setRestTimerTotalDuration((prev) => Math.max(prev, newSecs));
     setIsTimerActive(newSecs > 0);
@@ -401,13 +583,16 @@ export function WorkoutTrackerForm({
 
     try {
       if (newSecs > 0) {
+        soundEngine.startTimerKeepAlive();
         postSWMessage({
           type: "SCHEDULE_REST_TIMER",
+          timerId: newTarget,
           targetTimestamp: newTarget,
           title: "REST TIMER SELESAI! 🏋️",
           body: "Waktu istirahat selesai! Masuk ke set berikutnya untuk menyerang boss!",
         });
       } else {
+        soundEngine.stopTimerKeepAlive();
         postSWMessage({
           type: "CANCEL_REST_TIMER",
         });
@@ -417,6 +602,7 @@ export function WorkoutTrackerForm({
 
   const handleCancelTimer = () => {
     soundEngine.play("select");
+    soundEngine.stopTimerKeepAlive();
     soundEngine.triggerHaptic(50);
     setIsTimerActive(false);
     setTargetEndTime(null);
@@ -455,6 +641,7 @@ export function WorkoutTrackerForm({
   // Explicit session control: Discard / cancel active workout session
   const handleDiscardWorkout = () => {
     soundEngine.play("select");
+    soundEngine.stopTimerKeepAlive();
     soundEngine.triggerHaptic(50);
     setIsWorkoutActive(false);
     setLoggedExercises([]);
@@ -469,9 +656,7 @@ export function WorkoutTrackerForm({
       localStorage.removeItem("ironpixels_active_workout_draft");
       localStorage.removeItem("ironpixels_rest_timer_target");
     } catch (e) {}
-    if (navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: "CANCEL_REST_TIMER" });
-    }
+    postSWMessage({ type: "CANCEL_REST_TIMER" });
     setRoutineNotice("SESI LATIHAN DIBATALKAN. SEMUA DATA RESET KE IDLE.");
     setTimeout(() => setRoutineNotice(null), 3000);
   };
@@ -987,9 +1172,8 @@ export function WorkoutTrackerForm({
       localStorage.removeItem("ironpixels_rest_timer_target");
     } catch (e) {}
 
-    if (navigator.serviceWorker?.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: "CANCEL_REST_TIMER" });
-    }
+    soundEngine.stopTimerKeepAlive();
+    postSWMessage({ type: "CANCEL_REST_TIMER" });
 
     setIsWorkoutActive(false);
     setSessionStartTime(0);
