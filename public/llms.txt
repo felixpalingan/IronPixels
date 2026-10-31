@@ -1,0 +1,51 @@
+# IronPixels
+
+> Retro 16-Bit Gamified Fitness RPG & Real-Time Co-Op Dungeon Crawler PWA where physical gym workouts and weightlifting volume translate into real in-game combat damage.
+
+## Overview
+IronPixels is an open-source, web-first gamified progressive web application (PWA). It transforms weight training logs into turn-based retro 16-bit RPG battles against boss monsters across 100 dungeon floors.
+
+## Core Systems & Mechanics
+
+### Relative Volume Score (RVS)
+- **Concept**: Server-authoritative fair-play formula normalizing workout volume across bodyweight and movement tiers.
+- **Formula**: `RVS = (Lifted Weight / Bodyweight) * Reps * Tier Multiplier * (Hero Main Stat / 50)`
+- **Exercise Tiers**:
+  - Tier 1 (Compound / Heavy Free Weights): Squat, Deadlift, Bench Press, Overhead Press (1.5x)
+  - Tier 2 (Secondary Free Weights & Bodyweight): Barbell Rows, Pull-ups, Dips, Dumbbell Lunges (1.2x)
+  - Tier 3 (Isolation & Machines): Cable Flyes, Leg Extensions, Lateral Raises, Bicep Curls (1.0x)
+
+### Hero Classes
+- **Warrior**: STR-based class focusing on squats, deadlifts, and raw power.
+- **Rogue**: AGI-based class excelling at bodyweight mastery, high reps, and speed.
+- **Mage**: INT-based class prioritizing isolation technique, mind-muscle connection, and sustained burn.
+
+### Realtime Co-Op Dungeon Raids
+- Multiplayer boss encounters powered by Supabase Realtime WebSockets.
+- Dungeon floors scale from Floor 1 (Goblin King) to Floor 100 (Abyssal Dragon).
+- Damage dealt to dungeon bosses is directly tied to verified gym sets recorded in real time.
+- Rest timer integration: countdown timers with high-contrast accessibility and Web Audio alerts.
+
+### Fair Play & Security
+- 100% Free & Open Source: No pay-to-win, no microtransactions, zero loot boxes.
+- Anti-Cheat & Rate Limiting: Server-side validation of exercise logs with Supabase Row Level Security (RLS).
+- Offline-first PWA: Works inside gyms with patchy signal via service workers and IndexedDB caching.
+
+## Key URLs
+- [Home & Public Dashboard](https://iron-pixels.vercel.app/): Interactive landing page and gamer workout dashboard.
+- [About & Game Lore](https://iron-pixels.vercel.app/about): Deep dive into game mechanics, classes, floor bosses, and lore.
+- [Sign Up / Register](https://iron-pixels.vercel.app/register): Create an adventurer account and select initial hero class.
+- [Sign In / Login](https://iron-pixels.vercel.app/login): Access existing hero profile, character stats, and guild logs.
+
+## Technical Stack
+- **Framework**: Next.js 15 (App Router, Server Components, TypeScript)
+- **Styling**: Tailwind CSS with custom 16-bit scanline and pixel-art CRT theme
+- **Database & Realtime**: Supabase (PostgreSQL, Row Level Security, Realtime Broadcast Channels)
+- **Audio & Accessibility**: Web Audio API oscillator synthesizers, WCAG AAA compliant High Contrast mode
+- **Testing**: Playwright E2E testing suite, Jest unit & integration tests
+
+## Project & Licensing
+- **Repository**: https://github.com/felixpalingan/IronPixels
+- **Author**: Almakius Felix Bariq Hekopung
+- **License**: MIT License
+

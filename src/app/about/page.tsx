@@ -1253,6 +1253,8 @@ export default function AboutPage() {
                       <img
                         src={cls.icon}
                         alt={cls.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-contain pixelated"
                         style={{ imageRendering: "pixelated" }}
                       />
@@ -1272,6 +1274,8 @@ export default function AboutPage() {
                     <img
                       src={activeHeroClass.icon}
                       alt={activeHeroClass.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-contain pixelated"
                       style={{ imageRendering: "pixelated" }}
                     />
@@ -1331,6 +1335,8 @@ export default function AboutPage() {
                     <img
                       src={`/assets/dungeon/monsters/${activeDungeonTier.bossSprite}_idle_anim_f0.png`}
                       alt={activeDungeonTier.boss}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-contain pixelated -scale-x-100"
                       style={{ imageRendering: "pixelated" }}
                     />
@@ -1372,6 +1378,8 @@ export default function AboutPage() {
                             <img
                               src={`/assets/dungeon/monsters/${mob.sprite}_${mob.anim}_f0.png`}
                               alt={mob.name}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-contain pixelated"
                               style={{ imageRendering: "pixelated" }}
                             />
@@ -1409,6 +1417,8 @@ export default function AboutPage() {
                   <img
                     src="/icon.png"
                     alt="Almakius Felix Bariq Hekopung"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover pixelated"
                     style={{ imageRendering: "pixelated" }}
                   />
@@ -1515,6 +1525,8 @@ export default function AboutPage() {
             <img
               src="/icon.png"
               alt="IronPixels"
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-contain pixelated"
               style={{ imageRendering: "pixelated" }}
             />
@@ -1555,6 +1567,8 @@ export default function AboutPage() {
               <img
                 src="/icon.png"
                 alt="IronPixels"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-contain pixelated"
                 style={{ imageRendering: "pixelated" }}
               />

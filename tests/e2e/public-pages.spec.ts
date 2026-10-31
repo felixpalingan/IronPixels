@@ -46,4 +46,30 @@ test.describe("Public Pages & Visitor Journey", () => {
     await expect(page.getByPlaceholder("ENTER EMAIL...")).toBeVisible();
     await expect(page.getByRole("button", { name: /CREATE RECRUIT ACCOUNT/i })).toBeVisible();
   });
+
+  test("llms.txt serves 200 OK and structured markdown for AI engines", async ({ request }) => {
+    const response = await request.get("/llms.txt");
+    expect(response.status()).toBe(200);
+    const text = await response.text();
+    expect(text).toContain("# IronPixels");
+    expect(text).toContain("Relative Volume Score (RVS)");
+    expect(text).toContain("https://iron-pixels.vercel.app/about");
+  });
+
+  test("robots.txt serves 200 OK with explicit AI search crawler rules", async ({ request }) => {
+    const response = await request.get("/robots.txt");
+    expect(response.status()).toBe(200);
+    const text = await response.text();
+    expect(text).toContain("User-Agent: GPTBot");
+    expect(text).toContain("User-Agent: ClaudeBot");
+    expect(text).toContain("User-Agent: PerplexityBot");
+    expect(text).toContain("Allow: /llms.txt");
+  });
+
+  test("about page below-the-fold images have loading lazy attributes", async ({ page }) => {
+    await page.goto("/about");
+    const lazyImages = page.locator('img[loading="lazy"]');
+    const count = await lazyImages.count();
+    expect(count).toBeGreaterThanOrEqual(5);
+  });
 });
