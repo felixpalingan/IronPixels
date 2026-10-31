@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, Key, Mail, Eye, EyeOff, CornerDownRight } from "lucide-react";
+import { User, Key, Mail, Eye, EyeOff, CornerDownRight, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { clearClientSession } from "@/lib/clientSession";
@@ -177,6 +177,34 @@ export default function RegisterPage() {
             {loading ? "INITIALIZING PROFILE..." : "CREATE RECRUIT ACCOUNT"}
           </button>
         </form>
+
+        {/* RECRUIT ENLISTMENT PROTOCOL & VALUE PROPOSITION */}
+        <div className="w-full bg-[#141416] border border-zinc-800 p-4 font-mono text-xs space-y-3">
+          <div className="text-[10px] text-[#00ff41] font-bold tracking-widest uppercase flex items-center gap-2 border-b border-zinc-800/80 pb-2">
+            <Shield className="w-3.5 h-3.5 text-[#00ff41]" />
+            <span>RECRUIT ENLISTMENT PROTOCOL</span>
+          </div>
+          <ul className="space-y-2 text-zinc-400 text-[11px] leading-relaxed">
+            <li className="flex items-start gap-2">
+              <span className="text-[#00ff41] font-bold">▸</span>
+              <span>
+                <strong className="text-zinc-200">Relative Volume Score (RVS):</strong> Formula server-authoritative yang menyeimbangkan beban angkatan dan rasio berat badan secara adil untuk semua kelas.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#00ff41] font-bold">▸</span>
+              <span>
+                <strong className="text-zinc-200">100 Dungeon Floors:</strong> Pilih kelas Warrior, Rogue, atau Mage, taklukkan bos lantai, dan kumpulkan senjata pixel 16-bit mythical.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#00ff41] font-bold">▸</span>
+              <span>
+                <strong className="text-zinc-200">Zero Pay-to-Win:</strong> 100% open-source dan adil. Progres karakter sepenuhnya ditentukan oleh dedikasi dan konsistensi angkat beban Anda di gym.
+              </span>
+            </li>
+          </ul>
+        </div>
 
         <div className="flex flex-col items-center gap-2 font-mono text-xs">
           <div>

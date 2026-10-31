@@ -29,22 +29,34 @@ test.describe("Public Pages & Visitor Journey", () => {
     }
   });
 
-  test("visitor can open /login page directly and see operative terminal", async ({ page }) => {
+  test("visitor can open /login page directly and see operative terminal and protocol briefing", async ({ page }) => {
     await page.goto("/login");
 
     await expect(page).toHaveURL(/.*login/);
     await expect(page.getByPlaceholder("ENTER ID...")).toBeVisible();
     await expect(page.getByPlaceholder("••••••••")).toBeVisible();
     await expect(page.getByRole("button", { name: /ENTER DUNGEON/i })).toBeVisible();
+    await expect(page.getByText("OPERATIVE PROTOCOL BRIEFING")).toBeVisible();
+    await expect(page.getByText(/Real Volume/i)).toBeVisible();
+
+    // Verify Breadcrumb schema
+    const breadcrumbScript = await page.locator('script[type="application/ld+json"]').allInnerTexts();
+    expect(breadcrumbScript.some((txt) => txt.includes("BreadcrumbList"))).toBe(true);
   });
 
-  test("visitor can open /register page directly and see enlistment terminal", async ({ page }) => {
+  test("visitor can open /register page directly and see enlistment terminal and protocol briefing", async ({ page }) => {
     await page.goto("/register");
 
     await expect(page).toHaveURL(/.*register/);
     await expect(page.getByPlaceholder("ENTER USERNAME...")).toBeVisible();
     await expect(page.getByPlaceholder("ENTER EMAIL...")).toBeVisible();
     await expect(page.getByRole("button", { name: /CREATE RECRUIT ACCOUNT/i })).toBeVisible();
+    await expect(page.getByText("RECRUIT ENLISTMENT PROTOCOL")).toBeVisible();
+    await expect(page.getByText(/Relative Volume Score/i)).toBeVisible();
+
+    // Verify Breadcrumb schema
+    const breadcrumbScript = await page.locator('script[type="application/ld+json"]').allInnerTexts();
+    expect(breadcrumbScript.some((txt) => txt.includes("BreadcrumbList"))).toBe(true);
   });
 
   test("llms.txt serves 200 OK and structured markdown for AI engines", async ({ request }) => {

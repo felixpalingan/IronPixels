@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, Key, Eye, EyeOff, CornerDownRight } from "lucide-react";
+import { User, Key, Eye, EyeOff, CornerDownRight, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { clearClientSession } from "@/lib/clientSession";
@@ -156,6 +156,34 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {/* OPERATIVE PROTOCOL & VALUE PROPOSITION */}
+        <div className="w-full bg-[#141416] border border-zinc-800 p-4 font-mono text-xs space-y-3">
+          <div className="text-[10px] text-[#00ff41] font-bold tracking-widest uppercase flex items-center gap-2 border-b border-zinc-800/80 pb-2">
+            <Shield className="w-3.5 h-3.5 text-[#00ff41]" />
+            <span>OPERATIVE PROTOCOL BRIEFING</span>
+          </div>
+          <ul className="space-y-2 text-zinc-400 text-[11px] leading-relaxed">
+            <li className="flex items-start gap-2">
+              <span className="text-[#00ff41] font-bold">▸</span>
+              <span>
+                <strong className="text-zinc-200">Real Volume &rarr; Boss Damage:</strong> Setiap set dan beban angkatan di gym dikonversi otomatis menjadi damage serangan dungeon boss via kalkulasi server-side RVS.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#00ff41] font-bold">▸</span>
+              <span>
+                <strong className="text-zinc-200">100% Free &amp; Fair Play:</strong> Tanpa microtransactions atau pay-to-win. Seluruh gear, weapon, dan equipment diperoleh murni dari konsistensi latihan fisik.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#00ff41] font-bold">▸</span>
+              <span>
+                <strong className="text-zinc-200">Realtime Co-Op Raids:</strong> Bentuk party dungeon bersama rekan gym dan taklukkan bos lantai 1–100 secara realtime via WebSockets.
+              </span>
+            </li>
+          </ul>
+        </div>
 
         <div className="flex flex-col items-center gap-2 font-mono text-xs text-zinc-400">
           <div>

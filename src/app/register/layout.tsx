@@ -27,10 +27,37 @@ export const metadata: Metadata = {
   },
 };
 
+const registerBreadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: "https://iron-pixels.vercel.app",
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Enlist Hero Account",
+      item: "https://iron-pixels.vercel.app/register",
+    },
+  ],
+};
+
 export default function RegisterLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(registerBreadcrumbJsonLd) }}
+      />
+      {children}
+    </>
+  );
 }
