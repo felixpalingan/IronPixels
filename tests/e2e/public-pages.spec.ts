@@ -6,6 +6,14 @@ test.describe("Public Pages & Visitor Journey", () => {
     await page.route(/(va\.vercel-scripts\.com|supabase\.co\/realtime)/, (route) => route.abort());
   });
 
+  test("unauthenticated visitor visiting '/' receives 200 OK and sees public hero landing", async ({ page }) => {
+    const response = await page.goto("/");
+    expect(response?.status()).toBe(200);
+    expect(page.url()).not.toContain("/about");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByText(/IRONPIXELS/i).first()).toBeVisible();
+  });
+
   test("visitor can view /about landing and switch language", async ({ page }) => {
     await page.goto("/about");
 

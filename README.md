@@ -26,7 +26,7 @@
     <img src="https://img.shields.io/badge/TailwindCSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
   </a>
   <img src="https://img.shields.io/badge/Unit_Tests-33%2F33_Passing-brightgreen?style=for-the-badge" alt="Unit Tests Status" />
-  <img src="https://img.shields.io/badge/Playwright_E2E-18%2F18_Passing-brightgreen?style=for-the-badge&logo=playwright&logoColor=white" alt="Playwright E2E Status" />
+  <img src="https://img.shields.io/badge/Playwright_E2E-20%2F20_Passing-brightgreen?style=for-the-badge&logo=playwright&logoColor=white" alt="Playwright E2E Status" />
 </p>
 
 <p align="center">
@@ -104,7 +104,7 @@ graph TD
 | **Networking** | **Supabase Realtime WebSockets** | Zero-latency pub/sub broadcast channels for multi-device Co-Op boss raids. |
 | **Type Safety** | **TypeScript 5.7 & Strict Typecheck** | End-to-end data safety across database models, calculation engines, and client interfaces. |
 | **Unit Testing** | **Node.js Native Test Suite + tsx** | Ultra-fast unit testing (33/33 specs) covering server RVS calculations, stats, and unit conversions. |
-| **E2E Automation** | **Playwright 1.58** | Cross-viewport browser integration tests (18/18 specs) for Desktop and Mobile viewports. |
+| **E2E Automation** | **Playwright 1.58** | Cross-viewport browser integration tests (20/20 specs) for Desktop and Mobile viewports. |
 
 ---
 
@@ -234,7 +234,7 @@ Execute the built-in mathematical engine test suite and Playwright end-to-end in
 # Run 33 server-authoritative unit tests
 npm test
 
-# Run 18 Playwright cross-viewport E2E tests
+# Run 20 Playwright cross-viewport E2E tests
 npx playwright test
 ```
 
@@ -251,7 +251,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 The application maintains zero-warning production compilation and strict test coverage:
 - **Build**: `npm run build` compiles 30+ static pages, edge functions, and standalone PWA artifacts with zero lint or type errors.
 - **Unit Testing (33/33 Passing)**: Validates authoritative RVS formulas, tier multipliers, equipment stat bonuses, anti-cheat damage bounds, and metric unit conversions.
-- **E2E Integration Testing (18/18 Passing)**: Automates real user journeys with Playwright across Desktop and Mobile viewports, validating gym tracking, autofill, CAS gacha transactions, and co-op social interfaces.
+- **E2E Integration Testing (20/20 Passing)**: Automates real user journeys with Playwright across Desktop and Mobile viewports, validating gym tracking, autofill, CAS gacha transactions, public landing 200 OK, and co-op social interfaces.
 
 ---
 

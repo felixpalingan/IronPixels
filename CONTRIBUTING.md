@@ -48,7 +48,7 @@ Please treat everyone with respect, kindness, and professionalism. We are commit
    npx playwright test
    npm run build
    ```
-   All mathematical engine tests (33/33) and Playwright E2E specs (18/18) must pass, and the Next.js production build must compile with zero errors and zero warnings.
+   All mathematical engine tests (33/33) and Playwright E2E specs (20/20) must pass, and the Next.js production build must compile with zero errors and zero warnings.
 6. **Commit with Conventional Commits**:
    - `feat(...)`: New features or mechanics
    - `fix(...)`: Bug fixes

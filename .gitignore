@@ -44,3 +44,7 @@ playwright-report/
 test-results/
 /image.png
 scratch/
+
+# Local SEO & Audit Artifacts
+*-audit/
+
