@@ -1,6 +1,7 @@
 import { runWorkoutCalculationsTests } from "./workoutCalculations.test";
 import { runUnitConversionTests } from "./unitConversion.test";
 import { runRateLimitTests } from "./rateLimit.test";
+import { runProgressiveOverloadTests } from "./progressiveOverload.test";
 
 function main() {
   console.log("==================================================");
@@ -25,6 +26,11 @@ function main() {
   const res3 = runRateLimitTests();
   totalPassed += res3.passed;
   totalFailed += res3.failed;
+
+  // 4. Run Progressive Overload & 1RM Estimation tests
+  const res4 = runProgressiveOverloadTests();
+  totalPassed += res4.passed;
+  totalFailed += res4.failed;
 
   const duration = Date.now() - startTime;
 

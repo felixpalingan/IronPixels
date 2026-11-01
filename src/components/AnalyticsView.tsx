@@ -1,22 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { TrendingUp, Calendar, Dumbbell, Award, Zap, Flame, ChevronRight, BarChart3, ShieldCheck } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import {
+  TrendingUp,
+  Calendar,
+  Dumbbell,
+  Award,
+  Zap,
+  Flame,
+  BarChart3,
+  Target,
+  Trophy,
+  Sparkles,
+  AlertTriangle,
+  ArrowUpRight,
+  Info,
+} from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 import { EXERCISE_DATABASE, ExerciseDefinition } from "@/lib/exercisesData";
+import {
+  analyzeProgressiveOverload,
+  FormulaType,
+  ProgressiveOverloadAnalysis,
+  WorkoutSessionHistoryItem,
+} from "@/lib/progressiveOverload";
 
 interface AnalyticsViewProps {
   userId?: string;
   heroStats?: { level: number; str: number; agi: number; vit: number; luk: number };
+  userBodyweightKg?: number;
 }
 
-export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
-  const [history, setHistory] = useState<any[]>([]);
+export function AnalyticsView({
+  userId = "",
+  heroStats,
+  userBodyweightKg = 75,
+}: AnalyticsViewProps) {
+  const [history, setHistory] = useState<WorkoutSessionHistoryItem[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>("barbell-bench-press");
+  const [formula, setFormula] = useState<FormulaType>("epley");
+  const [chartMode, setChartMode] = useState<"1rm" | "volume">("1rm");
   const [streakCount, setStreakCount] = useState<number>(1);
   const [totalVolumeKg, setTotalVolumeKg] = useState<number>(0);
   const [totalRvsDealt, setTotalRvsDealt] = useState<number>(0);
   const [isDbLoaded, setIsDbLoaded] = useState<boolean>(false);
+  const [showFormulaInfo, setShowFormulaInfo] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -84,7 +112,10 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
       const dateStr = (sess.created_at || sess.date || "").split("T")[0];
       if (dateStr) {
         const currentVol = workoutDatesMap.get(dateStr) || 0;
-        workoutDatesMap.set(dateStr, currentVol + (Number(sess.total_volume_kg || sess.total_volume || sess.volume) || 1));
+        workoutDatesMap.set(
+          dateStr,
+          currentVol + (Number(sess.total_volume_kg || sess.total_volume || sess.volume) || 1)
+        );
       }
     });
 
@@ -106,78 +137,40 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
   };
 
   const calendarDays = generateCalendarDays();
-  const selectedExDef = EXERCISE_DATABASE.find((e) => e.id === selectedExerciseId) || EXERCISE_DATABASE[0];
 
-  // Calculate real progressive overload 1RM trend for selected exercise
-  const computeOverloadTrend = () => {
-    const points: Array<{ label: string; weight: number; est1RM: number }> = [];
-
-    history.forEach((sess: any) => {
-      const dateStr = (sess.created_at || sess.date || "").split("T")[0];
-      const dateLabel = dateStr ? dateStr.substring(5) : "Session";
-      const exercisesList = sess.exercises_log || sess.exercises || [];
-
-      let maxW = 0;
-      let maxReps = 0;
-
-      if (Array.isArray(exercisesList)) {
-        exercisesList.forEach((ex: any) => {
-          const exName = ex.exercise_name || ex.name || "";
-          if (
-            exName.toLowerCase() === selectedExDef.name.toLowerCase() ||
-            ex.definitionId === selectedExDef.id
-          ) {
-            const sets = ex.sets || [];
-            sets.forEach((st: any) => {
-              const w = Number(st.weight_kg || st.weight) || 0;
-              const r = Number(st.reps) || 0;
-              if (w > maxW || (w === maxW && r > maxReps)) {
-                maxW = w;
-                maxReps = r;
-              }
-            });
-          }
-        });
-      }
-
-      if (maxW > 0) {
-        const est1RM = Math.round(maxW * (1 + maxReps / 30));
-        points.push({
-          label: dateLabel,
-          weight: maxW,
-          est1RM,
-        });
-      }
+  // Run scientific progressive overload analysis
+  const overloadAnalysis: ProgressiveOverloadAnalysis = useMemo(() => {
+    return analyzeProgressiveOverload(history, selectedExerciseId, {
+      formula,
+      userBodyweightKg,
+      heroStats,
     });
+  }, [history, selectedExerciseId, formula, userBodyweightKg, heroStats]);
 
-    // Sort chronologically
-    points.reverse();
-
-    // If no real entries yet, provide baseline prediction scaled by hero STR/AGI
-    if (points.length === 0) {
-      const baseStr = heroStats?.str || 85;
-      const baseWeight = Math.round(baseStr * 0.7);
-      return [
-        { label: "Baseline", weight: baseWeight, est1RM: Math.round(baseWeight * 1.15) },
-        { label: "Goal +10%", weight: Math.round(baseWeight * 1.1), est1RM: Math.round(baseWeight * 1.25) },
-      ];
+  // Max value for SVG bar scaling
+  const maxChartValue = useMemo(() => {
+    if (chartMode === "1rm") {
+      const max1RM = Math.max(...overloadAnalysis.historyPoints.map((p) => p.est1RM), 10);
+      return Math.round(max1RM * 1.1);
+    } else {
+      const maxVol = Math.max(...overloadAnalysis.historyPoints.map((p) => p.volumeKg), 50);
+      return Math.round(maxVol * 1.1);
     }
+  }, [overloadAnalysis.historyPoints, chartMode]);
 
-    return points.slice(-5);
-  };
-
-  const trendPoints = computeOverloadTrend();
-  const currentEst1RM = trendPoints[trendPoints.length - 1]?.est1RM || 0;
-  const initialEst1RM = trendPoints[0]?.est1RM || currentEst1RM;
-  const progressPct =
-    initialEst1RM > 0
-      ? Math.round(((currentEst1RM - initialEst1RM) / initialEst1RM) * 100)
-      : 0;
-
-  const maxChart1RM = Math.max(...trendPoints.map((p) => p.est1RM), 10);
+  // Group exercises by category for easy selection
+  const categorizedExercises = useMemo(() => {
+    const map = new Map<string, ExerciseDefinition[]>();
+    EXERCISE_DATABASE.forEach((ex) => {
+      const cat = ex.category || "Other";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(ex);
+    });
+    return Array.from(map.entries());
+  }, []);
 
   return (
-    <div className="w-full max-w-[600px] mx-auto p-4 space-y-4 font-mono select-none">
+    <div className="w-full max-w-[640px] mx-auto p-4 space-y-4 font-mono select-none">
       {/* HEADER CARD */}
       <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-3">
@@ -188,16 +181,18 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
             <div>
               <h3 className="font-headline font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
                 <span>HERO GYM ANALYTICS</span>
-                <span className={`px-1.5 py-0.2 border text-[8px] font-bold uppercase ${
-                  !isDbLoaded
-                    ? "border-amber-400/80 bg-amber-950/40 text-amber-300 animate-pulse"
-                    : "border-pixel-green bg-pixel-green/20 text-pixel-green"
-                }`}>
+                <span
+                  className={`px-1.5 py-0.2 border text-[8px] font-bold uppercase ${
+                    !isDbLoaded
+                      ? "border-amber-400/80 bg-amber-950/40 text-amber-300 animate-pulse"
+                      : "border-pixel-green bg-pixel-green/20 text-pixel-green"
+                  }`}
+                >
                   {!isDbLoaded ? "SYNCHRONIZING..." : "LIVE DB SYNC"}
                 </span>
               </h3>
               <p className="text-[10px] text-zinc-400">
-                REALTIME PROGRESSIVE OVERLOAD & CONSISTENCY TRACKER
+                SCIENTIFIC PROGRESSIVE OVERLOAD & 1RM ESTIMATOR
               </p>
             </div>
           </div>
@@ -229,15 +224,21 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
             <>
               <div className="p-2 border border-pixel-border/60 bg-black/60">
                 <div className="text-[9px] text-zinc-400 font-bold uppercase">SESSIONS LOGGED</div>
-                <div className="font-headline font-black text-white text-sm">{history.length} SESSIONS</div>
+                <div className="font-headline font-black text-white text-sm">
+                  {history.length} SESSIONS
+                </div>
               </div>
               <div className="p-2 border border-pixel-border/60 bg-black/60">
                 <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL VOLUME</div>
-                <div className="font-headline font-black text-pixel-green text-sm">{formatNumber(totalVolumeKg)} KG</div>
+                <div className="font-headline font-black text-pixel-green text-sm">
+                  {formatNumber(totalVolumeKg)} KG
+                </div>
               </div>
               <div className="p-2 border border-pixel-border/60 bg-black/60">
                 <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL RVS DEALT</div>
-                <div className="font-headline font-black text-amber-300 text-sm">+{formatNumber(totalRvsDealt)} RVS</div>
+                <div className="font-headline font-black text-amber-300 text-sm">
+                  +{formatNumber(totalRvsDealt)} RVS
+                </div>
               </div>
             </>
           )}
@@ -266,7 +267,9 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
                   : "border-zinc-800 bg-black/80 text-zinc-600"
               }`}
               title={`${tile.dateStr}: ${
-                tile.hasWorkout ? `Workout Completed (${formatNumber(tile.volOnDate)} KG)` : "Rest Day"
+                tile.hasWorkout
+                  ? `Workout Completed (${formatNumber(tile.volOnDate)} KG)`
+                  : "Rest Day"
               }`}
             >
               <span className="text-[10px] font-bold">{tile.dayNum}</span>
@@ -288,56 +291,424 @@ export function AnalyticsView({ userId = "", heroStats }: AnalyticsViewProps) {
         </div>
       </div>
 
-      {/* PROGRESSIVE OVERLOAD BAR CHART */}
-      <div className="border border-pixel-border bg-surface p-4 space-y-3">
+      {/* PROGRESSIVE OVERLOAD ESTIMATOR & TARGET PROTOCOL */}
+      <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
         <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
           <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-amber-400" />
-            <h4 className="font-headline font-bold text-xs text-white uppercase tracking-wider">
-              PROGRESSIVE OVERLOAD (1RM ESTIMATOR)
-            </h4>
+            <div className="w-6 h-6 border border-amber-400 bg-amber-950/40 flex items-center justify-center text-amber-300">
+              <BarChart3 className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <h4 className="font-headline font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2">
+                <span>PROGRESSIVE OVERLOAD PROTOCOL</span>
+                <span className="px-1.5 py-0.2 border border-amber-400/80 bg-amber-950/60 text-amber-300 text-[8px] font-bold">
+                  DOUBLE PROGRESSION
+                </span>
+              </h4>
+              <p className="text-[9px] text-zinc-400">
+                1RM INTENSITY ESTIMATION & NEXT WORKOUT TARGETS
+              </p>
+            </div>
+          </div>
+
+          {/* Formula selection toggle */}
+          <div className="flex items-center gap-1 border border-zinc-800 bg-black p-0.5 text-[9px] font-bold">
+            <button
+              onClick={() => setFormula("epley")}
+              className={`px-2 py-0.5 transition-all ${
+                formula === "epley"
+                  ? "bg-amber-400 text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              title="Epley formula: W * (1 + R/30)"
+            >
+              EPLEY
+            </button>
+            <button
+              onClick={() => setFormula("brzycki")}
+              className={`px-2 py-0.5 transition-all ${
+                formula === "brzycki"
+                  ? "bg-amber-400 text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              title="Brzycki formula: W * (36 / (37 - R))"
+            >
+              BRZYCKI
+            </button>
           </div>
         </div>
 
+        {/* EXERCISE SELECTION DROPDOWN */}
         <div className="space-y-1">
-          <label className="text-[10px] text-zinc-400 font-bold uppercase">SELECT EXERCISE TO TRACK:</label>
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] text-zinc-400 font-bold uppercase flex items-center gap-1">
+              <Dumbbell className="w-3 h-3 text-pixel-green" />
+              <span>SELECT EXERCISE TO TRACK:</span>
+            </label>
+            {overloadAnalysis.isBodyweight && (
+              <span className="text-[9px] text-cyan-300 font-bold uppercase px-1.5 py-0.5 border border-cyan-400/60 bg-cyan-950/40">
+                CALISTHENICS (BW: {overloadAnalysis.userBodyweightKg} KG)
+              </span>
+            )}
+          </div>
           <select
             value={selectedExerciseId}
             onChange={(e) => setSelectedExerciseId(e.target.value)}
             className="w-full bg-black border border-pixel-border px-3 py-2 text-xs font-bold text-white focus:border-pixel-green outline-none uppercase"
           >
-            {EXERCISE_DATABASE.map((ex) => (
-              <option key={ex.id} value={ex.id}>
-                {ex.name} ({ex.category})
-              </option>
+            {categorizedExercises.map(([cat, list]) => (
+              <optgroup key={cat} label={`── ${cat.toUpperCase()} ──`}>
+                {list.map((ex) => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.name} [{ex.equipment}]
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
 
-        <div className="p-3 border border-zinc-800 bg-black/80 space-y-3">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-zinc-300 font-bold uppercase">{selectedExDef.name}</span>
-            <span className="text-amber-300 font-bold">
-              EST. 1RM: {currentEst1RM} KG ({progressPct >= 0 ? `+${progressPct}%` : `${progressPct}%`} PROGRESS)
-            </span>
+        {/* METRICS & PR HERO PANEL */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* 1. CURRENT EST 1RM */}
+          <div className="p-2.5 border border-amber-400/80 bg-black/80 space-y-1">
+            <div className="text-[9px] text-amber-400 font-bold uppercase flex items-center justify-between">
+              <span>CURRENT EST. 1RM</span>
+              <Sparkles className="w-3 h-3 text-amber-400" />
+            </div>
+            <div className="font-headline font-black text-amber-300 text-lg">
+              {overloadAnalysis.currentEst1RM}{" "}
+              <span className="text-xs text-zinc-400 font-normal">KG</span>
+            </div>
+            <div className="text-[9px] text-zinc-400">
+              {overloadAnalysis.progressPct >= 0 ? (
+                <span className="text-pixel-green font-bold">
+                  +{overloadAnalysis.progressPct}% total progress
+                </span>
+              ) : (
+                <span className="text-red-400 font-bold">
+                  {overloadAnalysis.progressPct}% total
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* SVG BAR CHART */}
-          <div className="h-32 flex items-end justify-between gap-2 pt-4 border-b border-zinc-800 px-2 pb-1">
-            {trendPoints.map((t, i) => {
-              const heightPct = Math.max(15, Math.round((t.est1RM / maxChart1RM) * 100));
+          {/* 2. ALL-TIME PR */}
+          <div className="p-2.5 border border-pixel-border/80 bg-black/80 space-y-1">
+            <div className="text-[9px] text-zinc-400 font-bold uppercase flex items-center justify-between">
+              <span>ALL-TIME PR (1RM)</span>
+              <Trophy className="w-3 h-3 text-amber-400" />
+            </div>
+            <div className="font-headline font-black text-white text-lg">
+              {overloadAnalysis.allTimePR1RM}{" "}
+              <span className="text-xs text-zinc-400 font-normal">KG</span>
+            </div>
+            <div className="text-[9px] text-zinc-400 truncate">
+              {overloadAnalysis.allTimeBestSet
+                ? `${overloadAnalysis.allTimeBestSet.weight}KG × ${overloadAnalysis.allTimeBestSet.reps}R`
+                : "No PR logged yet"}
+            </div>
+          </div>
+
+          {/* 3. LATEST BEST SET */}
+          <div className="p-2.5 border border-pixel-border/80 bg-black/80 space-y-1">
+            <div className="text-[9px] text-zinc-400 font-bold uppercase flex items-center justify-between">
+              <span>LATEST BEST SET</span>
+              <Target className="w-3 h-3 text-pixel-green" />
+            </div>
+            {overloadAnalysis.historyPoints.length > 0 ? (
+              <>
+                <div className="font-headline font-black text-pixel-green text-sm truncate">
+                  {overloadAnalysis.isBodyweight &&
+                  overloadAnalysis.historyPoints[overloadAnalysis.historyPoints.length - 1].bestWeight === 0
+                    ? `BW × ${overloadAnalysis.historyPoints[overloadAnalysis.historyPoints.length - 1].bestReps} REPS`
+                    : `${overloadAnalysis.historyPoints[overloadAnalysis.historyPoints.length - 1].bestWeight}KG × ${overloadAnalysis.historyPoints[overloadAnalysis.historyPoints.length - 1].bestReps}R`}
+                </div>
+                <div className="text-[9px] text-zinc-400">
+                  {overloadAnalysis.historyPoints[overloadAnalysis.historyPoints.length - 1].totalSets} sets logged
+                </div>
+              </>
+            ) : (
+              <div className="text-xs text-zinc-500 font-bold">No sets logged</div>
+            )}
+          </div>
+
+          {/* 4. SESSION VOLUME LOAD */}
+          <div className="p-2.5 border border-pixel-border/80 bg-black/80 space-y-1">
+            <div className="text-[9px] text-zinc-400 font-bold uppercase flex items-center justify-between">
+              <span>SESSION TONNAGE</span>
+              <ArrowUpRight className="w-3 h-3 text-cyan-400" />
+            </div>
+            {overloadAnalysis.historyPoints.length > 0 ? (
+              <>
+                <div className="font-headline font-black text-cyan-300 text-sm">
+                  {formatNumber(
+                    overloadAnalysis.historyPoints[overloadAnalysis.historyPoints.length - 1].volumeKg
+                  )}{" "}
+                  <span className="text-[10px] text-zinc-400 font-normal">KG</span>
+                </div>
+                <div className="text-[9px] text-zinc-400">
+                  {overloadAnalysis.volumeProgressPct >= 0 ? (
+                    <span className="text-pixel-green font-bold">
+                      +{overloadAnalysis.volumeProgressPct}% vs prev
+                    </span>
+                  ) : (
+                    <span className="text-amber-400 font-bold">
+                      {overloadAnalysis.volumeProgressPct}% vs prev
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-xs text-zinc-500 font-bold">0 KG</div>
+            )}
+          </div>
+        </div>
+
+        {/* PLATEAU DETECTED NOTIFICATION */}
+        {overloadAnalysis.isPlateau && (
+          <div className="p-2.5 border border-amber-500 bg-amber-950/50 flex items-start gap-2.5 text-xs">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <div className="text-amber-300 font-bold uppercase text-[10px]">
+                PLATEAU DETECTED (3+ SESSIONS WITHOUT 1RM GAIN)
+              </div>
+              <p className="text-[9px] text-zinc-300 leading-relaxed">
+                Strength adaptation has plateaued. Recommended: perform a micro-deload session
+                (-20% load) or switch to a higher-rep hypertrophy scheme (10-12 reps) to trigger
+                fresh neuromuscular adaptations.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* BASELINE NOTICE */}
+        {overloadAnalysis.isBaseline && (
+          <div className="p-2 border border-pixel-border/80 bg-black/60 flex items-center justify-between text-[10px] text-zinc-300">
+            <span className="text-zinc-400">
+              No previous workout logged for this exercise. Showing estimated starting baseline
+              calibrated to your hero stats.
+            </span>
+          </div>
+        )}
+
+        {/* INTERACTIVE CHART: 1RM vs VOLUME VIEW */}
+        <div className="p-3 border border-zinc-800 bg-black/80 space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-300 font-bold uppercase truncate max-w-[200px]">
+                {overloadAnalysis.exerciseName}
+              </span>
+              <span className="text-[9px] text-zinc-400">
+                ({overloadAnalysis.historyPoints.length} SESSIONS)
+              </span>
+            </div>
+
+            {/* Chart mode toggle */}
+            <div className="flex items-center gap-1 border border-zinc-800 bg-black p-0.5 text-[9px] font-bold">
+              <button
+                onClick={() => setChartMode("1rm")}
+                className={`px-2 py-0.5 transition-all ${
+                  chartMode === "1rm"
+                    ? "bg-pixel-green text-black"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                1RM (INTENSITY)
+              </button>
+              <button
+                onClick={() => setChartMode("volume")}
+                className={`px-2 py-0.5 transition-all ${
+                  chartMode === "volume"
+                    ? "bg-pixel-green text-black"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                VOLUME (TONNAGE)
+              </button>
+            </div>
+          </div>
+
+          {/* SVG/CSS BAR CHART */}
+          <div className="h-36 flex items-end justify-between gap-2 pt-4 border-b border-zinc-800 px-2 pb-1">
+            {overloadAnalysis.historyPoints.slice(-6).map((point, i) => {
+              const val = chartMode === "1rm" ? point.est1RM : point.volumeKg;
+              const heightPct = Math.min(
+                100,
+                Math.max(16, Math.round((val / maxChartValue) * 100))
+              );
+              const isPR = chartMode === "1rm" && point.est1RM === overloadAnalysis.allTimePR1RM;
+
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                  <span className="text-[9px] font-bold text-pixel-green">{t.est1RM}kg</span>
+                <div
+                  key={i}
+                  className="flex-1 flex flex-col items-center gap-1 h-full justify-end group relative"
+                >
+                  {/* Tooltip on hover */}
+                  <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-black border border-pixel-green p-1 text-[8px] font-bold text-white whitespace-nowrap z-10 pointer-events-none shadow-neon">
+                    <div>{point.date}</div>
+                    <div className="text-amber-300">
+                      Best: {point.bestWeight > 0 ? `${point.bestWeight}KG` : "BW"} × {point.bestReps}R
+                    </div>
+                    <div className="text-pixel-green">1RM: {point.est1RM} KG</div>
+                    <div className="text-cyan-300">Vol: {point.volumeKg} KG</div>
+                  </div>
+
+                  {/* Value tag */}
+                  <div className="flex items-center gap-0.5 text-[9px] font-bold">
+                    {isPR && <Trophy className="w-2.5 h-2.5 text-amber-400" />}
+                    <span className={isPR ? "text-amber-400 font-black" : "text-pixel-green"}>
+                      {chartMode === "1rm" ? `${point.est1RM}kg` : `${point.volumeKg}k`}
+                    </span>
+                  </div>
+
+                  {/* Bar */}
                   <div
-                    className="w-full bg-gradient-to-t from-pixel-green/20 to-pixel-green border-t-2 border-pixel-green transition-all"
+                    className={`w-full transition-all rounded-t-sm ${
+                      isPR
+                        ? "bg-gradient-to-t from-amber-500/30 to-amber-400 border-t-2 border-amber-400 shadow-gold-glow"
+                        : chartMode === "1rm"
+                        ? "bg-gradient-to-t from-pixel-green/20 to-pixel-green border-t-2 border-pixel-green"
+                        : "bg-gradient-to-t from-cyan-500/20 to-cyan-400 border-t-2 border-cyan-400"
+                    }`}
                     style={{ height: `${heightPct}%` }}
                   />
-                  <span className="text-[9px] text-zinc-400 font-bold truncate max-w-[45px]">{t.label}</span>
+
+                  {/* Date and Set label */}
+                  <div className="flex flex-col items-center">
+                    <span className="text-[9px] text-zinc-300 font-bold truncate max-w-[50px]">
+                      {point.label}
+                    </span>
+                    <span className="text-[8px] text-zinc-500 truncate max-w-[50px]">
+                      {point.bestWeight > 0 ? `${point.bestWeight}k` : "BW"}×{point.bestReps}
+                    </span>
+                  </div>
                 </div>
               );
             })}
           </div>
+        </div>
+
+        {/* ACTIONABLE NEXT-SESSION TARGETS (DOUBLE PROGRESSION) */}
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between border-b border-pixel-border/40 pb-1.5">
+            <h5 className="font-headline font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5 text-amber-400" />
+              <span>NEXT SESSION OVERLOAD PROTOCOL</span>
+            </h5>
+            <span className="text-[9px] text-pixel-green font-bold">
+              PICK TARGET A OR TARGET B
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* TARGET A: LOAD OVERLOAD */}
+            <div className="p-3 border border-amber-400/80 bg-black/70 space-y-2 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="px-1.5 py-0.2 border border-amber-400 bg-amber-950/60 text-amber-300 text-[8px] font-bold">
+                  TARGET A: LOAD OVERLOAD
+                </span>
+                <span className="text-[9px] font-bold text-amber-300">
+                  {overloadAnalysis.targets.loadTarget.badge}
+                </span>
+              </div>
+
+              <div className="flex items-baseline justify-between">
+                <div className="font-headline font-black text-white text-base">
+                  {overloadAnalysis.targets.loadTarget.targetWeightKg} KG ×{" "}
+                  {overloadAnalysis.targets.loadTarget.targetReps} REPS
+                </div>
+                <div className="text-[9px] font-bold text-pixel-green">
+                  EST 1RM: {overloadAnalysis.targets.loadTarget.est1RM} KG
+                </div>
+              </div>
+
+              <p className="text-[9px] text-zinc-300 leading-tight">
+                {overloadAnalysis.targets.loadTarget.description}
+              </p>
+            </div>
+
+            {/* TARGET B: REP OVERLOAD */}
+            <div className="p-3 border border-pixel-green/80 bg-black/70 space-y-2 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="px-1.5 py-0.2 border border-pixel-green bg-pixel-green/20 text-pixel-green text-[8px] font-bold">
+                  TARGET B: REP OVERLOAD
+                </span>
+                <span className="text-[9px] font-bold text-pixel-green">
+                  {overloadAnalysis.targets.repTarget.badge}
+                </span>
+              </div>
+
+              <div className="flex items-baseline justify-between">
+                <div className="font-headline font-black text-white text-base">
+                  {overloadAnalysis.targets.repTarget.targetWeightKg > 0
+                    ? `${overloadAnalysis.targets.repTarget.targetWeightKg} KG`
+                    : "BODYWEIGHT"}{" "}
+                  × {overloadAnalysis.targets.repTarget.targetReps} REPS
+                </div>
+                <div className="text-[9px] font-bold text-pixel-green">
+                  EST 1RM: {overloadAnalysis.targets.repTarget.est1RM} KG
+                </div>
+              </div>
+
+              <p className="text-[9px] text-zinc-300 leading-tight">
+                {overloadAnalysis.targets.repTarget.description}
+              </p>
+            </div>
+          </div>
+
+          {/* TONNAGE PROGRESSION TARGET */}
+          <div className="p-2.5 border border-zinc-800 bg-black/50 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 border border-cyan-400 bg-cyan-950/50 flex items-center justify-center text-cyan-300 text-[9px] font-bold">
+                VOL
+              </div>
+              <div>
+                <span className="text-[10px] text-zinc-300 font-bold uppercase">
+                  TONNAGE ACCUMULATION GOAL:
+                </span>
+                <p className="text-[9px] text-zinc-400">
+                  {overloadAnalysis.targets.volumeTarget.description}
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] text-cyan-300 font-bold px-2 py-0.5 border border-cyan-400/50 bg-cyan-950/40">
+              {overloadAnalysis.targets.volumeTarget.badge}
+            </span>
+          </div>
+        </div>
+
+        {/* SCIENTIFIC FORMULA FOOTER / EXPLANATION */}
+        <div className="pt-1">
+          <button
+            onClick={() => setShowFormulaInfo(!showFormulaInfo)}
+            className="text-[9px] text-zinc-400 hover:text-zinc-200 font-bold flex items-center gap-1 transition-colors uppercase"
+          >
+            <Info className="w-3 h-3 text-pixel-green" />
+            <span>HOW 1RM & PROGRESSIVE OVERLOAD ARE ESTIMATED</span>
+          </button>
+
+          {showFormulaInfo && (
+            <div className="mt-2 p-3 border border-zinc-800 bg-black/90 text-[9px] text-zinc-400 space-y-1.5 leading-relaxed">
+              <div className="text-white font-bold uppercase">
+                SCIENTIFIC 1RM METHODOLOGY ({formula.toUpperCase()}):
+              </div>
+              <p>
+                {formula === "epley"
+                  ? "• Epley Formula: 1RM = Weight × (1 + Reps / 30). Widely used in powerlifting for sets up to 10-12 reps."
+                  : "• Brzycki Formula: 1RM = Weight × (36 / (37 - Reps)). A conservative, linear fatigue curve formula."}
+              </p>
+              <p>
+                • Sets with repetitions &gt; 15 are conservatively capped to avoid aerobic endurance distortions.
+              </p>
+              <p>
+                • Bodyweight calisthenics factor the lifter's actual bodyweight ({userBodyweightKg} KG) plus any added external load.
+              </p>
+              <p>
+                • The Double Progression protocol recommends securing target reps before advancing load by +2.5 KG / +5 KG.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

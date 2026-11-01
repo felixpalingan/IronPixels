@@ -1283,6 +1283,7 @@ export function DashboardLayout() {
               >
                 <AnalyticsView
                   userId={userData.user_id}
+                  userBodyweightKg={userData.weight_kg}
                   heroStats={{
                     level: userData.level,
                     str: totalStats.str,
