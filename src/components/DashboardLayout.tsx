@@ -674,12 +674,12 @@ export function DashboardLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-white flex justify-center selection:bg-pixel-green selection:text-black relative">
+    <div className="min-h-screen bg-background text-white flex justify-center selection:bg-pixel-green selection:text-black relative overflow-x-clip">
       {isCriticalHp && (
         <div className="pointer-events-none fixed inset-0 border-4 border-red-600/80 shadow-[inset_0_0_80px_rgba(255,0,0,0.5)] animate-pulse z-30" />
       )}
 
-      <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-24 relative z-10">
+      <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-24 relative z-10 min-w-0">
         <SyncNotificationBanner />
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-pixel-border/60 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -742,7 +742,7 @@ export function DashboardLayout() {
           </div>
         ) : null}
 
-        <main className="p-4 flex-1 relative">
+        <main className="p-2.5 sm:p-4 flex-1 relative min-w-0 overflow-x-clip">
           <TombstoneModal
             isOpen={isHeroDead && !isTombstoneDismissed}
             username={userData.username}
@@ -1359,9 +1359,9 @@ export function DashboardLayout() {
             )}
           </AnimatePresence>
         </main>
-
-        <BottomNav activeTab={activeTab} onSelectTab={setActiveTab} />
       </div>
+
+      <BottomNav activeTab={activeTab} onSelectTab={setActiveTab} />
     </div>
   );
 }

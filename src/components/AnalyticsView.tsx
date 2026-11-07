@@ -170,19 +170,19 @@ export function AnalyticsView({
   }, []);
 
   return (
-    <div className="w-full max-w-[640px] mx-auto p-4 space-y-4 font-mono select-none">
+    <div className="w-full max-w-full space-y-4 font-mono select-none min-w-0">
       {/* HEADER CARD */}
-      <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
-        <div className="flex items-center justify-between border-b border-pixel-border/50 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 border border-pixel-green bg-pixel-green/20 flex items-center justify-center text-pixel-green">
+      <div className="border border-pixel-border bg-surface p-3 sm:p-4 space-y-3 shadow-neon min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-pixel-border/50 pb-3 gap-2.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-9 h-9 border border-pixel-green bg-pixel-green/20 flex items-center justify-center text-pixel-green flex-shrink-0">
               <TrendingUp className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="font-headline font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <h3 className="font-headline font-black text-xs sm:text-sm text-white uppercase tracking-wider flex items-center gap-1.5 flex-wrap">
                 <span>HERO GYM ANALYTICS</span>
                 <span
-                  className={`px-1.5 py-0.2 border text-[8px] font-bold uppercase ${
+                  className={`px-1.5 py-0.5 border text-[7.5px] sm:text-[8px] font-bold uppercase flex-shrink-0 ${
                     !isDbLoaded
                       ? "border-amber-400/80 bg-amber-950/40 text-amber-300 animate-pulse"
                       : "border-pixel-green bg-pixel-green/20 text-pixel-green"
@@ -191,53 +191,53 @@ export function AnalyticsView({
                   {!isDbLoaded ? "SYNCHRONIZING..." : "LIVE DB SYNC"}
                 </span>
               </h3>
-              <p className="text-[10px] text-zinc-400">
+              <p className="text-[9px] sm:text-[10px] text-zinc-400 truncate">
                 SCIENTIFIC PROGRESSIVE OVERLOAD & 1RM ESTIMATOR
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 border border-amber-400 bg-amber-950/60 text-amber-300 text-xs font-bold shadow-gold-glow">
-            <Flame className="w-4 h-4 fill-amber-400 text-amber-400" />
+          <div className="flex items-center gap-1.5 px-2 py-1 border border-amber-400 bg-amber-950/60 text-amber-300 text-[11px] sm:text-xs font-bold shadow-gold-glow flex-shrink-0 self-start sm:self-auto">
+            <Flame className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
             <span>{streakCount} ACTIVE DAYS</span>
           </div>
         </div>
 
         {/* METRICS OVERVIEW GRID */}
-        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2 text-center text-xs">
           {!isDbLoaded ? (
             <>
-              <div className="p-2 border border-pixel-border/60 bg-black/60 space-y-1">
-                <div className="text-[9px] text-zinc-400 font-bold uppercase">SESSIONS</div>
-                <div className="h-5 w-16 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
+              <div className="p-1.5 sm:p-2 border border-pixel-border/60 bg-black/60 space-y-1 min-w-0">
+                <div className="text-[7.5px] sm:text-[9px] text-zinc-400 font-bold uppercase truncate">SESSIONS</div>
+                <div className="h-4 sm:h-5 w-12 sm:w-16 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
               </div>
-              <div className="p-2 border border-pixel-border/60 bg-black/60 space-y-1">
-                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL VOLUME</div>
-                <div className="h-5 w-20 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
+              <div className="p-1.5 sm:p-2 border border-pixel-border/60 bg-black/60 space-y-1 min-w-0">
+                <div className="text-[7.5px] sm:text-[9px] text-zinc-400 font-bold uppercase truncate">TOTAL VOLUME</div>
+                <div className="h-4 sm:h-5 w-14 sm:w-20 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
               </div>
-              <div className="p-2 border border-pixel-border/60 bg-black/60 space-y-1">
-                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL RVS</div>
-                <div className="h-5 w-16 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
+              <div className="p-1.5 sm:p-2 border border-pixel-border/60 bg-black/60 space-y-1 min-w-0">
+                <div className="text-[7.5px] sm:text-[9px] text-zinc-400 font-bold uppercase truncate">TOTAL RVS</div>
+                <div className="h-4 sm:h-5 w-12 sm:w-16 mx-auto bg-surface/60 border border-zinc-800 animate-shimmer-wave" />
               </div>
             </>
           ) : (
             <>
-              <div className="p-2 border border-pixel-border/60 bg-black/60">
-                <div className="text-[9px] text-zinc-400 font-bold uppercase">SESSIONS LOGGED</div>
-                <div className="font-headline font-black text-white text-sm">
-                  {history.length} SESSIONS
+              <div className="p-1.5 sm:p-2 border border-pixel-border/60 bg-black/60 min-w-0 overflow-hidden">
+                <div className="text-[7.5px] sm:text-[9px] text-zinc-400 font-bold uppercase truncate">SESSIONS</div>
+                <div className="font-headline font-black text-white text-xs sm:text-sm truncate">
+                  {history.length}
                 </div>
               </div>
-              <div className="p-2 border border-pixel-border/60 bg-black/60">
-                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL VOLUME</div>
-                <div className="font-headline font-black text-pixel-green text-sm">
+              <div className="p-1.5 sm:p-2 border border-pixel-border/60 bg-black/60 min-w-0 overflow-hidden">
+                <div className="text-[7.5px] sm:text-[9px] text-zinc-400 font-bold uppercase truncate">VOLUME</div>
+                <div className="font-headline font-black text-pixel-green text-xs sm:text-sm truncate">
                   {formatNumber(totalVolumeKg)} KG
                 </div>
               </div>
-              <div className="p-2 border border-pixel-border/60 bg-black/60">
-                <div className="text-[9px] text-zinc-400 font-bold uppercase">TOTAL RVS DEALT</div>
-                <div className="font-headline font-black text-amber-300 text-sm">
-                  +{formatNumber(totalRvsDealt)} RVS
+              <div className="p-1.5 sm:p-2 border border-pixel-border/60 bg-black/60 min-w-0 overflow-hidden">
+                <div className="text-[7.5px] sm:text-[9px] text-zinc-400 font-bold uppercase truncate">TOTAL RVS</div>
+                <div className="font-headline font-black text-amber-300 text-xs sm:text-sm truncate">
+                  +{formatNumber(totalRvsDealt)}
                 </div>
               </div>
             </>
@@ -246,22 +246,22 @@ export function AnalyticsView({
       </div>
 
       {/* WORKOUT CONSISTENCY STREAK HEATMAP */}
-      <div className="border border-pixel-border bg-surface p-4 space-y-3">
-        <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-pixel-green" />
-            <h4 className="font-headline font-bold text-xs text-white uppercase tracking-wider">
-              28-DAY WORKOUT CONSISTENCY HEATMAP
+      <div className="border border-pixel-border bg-surface p-3 sm:p-4 space-y-3 min-w-0">
+        <div className="flex flex-wrap items-center justify-between border-b border-pixel-border/50 pb-2 gap-1">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-pixel-green flex-shrink-0" />
+            <h4 className="font-headline font-bold text-[11px] sm:text-xs text-white uppercase tracking-wider">
+              28-DAY WORKOUT HEATMAP
             </h4>
           </div>
-          <span className="text-[9px] text-zinc-400 font-bold">LAST 4 WEEKS</span>
+          <span className="text-[8.5px] sm:text-[9px] text-zinc-400 font-bold">LAST 4 WEEKS</span>
         </div>
 
-        <div className="grid grid-cols-7 gap-1.5 pt-1">
+        <div className="grid grid-cols-7 gap-1 sm:gap-1.5 pt-1">
           {calendarDays.map((tile, idx) => (
             <div
               key={idx}
-              className={`h-9 border flex flex-col items-center justify-center relative transition-all ${
+              className={`h-8 sm:h-9 w-full min-w-0 border flex flex-col items-center justify-center relative transition-all overflow-hidden ${
                 tile.hasWorkout
                   ? "border-pixel-green bg-pixel-green/20 text-pixel-green shadow-neon"
                   : "border-zinc-800 bg-black/80 text-zinc-600"
@@ -272,7 +272,7 @@ export function AnalyticsView({
                   : "Rest Day"
               }`}
             >
-              <span className="text-[10px] font-bold">{tile.dayNum}</span>
+              <span className="text-[9px] sm:text-[10px] font-bold leading-none">{tile.dayNum}</span>
               {tile.hasWorkout && (
                 <div className="w-1.5 h-1.5 rounded-full bg-pixel-green animate-pulse mt-0.5" />
               )}
@@ -280,39 +280,39 @@ export function AnalyticsView({
           ))}
         </div>
 
-        <div className="flex items-center justify-between text-[9px] text-zinc-400 pt-1 font-bold">
-          <span>REST DAY (BLACK)</span>
+        <div className="flex flex-wrap items-center justify-between text-[8px] sm:text-[9px] text-zinc-400 pt-1 font-bold gap-1">
+          <span>REST (BLACK)</span>
           <div className="flex items-center gap-1">
             <div className="w-2.5 h-2.5 border border-zinc-800 bg-black" />
             <div className="w-2.5 h-2.5 border border-pixel-green/50 bg-pixel-green/20" />
             <div className="w-2.5 h-2.5 border border-pixel-green bg-pixel-green" />
           </div>
-          <span>WORKOUT LOGGED (NEON GREEN)</span>
+          <span>LOGGED (NEON)</span>
         </div>
       </div>
 
       {/* PROGRESSIVE OVERLOAD ESTIMATOR & TARGET PROTOCOL */}
-      <div className="border border-pixel-border bg-surface p-4 space-y-3 shadow-neon">
-        <div className="flex items-center justify-between border-b border-pixel-border/50 pb-2">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 border border-amber-400 bg-amber-950/40 flex items-center justify-center text-amber-300">
+      <div className="border border-pixel-border bg-surface p-3 sm:p-4 space-y-3 shadow-neon min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-pixel-border/50 pb-2 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 border border-amber-400 bg-amber-950/40 flex items-center justify-center text-amber-300 flex-shrink-0">
               <BarChart3 className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h4 className="font-headline font-bold text-xs text-white uppercase tracking-wider flex items-center gap-2">
-                <span>PROGRESSIVE OVERLOAD PROTOCOL</span>
-                <span className="px-1.5 py-0.2 border border-amber-400/80 bg-amber-950/60 text-amber-300 text-[8px] font-bold">
+            <div className="min-w-0 flex-1">
+              <h4 className="font-headline font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5 flex-wrap">
+                <span>PROGRESSIVE OVERLOAD</span>
+                <span className="px-1.5 py-0.5 border border-amber-400/80 bg-amber-950/60 text-amber-300 text-[7.5px] sm:text-[8px] font-bold">
                   DOUBLE PROGRESSION
                 </span>
               </h4>
-              <p className="text-[9px] text-zinc-400">
-                1RM INTENSITY ESTIMATION & NEXT WORKOUT TARGETS
+              <p className="text-[8.5px] sm:text-[9px] text-zinc-400 truncate">
+                1RM INTENSITY ESTIMATION & NEXT TARGETS
               </p>
             </div>
           </div>
 
           {/* Formula selection toggle */}
-          <div className="flex items-center gap-1 border border-zinc-800 bg-black p-0.5 text-[9px] font-bold">
+          <div className="flex items-center gap-1 border border-zinc-800 bg-black p-0.5 text-[8.5px] sm:text-[9px] font-bold flex-shrink-0 self-start sm:self-auto">
             <button
               onClick={() => setFormula("epley")}
               className={`px-2 py-0.5 transition-all ${
@@ -493,19 +493,19 @@ export function AnalyticsView({
         )}
 
         {/* INTERACTIVE CHART: 1RM vs VOLUME VIEW */}
-        <div className="p-3 border border-zinc-800 bg-black/80 space-y-3">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-300 font-bold uppercase truncate max-w-[200px]">
+        <div className="p-3 border border-zinc-800 bg-black/80 space-y-3 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 border-b border-zinc-800/80 pb-2">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <span className="text-zinc-200 font-bold uppercase text-[11px] truncate">
                 {overloadAnalysis.exerciseName}
               </span>
-              <span className="text-[9px] text-zinc-400">
+              <span className="text-[9px] text-zinc-400 flex-shrink-0">
                 ({overloadAnalysis.historyPoints.length} SESSIONS)
               </span>
             </div>
 
             {/* Chart mode toggle */}
-            <div className="flex items-center gap-1 border border-zinc-800 bg-black p-0.5 text-[9px] font-bold">
+            <div className="flex items-center gap-1 border border-zinc-800 bg-black p-0.5 text-[8.5px] sm:text-[9px] font-bold flex-shrink-0 self-start sm:self-auto">
               <button
                 onClick={() => setChartMode("1rm")}
                 className={`px-2 py-0.5 transition-all ${
@@ -530,7 +530,7 @@ export function AnalyticsView({
           </div>
 
           {/* SVG/CSS BAR CHART */}
-          <div className="h-36 flex items-end justify-between gap-2 pt-4 border-b border-zinc-800 px-2 pb-1">
+          <div className="h-36 flex items-end justify-between gap-1 sm:gap-2 pt-4 border-b border-zinc-800 px-1 sm:px-2 pb-1 min-w-0 overflow-x-hidden">
             {overloadAnalysis.historyPoints.slice(-6).map((point, i) => {
               const val = chartMode === "1rm" ? point.est1RM : point.volumeKg;
               const heightPct = Math.min(
@@ -542,7 +542,7 @@ export function AnalyticsView({
               return (
                 <div
                   key={i}
-                  className="flex-1 flex flex-col items-center gap-1 h-full justify-end group relative"
+                  className="flex-1 min-w-0 flex flex-col items-center gap-1 h-full justify-end group relative"
                 >
                   {/* Tooltip on hover */}
                   <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-black border border-pixel-green p-1 text-[8px] font-bold text-white whitespace-nowrap z-10 pointer-events-none shadow-neon">
@@ -555,9 +555,9 @@ export function AnalyticsView({
                   </div>
 
                   {/* Value tag */}
-                  <div className="flex items-center gap-0.5 text-[9px] font-bold">
-                    {isPR && <Trophy className="w-2.5 h-2.5 text-amber-400" />}
-                    <span className={isPR ? "text-amber-400 font-black" : "text-pixel-green"}>
+                  <div className="flex items-center gap-0.5 text-[8.5px] sm:text-[9px] font-bold truncate max-w-full">
+                    {isPR && <Trophy className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />}
+                    <span className={`truncate ${isPR ? "text-amber-400 font-black" : "text-pixel-green"}`}>
                       {chartMode === "1rm" ? `${point.est1RM}kg` : `${point.volumeKg}k`}
                     </span>
                   </div>
@@ -575,11 +575,11 @@ export function AnalyticsView({
                   />
 
                   {/* Date and Set label */}
-                  <div className="flex flex-col items-center">
-                    <span className="text-[9px] text-zinc-300 font-bold truncate max-w-[50px]">
+                  <div className="flex flex-col items-center w-full min-w-0">
+                    <span className="text-[8px] sm:text-[9px] text-zinc-300 font-bold truncate max-w-full text-center">
                       {point.label}
                     </span>
-                    <span className="text-[8px] text-zinc-500 truncate max-w-[50px]">
+                    <span className="text-[7.5px] sm:text-[8px] text-zinc-500 truncate max-w-full text-center">
                       {point.bestWeight > 0 ? `${point.bestWeight}k` : "BW"}×{point.bestReps}
                     </span>
                   </div>
@@ -658,21 +658,21 @@ export function AnalyticsView({
           </div>
 
           {/* TONNAGE PROGRESSION TARGET */}
-          <div className="p-2.5 border border-zinc-800 bg-black/50 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 border border-cyan-400 bg-cyan-950/50 flex items-center justify-center text-cyan-300 text-[9px] font-bold">
+          <div className="p-2.5 border border-zinc-800 bg-black/50 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 min-w-0">
+            <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
+              <div className="w-5 h-5 border border-cyan-400 bg-cyan-950/50 flex items-center justify-center text-cyan-300 text-[8.5px] font-bold flex-shrink-0 mt-0.5 sm:mt-0">
                 VOL
               </div>
-              <div>
-                <span className="text-[10px] text-zinc-300 font-bold uppercase">
+              <div className="min-w-0 flex-1">
+                <span className="text-[9.5px] sm:text-[10px] text-zinc-300 font-bold uppercase block truncate">
                   TONNAGE ACCUMULATION GOAL:
                 </span>
-                <p className="text-[9px] text-zinc-400">
+                <p className="text-[8.5px] sm:text-[9px] text-zinc-400 line-clamp-2 sm:line-clamp-none">
                   {overloadAnalysis.targets.volumeTarget.description}
                 </p>
               </div>
             </div>
-            <span className="text-[10px] text-cyan-300 font-bold px-2 py-0.5 border border-cyan-400/50 bg-cyan-950/40">
+            <span className="text-[9px] sm:text-[10px] text-cyan-300 font-bold px-2 py-0.5 border border-cyan-400/50 bg-cyan-950/40 flex-shrink-0 self-start sm:self-auto">
               {overloadAnalysis.targets.volumeTarget.badge}
             </span>
           </div>
