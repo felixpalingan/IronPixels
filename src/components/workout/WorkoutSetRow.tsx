@@ -20,6 +20,7 @@ interface WorkoutSetRowProps {
   weightUnit: WeightUnit;
   isAgilityEx: boolean;
   isUnilateralEx: boolean;
+  isDistanceBased?: boolean;
   canDelete: boolean;
   prevSet?: { weight_kg: number; reps: number } | null;
   onUpdateSet: (exId: string, setIdx: number, field: "weight" | "reps", val: number) => void;
@@ -35,6 +36,7 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
   weightUnit,
   isAgilityEx,
   isUnilateralEx,
+  isDistanceBased = false,
   canDelete,
   prevSet,
   onUpdateSet,
@@ -74,6 +76,8 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
               ? String(toDisplayWeight(prevSet.weight_kg, weightUnit))
               : isAgilityEx
               ? "0 (BW)"
+              : isDistanceBased
+              ? (isUnilateralEx ? "Per sisi (kg)" : "Beban (kg)")
               : isUnilateralEx
               ? "Beban 1 sisi"
               : "0"
@@ -98,6 +102,8 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
           placeholder={
             prevSet && prevSet.reps > 0
               ? String(prevSet.reps)
+              : isDistanceBased
+              ? "Jarak (m)"
               : isUnilateralEx
               ? "Reps/sisi"
               : "0"
@@ -145,7 +151,7 @@ export const WorkoutSetRow = memo<WorkoutSetRowProps>(function WorkoutSetRow({
               <span>LAST:</span>
             </span>
             <span className="text-zinc-300 font-bold">
-              {toDisplayWeight(prevSet.weight_kg, weightUnit)} {weightUnit.toUpperCase()} × {prevSet.reps} reps
+              {toDisplayWeight(prevSet.weight_kg, weightUnit)} {weightUnit.toUpperCase()} × {prevSet.reps} {isDistanceBased ? "m" : "reps"}
             </span>
           </div>
           {!isDone && (!set.weight || !set.reps) && (

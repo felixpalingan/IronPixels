@@ -3,6 +3,7 @@ import {
   getExerciseScalingStat,
   getExerciseMovementType,
   isExerciseUnilateral,
+  isExerciseDistanceBased,
   MovementType,
 } from "./exercisesData";
 
@@ -123,6 +124,7 @@ export interface ExerciseSetLogInput {
   weight_kg?: number;
   weight?: number;
   reps?: number;
+  distance_meters?: number;
   completed?: boolean;
 }
 
@@ -137,6 +139,7 @@ export interface ExerciseItemLogInput {
   rvs_multiplier?: number;
   rvsMultiplier?: number;
   multiplier?: number;
+  is_distance_based?: boolean;
   sets?: ExerciseSetLogInput[];
 }
 
@@ -149,10 +152,12 @@ export interface WorkoutTotalsResult {
     exercise_name: string;
     category: string;
     equipment?: string;
+    is_distance_based?: boolean;
     sets: Array<{
       set_number: number;
       weight_kg: number;
       reps: number;
+      distance_meters?: number;
       completed: boolean;
       rvs: number;
     }>;
@@ -208,11 +213,18 @@ export function calculateWorkoutSessionTotals({
     const exerciseName = def?.name || rawName || "Unknown Exercise";
     const multiplier = def?.rvsMultiplier ?? ex.rvs_multiplier ?? ex.rvsMultiplier ?? ex.multiplier ?? 1.0;
 
+    const isDistanceEx = isExerciseDistanceBased({
+      id: rawId,
+      name: exerciseName,
+      isDistanceBased: def?.isDistanceBased ?? ex.is_distance_based,
+    });
+
     const rawSets = Array.isArray(ex.sets) ? ex.sets : [];
     const sanitizedSets: Array<{
       set_number: number;
       weight_kg: number;
       reps: number;
+      distance_meters?: number;
       completed: boolean;
       rvs: number;
     }> = [];
@@ -222,7 +234,8 @@ export function calculateWorkoutSessionTotals({
       // If completed property is explicitly false, set was not done
       const isCompleted = s.completed !== false;
       const weight = Math.min(1000, Math.max(0, Number(s.weight_kg ?? s.weight ?? 0)));
-      const reps = Math.min(200, Math.max(0, Math.round(Number(s.reps ?? 0))));
+      const rawDistance = Number(s.distance_meters ?? 0);
+      const reps = Math.min(200, Math.max(0, Math.round(Number(s.reps ?? (rawDistance > 0 ? rawDistance : 0)))));
 
       if (isCompleted && reps > 0) {
         const setRvs = calculateSetRvs({
@@ -248,6 +261,7 @@ export function calculateWorkoutSessionTotals({
           set_number: sanitizedSets.length + 1,
           weight_kg: weight,
           reps,
+          distance_meters: isDistanceEx ? reps : undefined,
           completed: true,
           rvs: setRvs,
         });
@@ -259,6 +273,7 @@ export function calculateWorkoutSessionTotals({
         exercise_name: exerciseName,
         category,
         equipment,
+        is_distance_based: isDistanceEx,
         sets: sanitizedSets,
       });
     }

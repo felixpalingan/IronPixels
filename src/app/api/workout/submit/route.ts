@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateWorkoutSessionTotals } from "@/lib/workoutCalculations";
 import { EQUIPMENT_DICTIONARY } from "@/lib/equipment";
+import { calculateStreaks } from "@/lib/streakCalculator";
 
 export async function POST(request: Request) {
   try {
@@ -168,7 +169,24 @@ export async function POST(request: Request) {
         );
       }
 
-      // Step B: Update profile progression.
+      // Step B: Calculate streaks from historical sessions + new session
+      let currentStreak = 1;
+      let longestStreak = existingProfile?.longest_streak || 1;
+      try {
+        const { data: pastSessions } = await supabase
+          .from("workout_sessions")
+          .select("date")
+          .eq("user_id", userId);
+
+        const allDates = (pastSessions || []).map((s: { date: string }) => s.date).concat(safeDate);
+        const streakRes = calculateStreaks(allDates, safeDate);
+        currentStreak = Math.max(1, streakRes.currentStreak);
+        longestStreak = Math.max(longestStreak, streakRes.longestStreak);
+      } catch (streakErr) {
+        console.warn("Could not calculate streak from session history:", streakErr);
+      }
+
+      // Step C: Update profile progression.
       const updatePayload = {
         current_hp: newHp,
         exp: newExp,
@@ -177,6 +195,8 @@ export async function POST(request: Request) {
         gold: newGold,
         available_ap: newAp,
         daily_rvs: newDailyRvs,
+        workout_streak: currentStreak,
+        longest_streak: longestStreak,
         last_penalty_date: safeDate,
         updated_at: new Date().toISOString(),
       };

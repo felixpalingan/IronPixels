@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Users, Swords, Search, UserPlus, Check, X, Flame, Zap, Shield, Crown, Sparkles, UserCheck, ShieldAlert, Plus, Settings, Edit3 } from "lucide-react";
+import { Trophy, Users, Swords, Search, UserPlus, Check, X, Flame, Zap, Shield, Crown, Sparkles, UserCheck, ShieldAlert, Plus, Settings, Edit3, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
 import { LeaderboardEntry, PartyLeaderboardEntry } from "@/app/api/multiplayer/leaderboard/route";
@@ -349,14 +349,22 @@ export function MultiplayerHub({
                 </div>
 
                 <div>
-                  <div className="text-[9px] text-zinc-500 font-bold">STREAK</div>
+                  <div className="text-[9px] text-zinc-500 font-bold">STREAK (BEST)</div>
                   <div className="font-headline font-black text-sm text-rose-400">
-                    {inspectUser.workout_streak} DAYS
+                    {inspectUser.workout_streak}d {inspectUser.longest_streak && inspectUser.longest_streak > 1 ? `(${inspectUser.longest_streak}d BEST)` : ""}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
+                <a
+                  href={`/profile/${inspectUser.user_id}`}
+                  className="w-full py-2.5 border border-cyan-400 bg-cyan-950/60 hover:bg-cyan-500 text-cyan-300 hover:text-black font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-neon"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>VIEW FULL HERO PROFILE ↗</span>
+                </a>
+
                 {friendStatusMap[inspectUser.user_id] === "pending_outgoing" ? (
                   <div className="w-full py-2.5 bg-amber-950/40 border border-amber-500 text-amber-400 font-extrabold text-xs text-center uppercase">
                     FRIEND REQUEST SENT
@@ -364,7 +372,7 @@ export function MultiplayerHub({
                 ) : (
                   <button
                     onClick={() => handleFriendAction(inspectUser.user_id, "send_request")}
-                    className="w-full py-2.5 border border-pixel-green bg-pixel-green/20 hover:bg-pixel-green text-pixel-green hover:text-black font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-neon"
+                    className="w-full py-2.5 border border-pixel-green bg-pixel-green/20 hover:bg-pixel-green text-pixel-green hover:text-black font-headline font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>ADD FRIEND</span>

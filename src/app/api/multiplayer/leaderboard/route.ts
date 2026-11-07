@@ -11,6 +11,7 @@ export interface LeaderboardEntry {
   combat_power: number;
   daily_rvs: number;
   workout_streak: number;
+  longest_streak?: number;
   avatar_url?: string;
   equipped_weapon?: string;
 }
@@ -113,6 +114,7 @@ export async function GET(request: Request) {
             combat_power: Math.round(cp),
             daily_rvs: Number(prof.daily_rvs || 0),
             workout_streak: prof.workout_streak || 1,
+            longest_streak: prof.longest_streak || prof.workout_streak || 1,
             equipped_weapon: "/assets/items/weapons/01.png",
           };
         });

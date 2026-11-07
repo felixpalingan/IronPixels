@@ -92,7 +92,8 @@ export async function middleware(request: NextRequest) {
     const isPublicApiRoute =
       path.startsWith("/api/cron") ||
       path === "/api/exercises" ||
-      path === "/api/multiplayer/leaderboard";
+      path === "/api/multiplayer/leaderboard" ||
+      path.startsWith("/api/user/public");
 
     if (isPublicApiRoute || isTestRunner) {
       return response;
@@ -121,7 +122,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const isAuthOnlyRoute = path === "/login" || path === "/register";
-  const isPublicRoute = isAuthOnlyRoute || path === "/about" || path === "/";
+  const isPublicRoute = isAuthOnlyRoute || path === "/about" || path === "/" || path.startsWith("/profile");
 
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL("/login", request.url));

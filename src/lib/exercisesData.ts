@@ -13,6 +13,7 @@ export interface ExerciseDefinition {
   scalingStat?: "STR" | "AGI";
   movementType?: MovementType;
   isUnilateral?: boolean;
+  isDistanceBased?: boolean;
   aliases?: string[];
   isCustom?: boolean;
 }
@@ -115,6 +116,26 @@ export function isExerciseUnilateral(ex: {
     name.includes("lateral raise") ||
     name.includes("front raise") ||
     name.includes("dumbbell row")
+  );
+}
+
+export function isExerciseDistanceBased(ex: {
+  isDistanceBased?: boolean;
+  name?: string;
+  id?: string;
+}): boolean {
+  if (typeof ex.isDistanceBased === "boolean") return ex.isDistanceBased;
+  const name = (ex.name || "").toLowerCase();
+  const id = (ex.id || "").toLowerCase();
+  return (
+    name.includes("farmer") ||
+    name.includes("carry") ||
+    name.includes("loaded carry") ||
+    name.includes("suitcase carry") ||
+    id.includes("farmers-walk") ||
+    id.includes("farmer-walk") ||
+    id.includes("farmers-carry") ||
+    id.includes("carry")
   );
 }
 
@@ -978,5 +999,45 @@ export const EXERCISE_DATABASE: ExerciseDefinition[] = [
     ],
     rvsMultiplier: 1.05,
     aliases: ["toes to bar", "t2b", "hanging toes to bar", "toes-to-bar"],
+  },
+  {
+    id: "farmers-walk-dumbbell",
+    name: "Dumbbell Farmer's Walk",
+    category: "Core",
+    difficultyRank: 3,
+    difficultyLabel: "Intermediate",
+    equipment: "Dumbbell",
+    targetMuscles: ["Forearms", "Trapezius", "Core", "Obliques", "Grip Strength"],
+    instructions: [
+      "Pegang sepasang dumbbell berat di samping badan dengan postur tegak sempurna, dada tegap, dan bahu ditarik ke belakang.",
+      "Kencangkan otot perut (bracing core) dan mulailah melangkah pendek dan stabil tanpa membiarkan tubuh bergoyang.",
+      "Catat beban dumbbell per tangan (kg) dan jarak tempuh dalam meter (M).",
+    ],
+    rvsMultiplier: 1.0,
+    movementType: "compound",
+    isUnilateral: true,
+    isDistanceBased: true,
+    scalingStat: "STR",
+    aliases: ["farmer walk", "farmers walk", "farmer carry", "farmers carry", "dumbbell farmers walk", "dumbbell carry"],
+  },
+  {
+    id: "farmers-walk-trap-bar",
+    name: "Trap Bar Farmer's Carry",
+    category: "Core",
+    difficultyRank: 4,
+    difficultyLabel: "Advanced",
+    equipment: "Barbell",
+    targetMuscles: ["Trapezius", "Forearms", "Erector Spinae", "Glutes", "Grip Strength"],
+    instructions: [
+      "Posisikan tubuh di tengah trap bar (hex bar), angkat beban dengan teknik deadlift sempurna.",
+      "Kunci otot inti dan berjalan lurus ke depan dengan langkah terkontrol sesuai jarak target.",
+      "Letakkan bar kembali ke lantai dengan posisi squat/deadlift yang aman.",
+    ],
+    rvsMultiplier: 1.2,
+    movementType: "compound",
+    isUnilateral: false,
+    isDistanceBased: true,
+    scalingStat: "STR",
+    aliases: ["trap bar carry", "heavy carry", "trap bar farmer walk", "barbell carry", "loaded carry"],
   },
 ];

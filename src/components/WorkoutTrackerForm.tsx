@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, Dumbbell, Zap, Check, Search, Info, X, Timer, Volume2, History, Play, Bell, BellOff, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatNumber } from "@/lib/formatters";
-import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat, isExerciseUnilateral } from "@/lib/exercisesData";
+import { EXERCISE_DATABASE, ExerciseDefinition, getExerciseScalingStat, isExerciseUnilateral, isExerciseDistanceBased } from "@/lib/exercisesData";
 import { calculateSetRvs as calculateSetRvsPure } from "@/lib/workoutCalculations";
 import { soundEngine } from "@/lib/soundEffects";
 import { WeightUnit, kgToLbs, lbsToKg, toDisplayWeight, toCanonicalKg } from "@/lib/unitConversion";
@@ -1630,9 +1630,10 @@ export function WorkoutTrackerForm({
                 sum + calculateSetRvs(s.weight, s.reps, ex.rvsMultiplier, ex.category, ex.equipment, ex.name),
               0
             );
-            const defObj = EXERCISE_DATABASE.find((d) => d.id === ex.definitionId);
+            const defObj = EXERCISE_DATABASE.find((d) => d.id === ex.definitionId || d.name.toLowerCase() === ex.name.toLowerCase());
             const scalingStat = getExerciseScalingStat({ category: ex.category, equipment: ex.equipment });
             const isAgilityEx = scalingStat === "AGI";
+            const isDistanceEx = isExerciseDistanceBased({ name: ex.name, id: ex.definitionId, isDistanceBased: defObj?.isDistanceBased });
             const isUnilateralEx = isExerciseUnilateral({ name: ex.name, isUnilateral: defObj?.isUnilateral });
             const scalingFactor = isAgilityEx
               ? ((heroStats?.agi || 70) / 50).toFixed(2)
@@ -1651,6 +1652,11 @@ export function WorkoutTrackerForm({
                         <span className="text-[9px] px-1.5 py-0.5 border border-zinc-700 bg-black text-zinc-400 font-normal flex-shrink-0">
                           {ex.category}
                         </span>
+                        {isDistanceEx && (
+                          <span className="text-[9px] px-1.5 py-0.5 border border-emerald-400 bg-emerald-950/80 text-emerald-300 font-bold flex-shrink-0">
+                            📏 JARAK (METER)
+                          </span>
+                        )}
                         {isUnilateralEx && (
                           <span className="text-[9px] px-1.5 py-0.5 border border-sky-400 bg-sky-950/80 text-sky-300 font-bold flex-shrink-0">
                             ⚡ UNILATERAL (PER SISI)
@@ -1690,7 +1696,16 @@ export function WorkoutTrackerForm({
                   </div>
                 </div>
 
-                {isUnilateralEx && (
+                {isDistanceEx ? (
+                  <div className="flex items-start sm:items-center gap-2 p-2 bg-emerald-950/40 border border-emerald-500/50 text-emerald-200 text-[10.5px] font-mono shadow-sm">
+                    <span className="px-1.5 py-0.5 bg-emerald-900 border border-emerald-400 text-emerald-200 font-extrabold text-[9px] uppercase tracking-wider flex-shrink-0">
+                      💡 TIPS FARMER'S CARRY / LOADED WALK
+                    </span>
+                    <span className="leading-tight">
+                      Catat beban {isUnilateralEx ? "dumbbell per tangan (kg)" : "total beban (kg)"} &amp; jarak tempuh dalam <strong>meter (M)</strong>. Contoh: 24kg per tangan sejauh 30 meter = ketik <strong>24</strong> di kolom beban &amp; <strong>30</strong> di kolom jarak.
+                    </span>
+                  </div>
+                ) : isUnilateralEx ? (
                   <div className="flex items-start sm:items-center gap-2 p-2 bg-sky-950/40 border border-sky-500/50 text-sky-200 text-[10.5px] font-mono shadow-sm">
                     <span className="px-1.5 py-0.5 bg-sky-900 border border-sky-400 text-sky-200 font-extrabold text-[9px] uppercase tracking-wider flex-shrink-0">
                       💡 TIPS LOG UNILATERAL
@@ -1699,7 +1714,7 @@ export function WorkoutTrackerForm({
                       Catat <strong>beban 1 dumbbell</strong> &amp; <strong>reps per tangan/kaki</strong> (contoh: 8 reps kiri &amp; 8 reps kanan = ketik <strong>8 reps</strong>, jangan ditotal).
                     </span>
                   </div>
-                )}
+                ) : null}
 
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-1.5 text-[9px] text-zinc-400 font-bold uppercase text-center border-b border-pixel-border/30 pb-1.5">
@@ -1707,7 +1722,9 @@ export function WorkoutTrackerForm({
                     <span className="col-span-3">
                       {weightUnit.toUpperCase()} {isUnilateralEx ? "(PER DUMBBELL)" : "(WEIGHT)"}
                     </span>
-                    <span className="col-span-3">{isUnilateralEx ? "REPS / SISI" : "REPS"}</span>
+                    <span className="col-span-3">
+                      {isDistanceEx ? "JARAK (M)" : isUnilateralEx ? "REPS / SISI" : "REPS"}
+                    </span>
                     <span className="col-span-2">RVS</span>
                     <span className="col-span-3">STATUS / LOG</span>
                   </div>
@@ -1739,6 +1756,7 @@ export function WorkoutTrackerForm({
                         weightUnit={weightUnit}
                         isAgilityEx={isAgilityEx}
                         isUnilateralEx={isUnilateralEx}
+                        isDistanceBased={isDistanceEx}
                         canDelete={ex.sets.length > 1}
                         prevSet={prevSet}
                         onUpdateSet={handleUpdateSet}

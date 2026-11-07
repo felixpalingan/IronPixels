@@ -7,6 +7,7 @@ import { soundEngine } from "@/lib/soundEffects";
 import { WeightUnit, kgToLbs, toDisplayWeight } from "@/lib/unitConversion";
 import { WorkoutHistorySkeleton } from "@/components/Skeleton";
 import { mergeSessionHistories, syncPendingWorkouts, getPendingWorkouts } from "@/lib/offlineSync";
+import { isExerciseDistanceBased } from "@/lib/exercisesData";
 
 export interface ExerciseSetLog {
   set_number: number;
@@ -380,14 +381,17 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                           </div>
 
                           <div className="flex flex-wrap gap-2 pt-1">
-                            {ex.sets?.map((set, setIdx) => (
-                              <span
-                                key={setIdx}
-                                className="px-2 py-0.5 border border-pixel-border/60 bg-surface text-[9px] text-zinc-300 font-mono"
-                              >
-                                Set {set.set_number}: {toDisplayWeight(set.weight_kg, weightUnit)} {weightUnit} x {set.reps} reps
-                              </span>
-                            ))}
+                            {ex.sets?.map((set, setIdx) => {
+                              const isDist = isExerciseDistanceBased({ name: ex.exercise_name });
+                              return (
+                                <span
+                                  key={setIdx}
+                                  className="px-2 py-0.5 border border-pixel-border/60 bg-surface text-[9px] text-zinc-300 font-mono"
+                                >
+                                  Set {set.set_number}: {toDisplayWeight(set.weight_kg, weightUnit)} {weightUnit} x {set.reps} {isDist ? "m" : "reps"}
+                                </span>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}

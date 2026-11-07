@@ -3,6 +3,7 @@ import { runUnitConversionTests } from "./unitConversion.test";
 import { runRateLimitTests } from "./rateLimit.test";
 import { runProgressiveOverloadTests } from "./progressiveOverload.test";
 import { runOfflineSyncTests } from "./offlineSync.test";
+import { runStreakCalculatorTests } from "./streakCalculator.test";
 
 function main() {
   console.log("==================================================");
@@ -37,6 +38,11 @@ function main() {
   const res5 = runOfflineSyncTests();
   totalPassed += res5.passed;
   totalFailed += res5.failed;
+
+  // 6. Run Streak Calculator tests
+  const res6 = runStreakCalculatorTests();
+  totalPassed += res6.passed;
+  totalFailed += (res6.total - res6.passed);
 
   const duration = Date.now() - startTime;
 

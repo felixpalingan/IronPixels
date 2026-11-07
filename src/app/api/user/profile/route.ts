@@ -134,6 +134,7 @@ export async function GET() {
       weight_unit: profile.weight_unit || "kg",
       max_floor: profile.max_floor || 1,
       workout_streak: profile.workout_streak || 1,
+      longest_streak: profile.longest_streak || profile.workout_streak || 1,
       available_ap: profile.available_ap ?? 5,
       boss_attack: bossAttackEvent,
       stats: {
