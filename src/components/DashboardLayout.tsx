@@ -20,6 +20,8 @@ import { DailyQuestsWidget } from "@/components/DailyQuestsWidget";
 import { MultiplayerHub } from "@/components/MultiplayerHub";
 import { AnalyticsView } from "@/components/AnalyticsView";
 import { TombstoneModal } from "@/components/TombstoneModal";
+import { SyncNotificationBanner } from "@/components/SyncNotificationBanner";
+import { initAutoSync, submitWorkoutWithOfflineFallback } from "@/lib/offlineSync";
 import { EQUIPMENT_DICTIONARY, InventoryRecord, ItemType } from "@/lib/equipment";
 import { Skeleton } from "@/components/Skeleton";
 
@@ -90,6 +92,7 @@ export function DashboardLayout() {
   const todayRvsKey = `ironpixels_daily_rvs_${todayStr}`;
 
   useEffect(() => {
+    const cleanupAutoSync = initAutoSync();
     try {
       const savedRvs = localStorage.getItem(todayRvsKey);
       if (savedRvs) {
@@ -186,6 +189,9 @@ export function DashboardLayout() {
     }
 
     fetchData();
+    return () => {
+      cleanupAutoSync();
+    };
   }, [todayRvsKey]);
 
   const baseStats = profile?.stats || { str: 85, agi: 72, vit: 54, luk: 60 };
@@ -504,30 +510,27 @@ export function DashboardLayout() {
       localStorage.setItem("ironpixels_profile", JSON.stringify(updatedProf));
     }
 
-    try {
-      fetch("/api/workout/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: newSessionRecord.session_id,
-          user_id: userData.user_id,
-          date: todayStr,
-          duration_minutes: realDuration,
-          total_rvs: summary.totalRvs,
-          total_volume_kg: summary.totalVolume,
-          exercises_log: summary.exercisesLog || [],
-        }),
+    const submissionPayload = {
+      session_id: newSessionRecord.session_id,
+      user_id: userData.user_id,
+      date: todayStr,
+      duration_minutes: realDuration,
+      total_rvs: summary.totalRvs,
+      total_volume_kg: summary.totalVolume,
+      exercises_log: summary.exercisesLog || [],
+    };
+
+    submitWorkoutWithOfflineFallback(submissionPayload)
+      .then((res) => {
+        if (res && res.profile) {
+          setProfile(res.profile);
+          localStorage.setItem("ironpixels_profile", JSON.stringify(res.profile));
+          if (res.profile.gold !== undefined) setUserGold(res.profile.gold);
+        }
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.profile) {
-            setProfile(data.profile);
-            localStorage.setItem("ironpixels_profile", JSON.stringify(data.profile));
-            if (data.profile.gold !== undefined) setUserGold(data.profile.gold);
-          }
-        })
-        .catch(() => {});
-    } catch (e) {}
+      .catch((err) => {
+        console.error("Workout submission fallback handled:", err);
+      });
 
     setTimeout(() => {
       setSessionVictoryModal(null);
@@ -677,6 +680,7 @@ export function DashboardLayout() {
       )}
 
       <div className="w-full max-w-[600px] min-h-screen flex flex-col justify-between border-x border-pixel-border/30 pb-24 relative z-10">
+        <SyncNotificationBanner />
         <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-pixel-border/60 px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <img

@@ -2,6 +2,7 @@ import { runWorkoutCalculationsTests } from "./workoutCalculations.test";
 import { runUnitConversionTests } from "./unitConversion.test";
 import { runRateLimitTests } from "./rateLimit.test";
 import { runProgressiveOverloadTests } from "./progressiveOverload.test";
+import { runOfflineSyncTests } from "./offlineSync.test";
 
 function main() {
   console.log("==================================================");
@@ -31,6 +32,11 @@ function main() {
   const res4 = runProgressiveOverloadTests();
   totalPassed += res4.passed;
   totalFailed += res4.failed;
+
+  // 5. Run Offline Sync & Auto-Retry tests
+  const res5 = runOfflineSyncTests();
+  totalPassed += res5.passed;
+  totalFailed += res5.failed;
 
   const duration = Date.now() - startTime;
 

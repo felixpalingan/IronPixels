@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dumbbell, Calendar, Flame, ChevronDown, ChevronUp, History, Sparkles, Award, Trash2 } from "lucide-react";
+import { Dumbbell, Calendar, Flame, ChevronDown, ChevronUp, History, Sparkles, Award, Trash2, RefreshCw, WifiOff } from "lucide-react";
 import { formatNumber } from "@/lib/formatters";
 import { soundEngine } from "@/lib/soundEffects";
 import { WeightUnit, kgToLbs, toDisplayWeight } from "@/lib/unitConversion";
 import { WorkoutHistorySkeleton } from "@/components/Skeleton";
+import { mergeSessionHistories, syncPendingWorkouts, getPendingWorkouts } from "@/lib/offlineSync";
 
 export interface ExerciseSetLog {
   set_number: number;
@@ -26,6 +27,7 @@ export interface WorkoutSessionLog {
   total_rvs: number;
   total_volume_kg: number;
   exercises_log: ExerciseItemLog[];
+  is_pending_sync?: boolean;
 }
 
 interface WorkoutHistoryListProps {
@@ -39,6 +41,8 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
   const [sessionToDelete, setSessionToDelete] = useState<WorkoutSessionLog | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null);
+  const [isManualSyncing, setIsManualSyncing] = useState<boolean>(false);
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
 
   const [weightUnit, setWeightUnit] = useState<WeightUnit>(() => {
     try {
@@ -49,7 +53,13 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
     }
   });
 
+  const checkPendingCount = () => {
+    const queue = getPendingWorkouts();
+    setPendingSyncCount(queue.length);
+  };
+
   useEffect(() => {
+    checkPendingCount();
     const localLogs = localStorage.getItem("ironpixels_workout_history");
     if (localLogs) {
       try {
@@ -66,18 +76,41 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.sessions)) {
-            setSessions(data.sessions);
-            localStorage.setItem("ironpixels_workout_history", JSON.stringify(data.sessions));
+            const currentLocal = JSON.parse(localStorage.getItem("ironpixels_workout_history") || "[]");
+            const merged = mergeSessionHistories(currentLocal, data.sessions);
+            setSessions(merged);
+            localStorage.setItem("ironpixels_workout_history", JSON.stringify(merged));
           }
         }
       } catch (err) {
       } finally {
         setLoading(false);
+        checkPendingCount();
       }
     }
 
     fetchHistory();
   }, []);
+
+  const handleManualSyncAll = async () => {
+    setIsManualSyncing(true);
+    try {
+      await syncPendingWorkouts();
+      const currentLocal = JSON.parse(localStorage.getItem("ironpixels_workout_history") || "[]");
+      const res = await fetch("/api/workout/history");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.sessions)) {
+          const merged = mergeSessionHistories(currentLocal, data.sessions);
+          setSessions(merged);
+          localStorage.setItem("ironpixels_workout_history", JSON.stringify(merged));
+        }
+      }
+    } finally {
+      setIsManualSyncing(false);
+      checkPendingCount();
+    }
+  };
 
   const totalSessions = sessions.length;
   const totalLifetimeVolume = sessions.reduce((acc, s) => acc + (s.total_volume_kg || 0), 0);
@@ -209,6 +242,31 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
           </div>
         )}
 
+        {pendingSyncCount > 0 && (
+          <div className="p-3 border border-amber-400 bg-amber-950/60 flex items-center justify-between text-xs font-mono shadow-[0_0_12px_rgba(245,158,11,0.2)]">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4 text-amber-400 shrink-0" />
+              <div>
+                <div className="font-headline font-bold text-amber-300 text-[10px] uppercase">
+                  {pendingSyncCount} SESI OFFLINE MENUNGGU SINKRONISASI
+                </div>
+                <div className="text-[9px] text-zinc-300">
+                  Data aman di memori HP dan siap dikirim ke database.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleManualSyncAll}
+              disabled={isManualSyncing}
+              className="px-2.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-[9px] uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isManualSyncing ? "animate-spin" : ""}`} />
+              <span>{isManualSyncing ? "SYNCING..." : "SINKRONKAN"}</span>
+            </button>
+          </div>
+        )}
+
         {loading && sessions.length === 0 ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-bold uppercase tracking-wider animate-pulse">
@@ -253,11 +311,16 @@ export function WorkoutHistoryList({ userId = "user-1" }: WorkoutHistoryListProp
                       </div>
 
                       <div>
-                        <div className="font-headline font-extrabold text-xs text-white uppercase flex items-center gap-2">
+                        <div className="font-headline font-extrabold text-xs text-white uppercase flex items-center gap-2 flex-wrap">
                           <span>{session.date}</span>
                           <span className="text-[9px] text-zinc-400 font-mono font-normal">
                             ({session.duration_minutes || 45} MINS)
                           </span>
+                          {session.is_pending_sync && (
+                            <span className="px-1.5 py-0.5 border border-amber-400 bg-amber-950/80 text-amber-300 text-[8px] font-bold uppercase animate-pulse">
+                              OFFLINE (PENDING SYNC)
+                            </span>
+                          )}
                         </div>
 
                         <div className="text-[10px] text-zinc-400 flex items-center gap-2 mt-0.5 font-bold">
