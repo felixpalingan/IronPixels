@@ -83,5 +83,28 @@ export function runWorkoutCalculationsTests(): { passed: number; failed: number 
   assert(sessionResult.totalReps === 10, `Total completed reps should be 10, received ${sessionResult.totalReps}`);
   assert(sessionResult.totalRvs > 0, `Total session RVS should be > 0, received ${sessionResult.totalRvs}`);
 
+  // Test 6: Farmer's Carry distance-based tracking (weight + meters)
+  const farmersResult = calculateWorkoutSessionTotals({
+    exercisesLog: [
+      {
+        exercise_name: "Dumbbell Farmer's Walk",
+        category: "Core",
+        equipment: "Dumbbell",
+        sets: [
+          { weight_kg: 24, distance_meters: 30, completed: true },
+          { weight_kg: 24, distance_meters: 30, completed: true },
+        ],
+      },
+    ],
+    userWeightKg: 75,
+    userStr: 85,
+  });
+
+  assert(farmersResult.totalSets === 2, "Farmer's Carry should count 2 completed sets");
+  assert(farmersResult.totalVolumeKg === 1440, `Farmer's Carry volume expected 1440kg (2 sets * 24kg * 30m), got ${farmersResult.totalVolumeKg}`);
+  assert(farmersResult.sanitizedExercisesLog[0]?.is_distance_based === true, "Farmer's Carry should be marked as distance-based");
+  assert(farmersResult.sanitizedExercisesLog[0]?.sets[0]?.distance_meters === 30, "Farmer's Carry set should preserve distance in meters");
+  assert(farmersResult.totalRvs > 0, `Farmer's Carry session RVS should be > 0 (got ${farmersResult.totalRvs})`);
+
   return { passed, failed };
 }
